@@ -1,10 +1,10 @@
 # DI4D Portal
 ## Technology
-- Django
-- Tailwind CSS
-- Jinja
-- Alpine.js
-- HTMX
+- Django [Django Docs](https://docs.djangoproject.com/)
+- Tailwind CSS [Tailwind CSS Docs](https://v2.tailwindcss.com/docs)
+- Jinja2 [Jinja2 Docs](https://www.devdoc.net/python/jinja-2.10.1-doc/)
+- Alpine.js [Alpine JS Docs](https://alpinejs.dev/start-here)
+- HTMX [HTMX Docs](https://htmx.org/docs/)
 
 ## Structure of the Django DI4D Portal
 - DI4D_Portal : This is the name/folder of our hole project.
