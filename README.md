@@ -16,3 +16,10 @@
 - Run migrations : python manage.py migrate
 - Create a super user : python manage.py createsuperuser
 - Run server : python manage.py runserver
+
+## Setup development environment (Windows)
+- Create venv: python -m venv .\code\.venv
+- Activate venv: .\code\.venv\Scripts\Activate.ps1
+- Upgrade pip: python -m pip install -U pip
+- Install deps from pyproject.toml: pip install -e .\code\.
+- Run Django: python .\code\DI4D_Portal\manage.py runserver
