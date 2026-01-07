@@ -5,13 +5,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install Python deps
+# Copy enough source for packaging metadata
 COPY pyproject.toml README.md ./
+COPY DI4D_Portal ./DI4D_Portal
+
+# Install Python deps
 RUN python -m pip install --upgrade pip && \
     pip install ".[dev]"
-
-# Copy app code
-COPY DI4D_Portal ./DI4D_Portal
 
 EXPOSE 8000
 
