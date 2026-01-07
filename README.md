@@ -25,4 +25,5 @@
 - Upgrade pip: python -m pip install -U pip
 - Install deps from pyproject.toml: pip install -e ".\code[dev]"
 - Install tailwind binary: python .\code\DI4D_Portal\manage.py tailwind install
+- Copy .vscode\tasks.json.template to .vscode\tasks.json and edit .venv with with your venv name.
 - Run dev environment: Ctrl + Shift + p, Task: run task, choose dev.
