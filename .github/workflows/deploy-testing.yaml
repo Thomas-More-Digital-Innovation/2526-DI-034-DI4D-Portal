@@ -6,7 +6,7 @@ on:
     
 jobs:
   ssh_command:
-    if: github.event.pull_request.merged == true
+    # if: github.event.pull_request.merged == true
     name: Run SSH command
     runs-on: ubuntu-latest
     steps:
