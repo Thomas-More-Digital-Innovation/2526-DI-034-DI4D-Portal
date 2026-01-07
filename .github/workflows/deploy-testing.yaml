@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+      - name: Pull latest github changes
+        run: cd ${{ github.event.repository.name }} && git pull origin testing
       - name: Redeploy OpenCloud stack
         uses: ./.github/actions/cloudflare-access-ssh
         with:
@@ -23,3 +24,4 @@ jobs:
           cf_access_client_id: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           cf_access_client_secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
           command: cd opencloud-compose && docker compose down && docker compose up -d --build --no-deps
+      
