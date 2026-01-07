@@ -4,7 +4,7 @@
 {# PAGE PUBLIC PART #}
 {% block content_structure %}
     <div class="flex flex-col min-h-screen">
-        <nav class="relative bg-[--blue_di4d] after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-white/10">
+        <nav class="relative bg-blue-di4d after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-white/10">
             <div class="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
             <div class="relative flex h-16 items-center justify-between">
                 <div class="absolute inset-y-0 left-0 flex items-center sm:hidden">
@@ -45,7 +45,7 @@
             <el-disclosure
             id="mobile-menu"
             hidden
-            class="sm:hidden absolute inset-x-0 top-16 z-50 bg-[--blue_di4d]">
+            class="sm:hidden absolute inset-x-0 top-16 z-50 bg-blue-di4d">
             <div class="space-y-1 px-2 pt-2 pb-3">
                 <a href="#" class="block rounded-md px-3 py-2 text-base font-medium text-white hover:bg-white/5 hover:text-white">Home</a>
                 <a href="#" class="block rounded-md px-3 py-2 text-base font-medium text-white hover:bg-white/5 hover:text-white">Tech Talks</a>
@@ -57,10 +57,10 @@
             {% block content %}
             {% endblock %}
         </main>
-        <footer class="bg-[--footer_blue_di4d] text-white py-10">
+        <footer class="bg-footer-blue-di4d text-white py-10">
             <div class="max-w-4xl mx-auto px-4 flex flex-col md:flex-row md:items-start md:justify-between gap-8">
                 <div class="flex items-start gap-6">
-                <div class="w-28 h-28 rounded-full overflow-hidden bg-[--orange_di4d] flex items-center justify-center">
+                <div class="w-28 h-28 rounded-full overflow-hidden bg-orange-di4d flex items-center justify-center">
                     <img src="{{ static('images/DI4D.png') }}" alt="DI4D" class="w-full h-full object-cover">
                 </div>
                 <div class="text-sm space-y-1">
