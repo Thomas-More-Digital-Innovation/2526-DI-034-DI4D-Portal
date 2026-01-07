@@ -13,7 +13,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Pull latest github changes
-        run: cd ${{ vars.GIT_REPO_PATH }} && git pull origin testing
+        uses: ./.github/actions/cloudflare-access-ssh
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          port: ${{ secrets.SSH_PORT }}
+          private_key: ${{ secrets.SSH_PRIVATE_KEY_VALUE }}
+          cf_access_client_id: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          cf_access_client_secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          command: cd ${{ vars.GIT_REPO_PATH }} && git pull origin testing
       - name: Redeploy OpenCloud stack
         uses: ./.github/actions/cloudflare-access-ssh
         with:
