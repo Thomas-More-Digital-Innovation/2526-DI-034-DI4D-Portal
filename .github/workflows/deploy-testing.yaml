@@ -61,7 +61,7 @@ jobs:
         run: |
           [ -n "$CF_ACCESS_CLIENT_ID" ] || (echo "Missing Access service token id. Set CF_ACCESS_CLIENT_ID (or SERVICE_TOKEN_ID) in the 'testing' environment secrets." && exit 1)
           [ -n "$CF_ACCESS_CLIENT_SECRET" ] || (echo "Missing Access service token secret. Set CF_ACCESS_CLIENT_SECRET (or SERVICE_TOKEN_SECRET) in the 'testing' environment secrets." && exit 1)
-          PROXY_CMD="cloudflared access ssh --hostname %h --service-token-id $CF_ACCESS_CLIENT_ID --service-token-secret $CF_ACCESS_CLIENT_SECRET"
+          PROXY_CMD="cloudflared access ssh --hostname %h --id '$CF_ACCESS_CLIENT_ID' --secret '$CF_ACCESS_CLIENT_SECRET'"
           ssh -o StrictHostKeyChecking=no \
               -o ProxyCommand="$PROXY_CMD" \
               -i "$SSH_PRIVATE_KEY_FILENAME" \
