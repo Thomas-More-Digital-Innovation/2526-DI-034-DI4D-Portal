@@ -61,10 +61,40 @@
             }
         },
         {
+            "label": "Run Livereload",
+            "type": "shell",
+            "command": "${workspaceFolder}\\code\\.venv\\Scripts\\python.exe",
+            "args": [
+                "${workspaceFolder}\\code\\DI4D_Portal\\manage.py",
+                "livereload"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^$",
+                    "file": 1,
+                    "location": 2,
+                    "message": 3
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^Starting livereload",
+                    "endsPattern": "^Listening on"
+                }
+            },
+            "presentation": {
+                "group": "dev"
+            }
+        },
+        {
             "label": "dev",
             "dependsOn": [
                 "Run Django Server",
-                "Run Tailwind Watcher"
+                "Run Tailwind Watcher",
+                "Run Livereload"
             ],
             "problemMatcher": []
         }
