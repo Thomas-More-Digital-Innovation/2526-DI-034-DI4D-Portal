@@ -36,6 +36,7 @@ class News(models.Model):
     description = models.CharField()
     author = models.ForeignKey(User, on_delete=models.RESTRICT)
     showAuthor = models.BooleanField(default=False)
+    picture = models.CharField()
 
 class Form(models.Model):
     userId = models.ForeignKey(User, on_delete=models.RESTRICT)

@@ -1,0 +1,170 @@
+{% extends "structure/structure_public.jinja" %}
+{% macro logo_box(logos) %}
+<div class="w-full flex justify-center py-6">
+  <div class="max-w-7xl w-full px-6">
+    <div class="w-full bg-white rounded-xl flex flex-wrap items-center justify-center gap-8 px-8 py-6">
+      {% for logo in logos %}
+        <img src="{{ logo.src }}" alt="{{ logo.alt }}"
+             class="h-20 w-auto object-contain" />
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+{% block title %}DI4D Portal - Home{% endblock %}
+{% block content %}
+<div class="w-full">
+    <!-- Section 1 -->
+    <div class="bg-[var(--blue_di4d)]">
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-10 
+                    px-6 py-12 lg:px-20 lg:py-15">
+                <!-- Image -->
+                <div class="w-full lg:w-2/5">
+                <img 
+                    src="{{ static('images/techtalks.jpg') }}" 
+                    alt="People are presenting their tech talks" 
+                    class="w-full h-auto rounded-lg">
+                </div>
+
+                <!-- Text -->
+                <div class="w-full lg:w-3/5">
+                <h1 class="text-3xl lg:text-4xl font-bold mb-4 text-white">
+                    What is DI4D?
+                </h1>
+                <p class="text-white text-base lg:text-lg">
+                    DI4D offers students from the Global South a unique opportunity to study in Belgium through an innovative and hands-on learning track. 
+                    Our program focuses on practical experience, creativity, and real-world application. Students enroll in Computer Science within the 
+                    Digital Innovation program at Thomas More University in Geel, where learning happens by doing — through real projects, modern technologies, 
+                    and guidance from experienced professionals.
+                </p>
+            </div>
+        </div>
+    </div>
+    <!-- Section 2 -->
+    <div class="bg-[var(--white_grey)] px-6 py-12 lg:px-20 lg:py-15">
+        <h2 class="text-center text-3xl lg:text-4xl text-black font-bold px-6">Our Academic Partners</h2>
+        {{ logo_box([
+            {'src': static('images/partners/partner1.jpg'), 'alt': 'partner 1'},
+            {'src': static('images/partners/partner2.jpg'), 'alt': 'partner 2'},
+            {'src': static('images/partners/partner3.jpg'), 'alt': 'partner 3'},
+            {'src': static('images/partners/partner4.png'), 'alt': 'partner 4'},
+            {'src': static('images/partners/partner5.jpg'), 'alt': 'partner 5'},
+            {'src': static('images/partners/partner6.avif'), 'alt': 'partner 6'},
+            {'src': static('images/partners/partner7.png'), 'alt': 'partner 7'},
+            {'src': static('images/partners/partner8.jpg'), 'alt': 'partner 8'},
+            {'src': static('images/partners/partner9.png'), 'alt': 'partner 9'}
+        ]) }}
+    </div>
+    <!-- Section 3 -->
+    <div class="bg-[var(--blue_di4d)]">
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-10 
+                    px-6 py-12 lg:px-20 lg:py-15">
+                <!-- Text -->
+                <div class="w-full lg:w-3/5">
+                <h2 class="text-3xl lg:text-4xl font-bold mb-4 text-white">
+                    The opportunity of Digital Innovation
+                </h2>
+                <p class="text-white text-base lg:text-lg mb-4">
+                    Digital Innovation is a chance to study computer science by doing projects for real clients. 
+                    You as a student make impact for a community of people with problems that have to be solved. Do you want to 
+                    join us? Click on the button below to fill in your student registration.
+                </p>
+                <!-- Check for button if it is possible to register -->
+                {% if register %}
+                <a class="btn_primary_orange" href="{{ url('student_registration') }}">
+                    Register yourself
+                </a>
+                {% else %}
+                    {%if startDate and endDate %}
+                    <a class="btn_primary_orange">
+                        Registration from {{ startDate }} to {{ endDate }}
+                    </a>
+                    {% else %}
+                    <a class="btn_primary_orange">
+                        Not possible to register now
+                    </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <!-- Image -->
+                <div class="w-full lg:w-2/5">
+                <img 
+                    src="{{ static('images/class_di.jpg') }}" 
+                    alt="Class with people of DI" 
+                    class="w-full h-auto rounded-lg">
+                </div>
+        </div>
+    </div>
+    <!-- Section 4 -->
+    <div class="bg-[var(--white_grey)] px-6 py-12 lg:px-20 lg:py-15">
+        <h2 class="text-center text-3xl lg:text-4xl text-black font-bold px-6">Our Stakeholders</h2>
+        {{ logo_box([
+            {'src': static('images/stakeholders/stakeholder1.jpg'), 'alt': 'stakeholder 1'},
+            {'src': static('images/stakeholders/stakeholder2.png'), 'alt': 'stakeholder 2'},
+            {'src': static('images/stakeholders/stakeholder3.png'), 'alt': 'stakeholder 3'},
+            {'src': static('images/stakeholders/stakeholder4.jpg'), 'alt': 'stakeholder 4'},
+            {'src': static('images/stakeholders/stakeholder5.png'), 'alt': 'stakeholder 5'},
+            {'src': static('images/stakeholders/stakeholder6.png'), 'alt': 'stakeholder 6'},
+            {'src': static('images/stakeholders/stakeholder7.png'), 'alt': 'stakeholder 7'},
+            {'src': static('images/stakeholders/stakeholder8.jpg'), 'alt': 'stakeholder 8'},
+            {'src': static('images/stakeholders/stakeholder9.jpg'), 'alt': 'stakeholder 9'},
+            {'src': static('images/stakeholders/stakeholder10.png'), 'alt': 'stakeholder 10'},
+            {'src': static('images/stakeholders/stakeholder11.webp'), 'alt': 'stakeholder 11'},
+            {'src': static('images/stakeholders/stakeholder12.png'), 'alt': 'stakeholder 12'},
+            {'src': static('images/stakeholders/stakeholder13.png'), 'alt': 'stakeholder 13'},
+            {'src': static('images/stakeholders/stakeholder14.png'), 'alt': 'stakeholder 14'}
+        ]) }}
+    </div>
+    <!-- Section 5 -->
+    <div class="bg-[var(--blue_di4d)] px-6 py-12 lg:px-20 lg:py-15">
+        <h2 class="text-center text-3xl lg:text-4xl text-white font-bold px-6">Checkout our latest news!</h2>
+        {% if news|length == 0 %}
+            <h3 class="text-center text-white text-xl lg:text-2xl mt-6">No news articles available at the moment.</h3>
+        {% else %}
+            <div class="flex flex-col lg:flex-row gap-3 mt-6 items-center justify-center mx-auto max-w-7xl">
+                {% for article in news %}
+                    {{ news_item(article) }}
+                {% endfor %}
+            </div>
+            <div class="w-full flex justify-center mt-3">
+                <a class="btn_primary_orange" href="{{ url('news') }}">Go to all our news articles</a>
+            </div>
+        {% endif %}
+    </div>
+    <!-- Section 6 -->
+    <div class="bg-[var(--white_grey)] px-6 py-12 lg:px-20 lg:py-15">
+        <h2 class="text-center text-3xl lg:text-4xl text-black font-bold px-6">Contact</h2>
+        <div class="flex flex-col lg:flex-row gap-10 mt-6 justify-center mx-auto max-w-7xl">
+            <div>
+                <form method="post" class="flex flex-col">
+                    {{ csrf_input }}
+                    <label class="text-black" for="name">Name</label>
+                    <input type="text" placeholder="Name" id="name" name="name" class="mb-4 p-2 rounded-lg w-full lg:w-150 bg-white text-[var(--light-grey)]"/>
+                    <label class="text-black" for="email">Email</label>
+                    <input type="email" placeholder="Email" id="email" name="email" class="mb-4 p-2 rounded-lg w-full lg:w-150 bg-white text-[var(--light-grey)]"/>
+                    <label class="text-black" for="message">Message</label>
+                    <textarea rows="5" placeholder="Message" id="message" name="message" class="mb-4 p-2 rounded-lg w-full lg:w-150 bg-white text-[var(--light-grey)]"></textarea>
+                    <div class="flex justify-end">
+                        <button class="btn_primary_orange w-40" type="submit">Send Message</button>
+                    </div>
+                </form>
+            </div>
+            <div>
+                <div class="w-full h-auto rounded-lg shadow-lg overflow-hidden">
+                    <iframe 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2502.057!2d4.9565335!3d51.1609428!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47c14c011b4bcb87%3A0xb5b970e9f2a6ce42!2sThomas%20More%20-%20Campus%20Geel!5e0!3m2!1snl!2sbe!4v1736246670000" 
+                        class="w-full h-full" 
+                        style="border:0;" 
+                        allowfullscreen="" 
+                        loading="lazy">
+                    </iframe>
+                </div>
+                <p class="text-black mt-4"><i class="fa-solid fa-location-dot"></i> Kleinhoefstraat 4, 2440 Geel</p>
+                <p class="text-black mt-4"><a href="mailto:digitalinnovation@thomasmore.be"><i class="fa-solid fa-envelope"></i> digitalinnovation@thomasmore.be</a></p>
+                <p class="text-black mt-4"><a href="tel:+32014562310"><i class="fa-solid fa-phone"></i> +32 014 56 23 10</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
