@@ -67,7 +67,7 @@ jobs:
             IMAGE_REPO=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]');
             export IMAGE="ghcr.io/$IMAGE_REPO:testing";
             export SECRET_KEY_DJANGO='${{ secrets.SECRET_KEY_DJANGO }}';
-            TRAEFIK_HOST='${{ secrets.TRAEFIK_HOST }}';
+            TRAEFIK_HOST='${{ env.TRAEFIK_HOST }}';
             if [ -z "$TRAEFIK_HOST" ]; then
               echo "Missing required secret TRAEFIK_HOST" >&2;
               exit 1;
