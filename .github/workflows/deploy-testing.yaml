@@ -67,15 +67,19 @@ jobs:
             IMAGE_REPO=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]');
             export IMAGE="ghcr.io/$IMAGE_REPO:testing";
             export SECRET_KEY_DJANGO='${{ secrets.SECRET_KEY_DJANGO }}';
-            TRAEFIK_HOST='${{ env.TRAEFIK_HOST }}';
+            TRAEFIK_HOST='${{ vars.TRAEFIK_HOST }}';
+            DJANGO_ALLOWED_HOSTS='${{ vars.DJANGO_ALLOWED_HOSTS }}';
+            # Derive TRAEFIK_HOST from DJANGO_ALLOWED_HOSTS if not explicitly set
+            if [ -z "$TRAEFIK_HOST" ] && [ -n "$DJANGO_ALLOWED_HOSTS" ]; then
+              TRAEFIK_HOST=$(echo "$DJANGO_ALLOWED_HOSTS" | tr ' ' ',' | cut -d',' -f1);
+            fi;
             if [ -z "$TRAEFIK_HOST" ]; then
-              echo "Missing required secret TRAEFIK_HOST" >&2;
+              echo "Missing TRAEFIK_HOST. Set secret TRAEFIK_HOST or provide DJANGO_ALLOWED_HOSTS with at least one hostname." >&2;
               exit 1;
             fi;
             export TRAEFIK_HOST;
-            DJANGO_ALLOWED_HOSTS='${{ secrets.DJANGO_ALLOWED_HOSTS }}';
             if [ -n "$DJANGO_ALLOWED_HOSTS" ]; then export DJANGO_ALLOWED_HOSTS; fi;
-            DJANGO_DEBUG='${{ secrets.DJANGO_DEBUG }}';
+            DJANGO_DEBUG='${{ vars.DJANGO_DEBUG }}';
             if [ -n "$DJANGO_DEBUG" ]; then export DJANGO_DEBUG; fi;
             docker compose -f docker-compose.testing.yml pull;
             docker compose -f docker-compose.testing.yml up -d
