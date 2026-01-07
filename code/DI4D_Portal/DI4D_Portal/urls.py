@@ -21,4 +21,7 @@ from DI4D_app import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('test', views.hello_world, name='hello_world'),
+    path('', views.home, name='home'),
+    path('student_registration/', views.student_registration, name='student_registration'),
+    path('news/', views.news, name='news'),
 ]
