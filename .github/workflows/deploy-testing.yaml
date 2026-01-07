@@ -4,15 +4,44 @@ on:
     branches:
       - testing
 jobs:
-  ssh_command:
-    # if: github.event.pull_request.merged == true
-    name: deploy to testing
-    environment: testing
-    # needs: terraform_apply
+  build_images:
+    name: Build & push Docker image (testing)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
-      - name: Pull latest github changes
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./code
+          file: ./code/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:testing
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+
+  deploy_testing:
+    name: Deploy to testing (docker compose pull)
+    environment: testing
+    runs-on: ubuntu-latest
+    needs: build_images
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via docker compose
         uses: ./.github/actions/cloudflare-access-ssh
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -21,15 +50,13 @@ jobs:
           private_key: ${{ secrets.SSH_PRIVATE_KEY_VALUE }}
           cf_access_client_id: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           cf_access_client_secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
-          command: cd ${{ vars.GIT_REPO_PATH }} && git pull origin testing
-      - name: Redeploy OpenCloud stack
-        uses: ./.github/actions/cloudflare-access-ssh
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          port: ${{ secrets.SSH_PORT }}
-          private_key: ${{ secrets.SSH_PRIVATE_KEY_VALUE }}
-          cf_access_client_id: ${{ secrets.CF_ACCESS_CLIENT_ID }}
-          cf_access_client_secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
-          command: cd opencloud-compose && docker compose down && docker compose up -d --build --no-deps
+          command: >-
+            set -euo pipefail;
+            DEPLOY_DIR="$HOME/di4d-testing";
+            mkdir -p "$DEPLOY_DIR";
+            cd "$DEPLOY_DIR";
+            curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/docker-compose.testing.yml" -o docker-compose.testing.yml;
+            export GITHUB_REPOSITORY='${{ github.repository }}';
+            docker compose -f docker-compose.testing.yml pull;
+            docker compose -f docker-compose.testing.yml up -d
       

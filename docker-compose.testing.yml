@@ -1,0 +1,11 @@
+services:
+  web:
+    image: ghcr.io/${GITHUB_REPOSITORY}:testing
+    ports:
+      - "8000:8000"
+    environment:
+      # Required by settings.py
+      SECRET_KEY_DJANGO: ${SECRET_KEY_DJANGO}
+      DJANGO_DEBUG: "True"
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
+    restart: unless-stopped
