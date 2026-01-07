@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Test</title>
-    <link rel="stylesheet" href="{{ static('css/dist/styles.css') }}">
-    {{ livereload_script()|safe }}
-</head>
-<body>
-    <h1 class="text-6xl font-bold text-blue-600 test">Hello world!</h1>
-</body>
-</html>
+{% extends "structure/structure_public.jinja" %}
+{% block title %}Test Page{% endblock %}
+{% block content %}
+    <h1 class="text-2xl">Hello world!</h1>
+    <h2 class="text-xl mb-2">Buttons</h2>
+    <a class="btn_primary_orange">Click me</a>
+    <a class="btn_primary_blue">Click me</a>
+{% endblock %}
