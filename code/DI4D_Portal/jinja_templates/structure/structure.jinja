@@ -1,0 +1,21 @@
+{# GENERAL COMPONENTS #}
+
+{# PAGE #}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="author" content="Maurits Groen, David Maat, Govart Peijenborg">
+    <meta name="description" content="DI4D Portal - Digital Platform of DI">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
+    <link rel="stylesheet" href="{{ static('style.css') }}">
+    <title>{% block title %}DI4D Portal{% endblock %}</title>
+</head>
+<body>
+    {% block content_structure %}
+    {% endblock %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.15.0/cdn.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/2.0.7/htmx.min.js"></script>
+</body>
+</html>
