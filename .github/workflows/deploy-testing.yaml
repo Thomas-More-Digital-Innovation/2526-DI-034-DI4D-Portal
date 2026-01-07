@@ -6,14 +6,14 @@ on:
 jobs:
   ssh_command:
     # if: github.event.pull_request.merged == true
-    name: Run SSH command
+    name: deploy to testing
     environment: testing
     # needs: terraform_apply
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run via Cloudflare Access SSH
+      - name: Redeploy OpenCloud stack
         uses: ./.github/actions/cloudflare-access-ssh
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -22,4 +22,4 @@ jobs:
           private_key: ${{ secrets.SSH_PRIVATE_KEY_VALUE }}
           cf_access_client_id: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           cf_access_client_secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
-          command: mkdir hello-world -v
+          command: cd opencloud-compose && docker compose down && docker compose up -d --build --no-deps
