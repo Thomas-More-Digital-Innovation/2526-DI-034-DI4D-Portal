@@ -5,6 +5,8 @@
 - Jinja2 [Jinja2 Docs](https://www.devdoc.net/python/jinja-2.10.1-doc/)
 - Alpine.js [Alpine JS Docs](https://alpinejs.dev/start-here)
 - HTMX [HTMX Docs](https://htmx.org/docs/)
+- Google Fonts [Google Fonts](https://fonts.google.com/)
+- Font Awesome [Font Awesome Icons](https://fontawesome.com/icons)
 
 ## Structure of the Django DI4D Portal
 - DI4D_Portal : This is the name/folder of our hole project.
@@ -21,6 +23,6 @@
 - Create venv: python -m venv .\code\\.venv
 - Activate venv: .\code\\.venv\Scripts\Activate.ps1
 - Upgrade pip: python -m pip install -U pip
-- Install deps from pyproject.toml: pip install -e .\code\.
+- Install deps from pyproject.toml: pip install -e ".\code[dev]"
 - Install tailwind binary: python .\code\DI4D_Portal\manage.py tailwind install
 - Run dev environment: Ctrl + Shift + p, Task: run task, choose dev.
