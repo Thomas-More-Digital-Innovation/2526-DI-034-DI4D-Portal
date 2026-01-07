@@ -35,6 +35,21 @@ jobs:
           [ -n "$SSH_USERNAME" ] || (echo "Missing SSH_USERNAME" && exit 1)
           getent hosts "$SSH_HOST" || (echo "DNS resolution failed for SSH_HOST: $SSH_HOST" && exit 1)
           echo "Preflight OK: host resolves and secrets present"
+      - name: Debug secret presence (no values)
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID || secrets.SERVICE_TOKEN_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET || secrets.SERVICE_TOKEN_SECRET }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USERNAME: ${{ secrets.SSH_USERNAME }}
+          SSH_PRIVATE_KEY_FILENAME: ${{ secrets.SSH_PRIVATE_KEY_FILENAME }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+        run: |
+          if [ -n "$CF_ACCESS_CLIENT_ID" ]; then echo "CF access client id: set"; else echo "CF access client id: MISSING"; fi
+          if [ -n "$CF_ACCESS_CLIENT_SECRET" ]; then echo "CF access client secret: set"; else echo "CF access client secret: MISSING"; fi
+          if [ -n "$SSH_HOST" ]; then echo "SSH_HOST: set"; else echo "SSH_HOST: MISSING"; fi
+          if [ -n "$SSH_USERNAME" ]; then echo "SSH_USERNAME: set"; else echo "SSH_USERNAME: MISSING"; fi
+          if [ -n "$SSH_PRIVATE_KEY_FILENAME" ]; then echo "SSH_PRIVATE_KEY_FILENAME: set"; else echo "SSH_PRIVATE_KEY_FILENAME: MISSING"; fi
+          echo "SSH_PORT: ${SSH_PORT:-22}"
       - name: Run remote command via SSH
         env:
           CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID || secrets.SERVICE_TOKEN_ID }}
@@ -44,12 +59,9 @@ jobs:
           SSH_PRIVATE_KEY_FILENAME: ${{ secrets.SSH_PRIVATE_KEY_FILENAME }}
           SSH_PORT: ${{ secrets.SSH_PORT }}
         run: |
-          [ -n "$CF_ACCESS_CLIENT_ID" ] || echo "Warning: CF_ACCESS_CLIENT_ID empty; assuming Access not required"
-          [ -n "$CF_ACCESS_CLIENT_SECRET" ] || echo "Warning: CF_ACCESS_CLIENT_SECRET empty; assuming Access not required"
-          PROXY_CMD="cloudflared access ssh --hostname %h"
-          if [ -n "$CF_ACCESS_CLIENT_ID" ] && [ -n "$CF_ACCESS_CLIENT_SECRET" ]; then
-            PROXY_CMD="$PROXY_CMD --service-token-id $CF_ACCESS_CLIENT_ID --service-token-secret $CF_ACCESS_CLIENT_SECRET"
-          fi
+          [ -n "$CF_ACCESS_CLIENT_ID" ] || (echo "Missing Access service token id. Set CF_ACCESS_CLIENT_ID (or SERVICE_TOKEN_ID) in the 'testing' environment secrets." && exit 1)
+          [ -n "$CF_ACCESS_CLIENT_SECRET" ] || (echo "Missing Access service token secret. Set CF_ACCESS_CLIENT_SECRET (or SERVICE_TOKEN_SECRET) in the 'testing' environment secrets." && exit 1)
+          PROXY_CMD="cloudflared access ssh --hostname %h --service-token-id $CF_ACCESS_CLIENT_ID --service-token-secret $CF_ACCESS_CLIENT_SECRET"
           ssh -o StrictHostKeyChecking=no \
               -o ProxyCommand="$PROXY_CMD" \
               -i "$SSH_PRIVATE_KEY_FILENAME" \
