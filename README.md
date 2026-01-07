@@ -5,6 +5,8 @@
 - Jinja2 [Jinja2 Docs](https://www.devdoc.net/python/jinja-2.10.1-doc/)
 - Alpine.js [Alpine JS Docs](https://alpinejs.dev/start-here)
 - HTMX [HTMX Docs](https://htmx.org/docs/)
+- Google Fonts [Google Fonts](https://fonts.google.com/)
+- Font Awesome [Font Awesome Icons](https://fontawesome.com/icons)
 
 ## Structure of the Django DI4D Portal
 - DI4D_Portal : This is the name/folder of our hole project.
