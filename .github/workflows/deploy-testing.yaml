@@ -59,7 +59,7 @@ jobs:
           cf_access_client_id: ${{ secrets.CF_ACCESS_CLIENT_ID }}
           cf_access_client_secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
           command: >-
-            set -euo pipefail;
+            set -eu;
             DEPLOY_DIR="$HOME/di4d-testing";
             mkdir -p "$DEPLOY_DIR";
             cd "$DEPLOY_DIR";
@@ -69,18 +69,12 @@ jobs:
             export SECRET_KEY_DJANGO='${{ secrets.SECRET_KEY_DJANGO }}';
             TRAEFIK_HOST='${{ vars.TRAEFIK_HOST }}';
             DJANGO_ALLOWED_HOSTS='${{ vars.DJANGO_ALLOWED_HOSTS }}';
-            # Derive TRAEFIK_HOST from DJANGO_ALLOWED_HOSTS if not explicitly set
-            if [ -z "$TRAEFIK_HOST" ] && [ -n "$DJANGO_ALLOWED_HOSTS" ]; then
-              TRAEFIK_HOST=$(echo "$DJANGO_ALLOWED_HOSTS" | tr ' ' ',' | cut -d',' -f1);
-            fi;
-            if [ -z "$TRAEFIK_HOST" ]; then
-              echo "Missing TRAEFIK_HOST. Set secret TRAEFIK_HOST or provide DJANGO_ALLOWED_HOSTS with at least one hostname." >&2;
-              exit 1;
-            fi;
+            [ -z "$TRAEFIK_HOST" ] && [ -n "$DJANGO_ALLOWED_HOSTS" ] && TRAEFIK_HOST=$(echo "$DJANGO_ALLOWED_HOSTS" | tr ' ' ',' | cut -d',' -f1);
+            [ -z "$TRAEFIK_HOST" ] && echo "Missing TRAEFIK_HOST. Set env TRAEFIK_HOST or provide DJANGO_ALLOWED_HOSTS with at least one hostname." >&2 && exit 1;
             export TRAEFIK_HOST;
-            if [ -n "$DJANGO_ALLOWED_HOSTS" ]; then export DJANGO_ALLOWED_HOSTS; fi;
+            [ -n "$DJANGO_ALLOWED_HOSTS" ] && export DJANGO_ALLOWED_HOSTS;
             DJANGO_DEBUG='${{ vars.DJANGO_DEBUG }}';
-            if [ -n "$DJANGO_DEBUG" ]; then export DJANGO_DEBUG; fi;
+            [ -n "$DJANGO_DEBUG" ] && export DJANGO_DEBUG;
             docker compose -f docker-compose.testing.yml pull;
             docker compose -f docker-compose.testing.yml up -d
       
