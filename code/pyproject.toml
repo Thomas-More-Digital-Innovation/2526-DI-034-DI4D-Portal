@@ -19,6 +19,10 @@ dev = [
     "django-tailwind>=4.4.2",
     "django-livereload-server>=0.5.1"
 ]
+prod = [
+    "gunicorn>=23.0.0",
+    "whitenoise>=6.8.2"
+]
 
 [tool.setuptools]
 include-package-data = true

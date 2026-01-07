@@ -136,11 +136,21 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 STATICFILES_DIRS = [
     BASE_DIR / "static",
-    BASE_DIR / "theme" / "static",
 ]
+
+# Only include theme static in dev mode when tailwind is installed
+if DEBUG:
+    theme_static = BASE_DIR / "theme" / "static"
+    if theme_static.exists():
+        STATICFILES_DIRS.append(theme_static)
+
+# Use whitenoise for efficient static file serving
+MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
