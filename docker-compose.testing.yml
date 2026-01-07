@@ -1,6 +1,6 @@
 services:
   traefik:
-    image: traefik:v3.3
+    image: traefik:latest
     command:
       - --api.dashboard=false
       - --log.level=INFO
