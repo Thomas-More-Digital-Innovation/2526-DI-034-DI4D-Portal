@@ -24,12 +24,21 @@ jobs:
       - name: Configure SSH key
         shell: bash
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY_VALUE }}
+          SSH_PRIVATE_KEY_B64: ${{ secrets.SSH_PRIVATE_KEY_B64 }}
         run: |
           set -euo pipefail
           install -d -m 700 ~/.ssh
-          printf '%s' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          if [ -z "${SSH_PRIVATE_KEY_B64:-}" ]; then
+            echo "Missing secret SSH_PRIVATE_KEY_B64 (base64-encoded private key)" >&2
+            exit 1
+          fi
+
+          echo "$SSH_PRIVATE_KEY_B64" | base64 -d > ~/.ssh/id_deploy
+
+          chmod 600 ~/.ssh/id_deploy
+
+          # Fail fast with a helpful error if the key can't be parsed.
+          ssh-keygen -y -f ~/.ssh/id_deploy >/dev/null
 
       - name: Connect and run command on remote server
         shell: bash
@@ -43,7 +52,7 @@ jobs:
           set -euo pipefail
 
           ssh \
-            -i ~/.ssh/id_rsa \
+            -i ~/.ssh/id_deploy \
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
