@@ -8,6 +8,7 @@ jobs:
   ssh_command:
     # if: github.event.pull_request.merged == true
     name: Run SSH command
+    environment: testing
     runs-on: ubuntu-latest
     steps:
       - name: Connect and run command on remote server
