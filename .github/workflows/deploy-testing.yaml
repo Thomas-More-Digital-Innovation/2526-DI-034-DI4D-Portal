@@ -13,6 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Compute image name (lowercase)
+        id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -30,8 +37,8 @@ jobs:
           file: ./code/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:testing
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ${{ steps.image.outputs.name }}:testing
+            ${{ steps.image.outputs.name }}:${{ github.sha }}
 
   deploy_testing:
     name: Deploy to testing (docker compose pull)
@@ -56,7 +63,8 @@ jobs:
             mkdir -p "$DEPLOY_DIR";
             cd "$DEPLOY_DIR";
             curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/docker-compose.testing.yml" -o docker-compose.testing.yml;
-            export GITHUB_REPOSITORY='${{ github.repository }}';
+            IMAGE_REPO=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]');
+            export IMAGE="ghcr.io/$IMAGE_REPO:testing";
             docker compose -f docker-compose.testing.yml pull;
             docker compose -f docker-compose.testing.yml up -d
       

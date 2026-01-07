@@ -1,6 +1,6 @@
 services:
   web:
-    image: ghcr.io/${GITHUB_REPOSITORY}:testing
+    image: ${IMAGE}
     ports:
       - "8000:8000"
     environment:
