@@ -83,7 +83,7 @@ TEMPLATES = [
         'DIRS': [BASE_DIR / 'jinja_templates'], 
         'APP_DIRS': True, 
         'OPTIONS': { 
-            'environment': 'DI4D_Portal.jinja2.environment', 
+            'environment': 'DI4D_Portal.jinja_env.environment', 
         }, 
     }
 ]
