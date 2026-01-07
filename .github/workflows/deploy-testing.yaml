@@ -66,6 +66,9 @@ jobs:
             curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/docker-compose.testing.yml" -o docker-compose.testing.yml;
             IMAGE_REPO=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]');
             export IMAGE="ghcr.io/$IMAGE_REPO:testing";
+            export SECRET_KEY_DJANGO='${{ secrets.SECRET_KEY_DJANGO }}';
+            export DJANGO_ALLOWED_HOSTS='${{ env.DJANGO_ALLOWED_HOSTS }}';
+            export DJANGO_DEBUG='${{ secrets.DJANGO_DEBUG }}';
             docker compose -f docker-compose.testing.yml pull;
             docker compose -f docker-compose.testing.yml up -d
       
