@@ -23,17 +23,17 @@ jobs:
 
       - name: Configure SSH key
         shell: bash
-        env:
-          SSH_PRIVATE_KEY_B64: ${{ secrets.SSH_PRIVATE_KEY_B64 }}
         run: |
           set -euo pipefail
           install -d -m 700 ~/.ssh
-          if [ -z "${SSH_PRIVATE_KEY_B64:-}" ]; then
-            echo "Missing secret SSH_PRIVATE_KEY_B64 (base64-encoded private key)" >&2
-            exit 1
-          fi
 
-          echo "$SSH_PRIVATE_KEY_B64" | base64 -d > ~/.ssh/id_deploy
+          cat > ~/.ssh/id_deploy <<'KEY'
+          ${{ secrets.SSH_PRIVATE_KEY_VALUE }}
+          KEY
+
+          # Normalize potential CRLF issues.
+          tr -d '\r' < ~/.ssh/id_deploy > ~/.ssh/id_deploy.tmp
+          mv ~/.ssh/id_deploy.tmp ~/.ssh/id_deploy
 
           chmod 600 ~/.ssh/id_deploy
 
