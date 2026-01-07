@@ -1,11 +1,56 @@
 services:
+  traefik:
+    image: traefik:v3.3
+    command:
+      - --api.dashboard=false
+      - --log.level=INFO
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.le.acme.httpchallenge=true
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    networks:
+      - proxy
+
   web:
     image: ${IMAGE}
-    ports:
-      - "8000:8000"
     environment:
       # Required by settings.py
       SECRET_KEY_DJANGO: ${SECRET_KEY_DJANGO?SECRET_KEY_DJANGO is required}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-True}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
+    labels:
+      - traefik.enable=true
+
+      # HTTP -> HTTPS redirect
+      - traefik.http.routers.di4d-http.rule=Host(`${TRAEFIK_HOST?TRAEFIK_HOST is required}`)
+      - traefik.http.routers.di4d-http.entrypoints=web
+      - traefik.http.routers.di4d-http.middlewares=di4d-https-redirect
+      - traefik.http.middlewares.di4d-https-redirect.redirectscheme.scheme=https
+
+      # HTTPS router
+      - traefik.http.routers.di4d.rule=Host(`${TRAEFIK_HOST?TRAEFIK_HOST is required}`)
+      - traefik.http.routers.di4d.entrypoints=websecure
+      - traefik.http.routers.di4d.tls=true
+      - traefik.http.routers.di4d.tls.certresolver=le
+
+      # Service port inside the container
+      - traefik.http.services.di4d.loadbalancer.server.port=8000
     restart: unless-stopped
+    networks:
+      - proxy
+
+volumes:
+  letsencrypt:
+
+networks:
+  proxy:
