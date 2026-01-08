@@ -1,0 +1,23 @@
+{% extends "structure/structure.jinja"%}
+{% block title %}Login - DI4D Portal{% endblock %}
+
+{% block content_structure %}
+<div class="min-h-screen bg-[var(--blue_di4d)] flex flex-col items-center justify-center px-4 py-12 gap-8">
+<img class="rounded-full object-cover w-50 h-50 md:w-60 md:h-60 mx-auto p-5" src="{{ static('images/DI4D.png') }}" alt="DI4D Logo">
+    <h1 class="text-white text-2xl md:text-3xl font-bold text-center">Login DI4D</h1>
+    <form method="post" class="w-full max-w-sm space-y-4 flex flex-col items-start">
+        {{ csrf_input }}
+        <label for="username" class="text-white text-sm font-medium w-full text-left">Username</label>
+        <input placeholder="Username" type="text" id="username" name="username" required class="w-full px-4 py-2 rounded-md border bg-white text-gray-900">
+        <label for="password" class="text-white text-sm font-medium w-full text-left">Password</label>
+        <input placeholder="Password" type="password" id="password" name="password" required class="w-full px-4 py-2 rounded-md border bg-white text-gray-900">
+        <a href="{{ url('password_reset') }}" class="text-white underline">Forgot Password?</a>
+        {% if error %}
+            <p class="w-full bg-red-500 text-white text-sm px-3 py-2 rounded mb-2">
+                {{ error }}
+            </p>
+        {% endif %}
+        <input class="btn_primary_orange mx-auto" type="submit" value="Login">
+    </form>
+</div>
+{% endblock %}

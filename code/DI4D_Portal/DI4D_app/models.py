@@ -1,4 +1,6 @@
 from django.db import models
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.contrib.auth.models import BaseUserManager
 
 # Create your models here.
 class UserType(models.Model):
@@ -13,16 +15,42 @@ class Partner(models.Model):
     city = models.CharField(max_length=100)
     isActive = models.BooleanField(default=True)
 
-class User(models.Model):
-    userTypeId = models.ForeignKey(UserType, on_delete=models.RESTRICT)
-    username = models.CharField(max_length=100)
-    password = models.CharField(max_length=100)
+class UserManager(BaseUserManager):
+    def create_user(self, username, email, password=None, **extra_fields):
+        if not username:
+            raise ValueError("Username is verplicht")
+        if not email:
+            raise ValueError("Email is verplicht")
+
+        email = self.normalize_email(email)
+        user = self.model(
+            username=username,
+            email=email,
+            **extra_fields
+        )
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, username, email, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        return self.create_user(username, email, password, **extra_fields)
+
+class User(AbstractBaseUser, PermissionsMixin):
+    userTypeId = models.ForeignKey(UserType, on_delete=models.RESTRICT, null=True, blank=True)
+    username = models.CharField(max_length=100, unique=True)
     firstname = models.CharField(max_length=100)
     lastname = models.CharField(max_length=100)
-    email = models.CharField(max_length=100)
-    partnerId = models.ForeignKey(Partner, on_delete=models.RESTRICT)
+    email = models.EmailField(unique=True)
+    partnerId = models.ForeignKey(Partner, on_delete=models.RESTRICT, null=True, blank=True)
     profilePicture = models.CharField(null=True, blank=True)
-    isActive = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+
+    objects = UserManager()
+    USERNAME_FIELD = "username"
+    REQUIRED_FIELDS = ["email"]
 
 class UserSettings(models.Model):
     settingJson = models.CharField()

@@ -7,11 +7,17 @@
     --white_grey: #F5F5F5;
     --footer_blue_di4d: #031F30;
     --light_grey: #595959;
-
+    --lightest_grey: #A6A6A6;
+    
     --normal_text: 16px;
     --normal_bigger_text: 24px;
     --title_h1_text: 40px;
     --title_h2_text: 30px;
+}
+
+::selection{
+    background-color: var(--orange_di4d);
+    color: white;
 }
 
 body{
