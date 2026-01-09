@@ -1,9 +1,11 @@
 from django.utils import timezone
 from django.core.mail import send_mail
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.conf import settings
-
+from django.contrib.auth import authenticate, login
 from .models import ApplicationSetting, News, User
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
 
 # Create your views here.
 def hello_world(request):
@@ -12,6 +14,9 @@ def hello_world(request):
 def home(request):
     data = {}
     today = timezone.now().date() 
+    # Check if user is already logged in
+    if request.user.is_authenticated:
+        return redirect('dashboard')
 
     # Check if there is a form send
     if request.method == "POST":
@@ -48,10 +53,36 @@ def home(request):
     # Get news articles (- : for latest news articles, then we limit to 2 articles)
     data["news"] = News.objects.all().order_by('-lastEditDate')[:2]
 
-    return render(request, 'home.jinja',  data)
+    return render(request, 'public/home.jinja',  data)
+
+def login_view(request):
+    data={}
+    # Check if user is already logged in
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
+    # Handle login form
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('dashboard')
+        else:
+            data["error"] = "Invalid username and/or password"
+    return render(request, 'auth/login.jinja', data)
+
+def logout_view(request):
+    logout(request)
+    return redirect('home')
 
 def student_registration(request):
     return render(request, 'test.jinja')
 
 def news(request):
     return render(request, 'test.jinja')
+
+@login_required(login_url='login')
+def dashboard(request):
+    return render(request, 'sharepoint/dashboard.jinja')

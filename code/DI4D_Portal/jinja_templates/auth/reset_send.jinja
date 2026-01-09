@@ -1,0 +1,14 @@
+{% extends "structure/structure.jinja"%}
+{% block title %}Forgot Password - DI4D Portal{% endblock %}
+
+{% block content_structure %}
+<div class="min-h-screen bg-[var(--blue_di4d)] flex flex-col items-center justify-center px-4 py-12 gap-8">
+<img class="rounded-full object-cover w-50 h-50 md:w-60 md:h-60 mx-auto p-5" src="{{ static('images/DI4D.png') }}" alt="DI4D Logo">
+    <h1 class="text-white text-2xl md:text-3xl font-bold text-center">Password reset sent</h1>
+    <p class="text-white max-w-2xl text-center">
+        We’ve emailed you instructions for setting your password, if an account exists with the email you entered. You should receive them shortly.
+        If you don’t receive an email, please make sure you’ve entered the address you registered with, and check your spam folder.
+    </p>
+    <a href="{{ url('login') }}" class="btn_primary_orange">Back to Login</a>
+</div>
+{% endblock %}

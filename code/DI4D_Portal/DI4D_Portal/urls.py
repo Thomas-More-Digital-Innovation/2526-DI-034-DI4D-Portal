@@ -17,11 +17,29 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from DI4D_app import views
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('test', views.hello_world, name='hello_world'),
     path('', views.home, name='home'),
+    path('login/', views.login_view, name='login'),
     path('student_registration/', views.student_registration, name='student_registration'),
     path('news/', views.news, name='news'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('logout/', views.logout_view, name='logout'),
+
+    # Docs : https://docs.djangoproject.com/en/6.0/topics/auth/default/#all-authentication-views
+    path("password_reset/", auth_views.PasswordResetView.as_view(
+        template_name="auth/forgot_password.jinja"
+    ), name="password_reset"),
+    path("password_reset/done/", auth_views.PasswordResetDoneView.as_view(
+        template_name="auth/reset_send.jinja"
+    ), name="password_reset_done"),
+    path("reset/<uidb64>/<token>/", auth_views.PasswordResetConfirmView.as_view(
+        template_name="auth/reset_password.jinja"
+    ), name="password_reset_confirm"),
+    path("reset/done/", auth_views.PasswordResetCompleteView.as_view(
+        template_name="auth/reset_complete.jinja"
+    ), name="password_reset_complete"),
 ]
