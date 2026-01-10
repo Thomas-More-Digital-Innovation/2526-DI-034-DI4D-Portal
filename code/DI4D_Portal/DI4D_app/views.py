@@ -6,6 +6,8 @@ from django.contrib.auth import authenticate, login
 from .models import ApplicationSetting, News, User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
+from django.core.paginator import Paginator
+from django.db.models import Q
 
 # Create your views here.
 def hello_world(request):
@@ -27,16 +29,17 @@ def home(request):
         
         # Get mails of admins
         admin_emails = User.objects.filter(userTypeId__name='admin').values_list('email', flat=True)
-
-        # Send email via SMTP
-        if len(admin_emails) > 0:
-            send_mail(
-                subject=f"Contact Form DI4D Portal - Message from {name}",
-                message=f"Name : {name}\nEmail: {email}\nMessage:\n{message}",
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=admin_emails,
-                fail_silently=False
-            )
+        # if everything is filled in
+        if name and email and message:
+            # Send email via SMTP
+            if len(admin_emails) > 0:
+                send_mail(
+                    subject=f"Contact Form DI4D Portal - Message from {name}",
+                    message=f"Name : {name}\nEmail: {email}\nMessage:\n{message}",
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=admin_emails,
+                    fail_silently=False
+                )
 
     # Check if student can register himself
     application_setting = ApplicationSetting.objects.first()
@@ -81,7 +84,21 @@ def student_registration(request):
     return render(request, 'test.jinja')
 
 def news(request):
-    return render(request, 'test.jinja')
+    all_articles = News.objects.all().order_by("-lastEditDate")
+    total_articles = all_articles.count()
+    search_query = ""
+
+    # Check if somebody searched for something
+    if request.method == "POST":
+        search_query = request.POST.get("q").strip()
+        # Check if search query is not empty
+        if search_query:
+            all_articles = all_articles.filter(Q(title__icontains=search_query) | Q(lastEditDate__icontains=search_query))
+        # Check if there is HTMX request
+        if request.headers.get("HX-Request") == "true":
+            return render(request, 'components/news_htmx.jinja', {"all_articles": all_articles, "total_articles": total_articles, "search_query": search_query})
+
+    return render(request, 'public/news.jinja', {"all_articles": all_articles, "total_articles": total_articles, "search_query": search_query})
 
 @login_required(login_url='login')
 def dashboard(request):
