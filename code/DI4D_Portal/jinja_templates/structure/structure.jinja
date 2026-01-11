@@ -21,12 +21,34 @@
   </div>
 </div>
 {% endmacro %}
-
+{# TALK ITEM BOX #}
+{% macro talk_item(talk) %}
+<div class="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition flex flex-col h-full">
+  <div class="w-full h-40 overflow-hidden">
+    {% if talk.thubnail %}
+      <img src="{{ static('images/techtalks/' ~ talk.thubnail) }}" alt="{{ talk.title }}" 
+           class="w-full h-full object-cover" />
+    {% else %}
+      <div class="w-full h-full bg-gradient-to-r from-blue-600 to-blue-800 flex items-center justify-center">
+        <span class="text-white text-lg font-bold text-center px-4">{{ talk.title }}</span>
+      </div>
+    {% endif %}
+  </div>
+  <div class="p-4 flex flex-col flex-grow">
+    <h3 class="text-lg font-bold mb-2 text-gray-900 line-clamp-2">{{ talk.title }}</h3>
+    <p class="text-sm text-gray-600 mb-2">
+      <span class="font-semibold">Speaker:</span> {{ talk.speaker }}
+    </p>
+    <p class="text-sm text-gray-600 mb-4 flex-grow line-clamp-2">{{ talk.description }}</p>
+    <a class="btn_primary_orange px-4 py-2 text-center" href="#">Watch Talk</a>
+  </div>
+</div>
+{% endmacro %}
 {# PAGE #}
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="author" content="Maurits Groen, David Maat, Govart Peijenborg">
+    <meta name="author" content="Maurits Groen, David Maat, Govart Peijnenborg">
     <meta name="description" content="DI4D Portal - Digital Platform of DI">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ static('css/dist/styles.css') }}">

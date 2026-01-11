@@ -3,7 +3,7 @@ from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from .models import ApplicationSetting, News, User
+from .models import ApplicationSetting, News, User, TechTalk
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 
@@ -82,6 +82,11 @@ def student_registration(request):
 
 def news(request):
     return render(request, 'test.jinja')
+
+def tech_talks(request):
+    data = {}
+    data["techtalks"] = TechTalk.objects.filter(isPublic=True).all()
+    return render(request, 'public/techtalks.jinja', data)
 
 @login_required(login_url='login')
 def dashboard(request):
