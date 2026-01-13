@@ -1,9 +1,13 @@
 {# This is a compont for return of HTMX #}
 {% from 'structure/structure.jinja' import news_item %}
 <div class="justify-center flex">
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 mt-6 max-w-6xl w-full">
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 mt-6 {% if not request.user.is_authenticated %}max-w-6xl{% endif %} w-full">
         {% for article in all_articles %}
-            {{ news_item(article) }}
+            {% if request.user.is_authenticated %}
+                {{ news_item(article, "--white_grey") }}
+            {% else %}
+                {{ news_item(article) }}
+            {% endif %}
         {% endfor %}
     </div>
 </div>
