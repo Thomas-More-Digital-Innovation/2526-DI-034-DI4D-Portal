@@ -84,9 +84,21 @@ def student_registration(request):
     return render(request, 'test.jinja')
 
 def news(request):
-    all_articles = News.objects.all().order_by("-lastEditDate")
-    total_articles = all_articles.count()
     search_query = ""
+    active_page = 'news'
+
+    # User logged in
+    if request.user.is_authenticated:
+        all_articles = News.objects.filter().order_by("-lastEditDate")
+        total_articles = all_articles.count()
+    # User not logged in
+    else:
+        all_articles = News.objects.filter(isPublic=True).order_by("-lastEditDate")
+        total_articles = all_articles.count()
+    
+    # Check if somebody want to sort by oldest
+    if request.POST.get("sort_by") == "oldest":
+        all_articles = all_articles.order_by("lastEditDate")
 
     # Check if somebody searched for something
     if request.method == "POST":
@@ -96,10 +108,11 @@ def news(request):
             all_articles = all_articles.filter(Q(title__icontains=search_query) | Q(lastEditDate__icontains=search_query))
         # Check if there is HTMX request
         if request.headers.get("HX-Request") == "true":
-            return render(request, 'components/news_htmx.jinja', {"all_articles": all_articles, "total_articles": total_articles, "search_query": search_query})
-
-    return render(request, 'public/news.jinja', {"all_articles": all_articles, "total_articles": total_articles, "search_query": search_query})
-
+            return render(request, 'components/news_htmx.jinja', {"all_articles": all_articles, "total_articles": total_articles, "search_query": search_query, "active_page": active_page})
+    if request.user.is_authenticated:
+        return render(request, 'sharepoint/news.jinja', {"all_articles": all_articles, "total_articles": total_articles, "search_query": search_query, "active_page": active_page})
+    else:
+        return render(request, 'public/news.jinja', {"all_articles": all_articles, "total_articles": total_articles, "search_query": search_query, "active_page": active_page})
 @login_required(login_url='login')
 def dashboard(request):
     active_page = 'dashboard'

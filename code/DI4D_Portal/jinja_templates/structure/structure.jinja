@@ -23,8 +23,8 @@
 {% endmacro %}
 
 {# NEW VERSION OF NEWS ITEM BOX #}
-{% macro news_item(article) %}
-<div class="bg-white rounded-lg news w-full h-full flex flex-col p-6">
+{% macro news_item(article, color) %}
+<div class="{% if color%} bg-[{{ color }}] {% else %}bg-white{% endif %} rounded-lg news w-full h-full flex flex-col p-6">
   <div class="flex flex-col md:flex-row gap-2 items-stretch h-full">
       <img src="{{ article.picture }}" alt="{{ article.title }}" 
           class="w-32 h-32 md:w-48 md:h-48 md:basis-2/5 aspect-square object-cover rounded mx-auto" />

@@ -33,7 +33,7 @@
           </a>
         </li>
         <li class="{% if active_page == 'news' %}border-2 border-white bg-[--orange_di4d]{% endif %} rounded-lg mb-2">
-          <a href="#" class="text-white text-md">
+          <a href="{{ url('news') }}" class="text-white text-md">
             <i class="fa-solid fa-newspaper text-xl"></i>
             News
           </a>
@@ -62,13 +62,13 @@
   
   <div class="flex-1 min-h-screen bg-base-100 lg:ml-64">
     <!-- Navigation Toggle -->
-    <div class="px-2 mt-2 lg:hidden">
+    <div class="px-2 pt-2 lg:hidden text-black">
       <button type="button" class="btn btn-text btn-square" aria-haspopup="dialog" aria-expanded="false" aria-controls="collapsible-sidebar" data-overlay="#collapsible-sidebar">
         <i class="fa-solid fa-bars text-xl"></i>
       </button>
     </div>
     <!-- End Navigation Toggle -->
-    <div class="p-4">
+    <div class="max-w-7xl mx-auto p-8">
         {% block content%}
         {% endblock %}
     </div>
