@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.contrib.auth import update_session_auth_hash
 
 # Create your views here.
 def hello_world(request):
@@ -113,7 +114,43 @@ def news(request):
         return render(request, 'sharepoint/news.jinja', {"all_articles": all_articles, "total_articles": total_articles, "search_query": search_query, "active_page": active_page})
     else:
         return render(request, 'public/news.jinja', {"all_articles": all_articles, "total_articles": total_articles, "search_query": search_query, "active_page": active_page})
+
 @login_required(login_url='login')
 def dashboard(request):
     active_page = 'dashboard'
     return render(request, 'sharepoint/dashboard.jinja', {'active_page': active_page})
+
+@login_required(login_url='login')
+def settings(request):
+    active_page = 'settings'
+    if request.method == 'POST':
+        # Check if it is to change password
+        if request.POST.get("changepassword"):
+            new_password = request.POST.get("newpassword")
+            confirm_password = request.POST.get("confirmnewpassword")
+            if new_password == confirm_password and new_password != "" and confirm_password != "":
+                request.user.set_password(new_password)
+                request.user.save()
+                # Keep the user logged in after changing password
+                update_session_auth_hash(request, request.user)
+
+                return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'success_password': "Password changed successfully"})
+            else:
+                return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'error_password': "Passwords do not match and/or are empty"})
+        # Check if it is to change profile settings
+        if request.POST.get("changeprofile"):
+            firstname = request.POST.get("firstname")
+            lastname = request.POST.get("lastname")
+            email = request.POST.get("email")
+            # Update user info
+            request.user.first_name = firstname
+            request.user.last_name = lastname
+            request.user.email = email
+            # Check if there was a profile picture uploaded
+            if request.FILES.get("profilepicture"):
+                # Image will be automatically saved to the correct location because of the ImageField in the User model (pillow)
+                request.user.profilePicture = request.FILES["profilepicture"]
+            request.user.save()
+            return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'success_profile': "Profile updated successfully"})
+
+    return render(request, 'sharepoint/settings.jinja', {'active_page': active_page})
