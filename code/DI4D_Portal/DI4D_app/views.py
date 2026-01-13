@@ -102,4 +102,5 @@ def news(request):
 
 @login_required(login_url='login')
 def dashboard(request):
-    return render(request, 'sharepoint/dashboard.jinja')
+    active_page = 'dashboard'
+    return render(request, 'sharepoint/dashboard.jinja', {'active_page': active_page})
