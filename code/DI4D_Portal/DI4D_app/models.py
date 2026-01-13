@@ -53,6 +53,19 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email"]
 
+    # Security check methods
+    def role_is_admin(self):
+        return self.userTypeId and self.userTypeId.name == "admin"
+    
+    def role_is_sharepoint_user(self):
+        return self.userTypeId.name == "sharepoint_user"
+    
+    def role_is_partner(self):
+        return self.userTypeId and self.userTypeId.name == "partner"
+    
+    def role_is_student(self):
+        return self.userTypeId and self.userTypeId.name == "student"
+
 class UserSettings(models.Model):
     settingJson = models.CharField()
     userId = models.ForeignKey(User, on_delete=models.RESTRICT)
