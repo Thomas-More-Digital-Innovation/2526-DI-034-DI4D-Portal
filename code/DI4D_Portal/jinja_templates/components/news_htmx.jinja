@@ -1,0 +1,17 @@
+{# This is a compont for return of HTMX #}
+{% from 'structure/structure.jinja' import news_item %}
+<div class="justify-center flex">
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 mt-6 max-w-6xl w-full">
+        {% for article in all_articles %}
+            {{ news_item(article) }}
+        {% endfor %}
+    </div>
+</div>
+{% if not all_articles %}
+    <p class="text-white text-center">No news articles found.</p>
+    {% if total_articles > 0 %}
+        <div class="mx-auto flex justify-center mt-4">
+            <a href="{{ url('news') }}" class="btn_primary_orange">View all articles</a>
+        </div>
+    {% endif %}
+{% endif %}
