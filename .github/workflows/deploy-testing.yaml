@@ -59,7 +59,7 @@ jobs:
         run: |
           helm registry login ghcr.io -u "${{ github.actor }}" -p "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: Package and push Helm chart to GHCR
+      - name: Package Helm chart and push to GHCR (OCI) using ORAS
         shell: bash
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -70,14 +70,33 @@ jobs:
             echo "Chart directory $CHART_DIR not found" >&2
             exit 1
           fi
-          CHART_NAME=$(grep '^name:' "$CHART_DIR/Chart.yaml" | head -n1 | awk '{print $2}')
-          CHART_VERSION=$(grep '^version:' "$CHART_DIR/Chart.yaml" | head -n1 | awk '{print $2}')
+          # Package chart
+          helm package "$CHART_DIR" -d /tmp
+          TGZ=$(ls /tmp/*.tgz | head -n1)
+          if [ -z "$TGZ" ]; then
+            echo "Failed to package chart" >&2
+            exit 1
+          fi
+          CHART_NAME=$(basename "$TGZ" | sed -E 's/^(.*)-([0-9].*)\.tgz$/\1/')
+          CHART_VERSION=$(basename "$TGZ" | sed -E 's/^(.*)-([0-9].*)\.tgz$/\2/' | sed 's/\.tgz$//')
           OWNER=${GITHUB_REPOSITORY%%/*}
           REPO=${GITHUB_REPOSITORY##*/}
           CHART_REF=ghcr.io/${OWNER}/${REPO}-charts/${CHART_NAME}:${CHART_VERSION}
-          echo "Saving chart as $CHART_REF"
-          helm chart save "$CHART_DIR" "$CHART_REF"
-          helm chart push "$CHART_REF"
+          echo "Chart packaged: $TGZ -> $CHART_REF"
+
+          # Install ORAS
+          ORAS_VERSION="v0.18.0"
+          echo "Installing ORAS ${ORAS_VERSION}"
+          curl -fsSL "https://github.com/oras-project/oras/releases/download/${ORAS_VERSION}/oras_${ORAS_VERSION#v}_linux_amd64.tar.gz" -o oras.tar.gz
+          tar -xzf oras.tar.gz
+          sudo mv oras /usr/local/bin/oras
+          rm -f oras.tar.gz
+
+          # Login to GHCR with ORAS
+          echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+          # Push chart as OCI artifact
+          oras push "$CHART_REF" "$TGZ:application/tar+gzip"
 
       - name: Output published artifacts
         run: |
