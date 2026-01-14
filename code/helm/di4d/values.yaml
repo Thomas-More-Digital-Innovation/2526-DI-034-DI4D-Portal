@@ -175,6 +175,13 @@ postgresql:
     persistence:
       enabled: true
       size: 8Gi
+      storageClass: "your-storage-class"
+    podSecurityContext:
+      fsGroup: 999
+    containerSecurityContext:
+      runAsUser: 999
+    extendedConfiguration: |
+      unix_socket_directories = '/tmp'
 
 # Django application environment variables
 env:
