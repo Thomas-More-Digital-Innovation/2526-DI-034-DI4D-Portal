@@ -84,12 +84,11 @@ jobs:
           CHART_REF=ghcr.io/${OWNER}/${REPO}-charts/${CHART_NAME}:${CHART_VERSION}
           echo "Chart packaged: $TGZ -> $CHART_REF"
 
-          # Install ORAS
-          ORAS_VERSION="v0.18.0"
-          echo "Installing ORAS ${ORAS_VERSION}"
-          curl -fsSL "https://github.com/oras-project/oras/releases/download/${ORAS_VERSION}/oras_${ORAS_VERSION#v}_linux_amd64.tar.gz" -o oras.tar.gz
+          # Install ORAS (download latest stable binary tarball)
+          echo "Installing ORAS latest"
+          curl -fsSL "https://github.com/oras-project/oras/releases/latest/download/oras_linux_amd64.tar.gz" -o oras.tar.gz
           tar -xzf oras.tar.gz
-          sudo mv oras /usr/local/bin/oras
+          sudo mv oras /usr/local/bin/oras || sudo mv bin/oras /usr/local/bin/oras
           rm -f oras.tar.gz
 
           # Login to GHCR with ORAS
