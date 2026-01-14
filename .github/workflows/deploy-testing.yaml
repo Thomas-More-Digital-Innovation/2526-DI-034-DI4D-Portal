@@ -2,7 +2,7 @@ name: Testing Deployment
 on:
   push:
     branches:
-      - testing-k8s
+      - main
 
 jobs:
   publish:
