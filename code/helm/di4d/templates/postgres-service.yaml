@@ -1,0 +1,19 @@
+{{- if .Values.postgresql.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "di4d.fullname" . }}-postgresql
+  labels:
+    {{- include "di4d.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  type: ClusterIP
+  ports:
+  - name: postgresql
+    port: 5432
+    targetPort: postgresql
+    protocol: TCP
+  selector:
+    {{- include "di4d.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+{{- end }}

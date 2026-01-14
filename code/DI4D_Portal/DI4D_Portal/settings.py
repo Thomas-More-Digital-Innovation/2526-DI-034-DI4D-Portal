@@ -26,17 +26,16 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY_DJANGO")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DJANGO_DEBUG", "True").strip().lower() in {"1", "true", "yes", "on"}
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+_allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
+ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts.split(",") if h.strip()]
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    "tailwind",
     "theme",
-    "livereload",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -46,7 +45,10 @@ INSTALLED_APPS = [
     'DI4D_app',
 ]
 
-TAILWIND_APP_NAME="theme"
+if DEBUG:
+    INSTALLED_APPS.insert(0, "tailwind")
+    INSTALLED_APPS.insert(2, "livereload")
+    TAILWIND_APP_NAME = "theme"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -56,8 +58,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'livereload.middleware.LiveReloadScript',
 ]
+
+if DEBUG:
+    MIDDLEWARE.append('livereload.middleware.LiveReloadScript')
 
 ROOT_URLCONF = 'DI4D_Portal.urls'
 
@@ -79,7 +83,7 @@ TEMPLATES = [
         'DIRS': [BASE_DIR / 'jinja_templates'], 
         'APP_DIRS': True, 
         'OPTIONS': { 
-            'environment': 'DI4D_Portal.jinja2.environment', 
+            'environment': 'DI4D_Portal.jinja_env.environment', 
         }, 
     }
 ]
@@ -89,13 +93,30 @@ WSGI_APPLICATION = 'DI4D_Portal.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+# Default to SQLite for local development. Use PostgreSQL in production by setting DB_ENGINE=postgres
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").lower()
+
+if DB_ENGINE == "postgres":
+    # PostgreSQL configuration for production (set via Helm values)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('POSTGRES_DB', 'di4d_db'),
+            'USER': os.getenv('POSTGRES_USER', 'di4d'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+            'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+        }
     }
-}
+else:
+    # SQLite configuration for local development (default)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -136,11 +157,21 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 STATICFILES_DIRS = [
     BASE_DIR / "static",
-    BASE_DIR / "theme" / "static",
 ]
+
+# Only include theme static in dev mode when tailwind is installed
+if DEBUG:
+    theme_static = BASE_DIR / "theme" / "static"
+    if theme_static.exists():
+        STATICFILES_DIRS.append(theme_static)
+
+# Use whitenoise for efficient static file serving
+MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

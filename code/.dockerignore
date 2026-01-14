@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+DI4D_Portal/db.sqlite3
+DI4D_Portal/**/__pycache__/
+DI4D_Portal/**/.pytest_cache/
+DI4D_Portal/**/.mypy_cache/
