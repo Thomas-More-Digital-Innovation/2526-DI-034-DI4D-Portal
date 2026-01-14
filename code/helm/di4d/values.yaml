@@ -188,6 +188,6 @@ env:
   - name: POSTGRES_PASSWORD
     value: "di4d_password"
   - name: DJANGO_ALLOWED_HOSTS
-    value: "di4d.davidmaat.be,localhost"
+    value: "di4d.davidmaat.be,localhost,127.0.0.1,.cluster.local"
   - name: SECRET_KEY_DJANGO
     value: "change-me-in-production"
