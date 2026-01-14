@@ -163,6 +163,8 @@ affinity: {}
 # PostgreSQL database configuration
 postgresql:
   enabled: true
+  image:
+    tag: "16.6.0-debian-12-r0"
   auth:
     username: di4d
     password: di4d_password
@@ -171,7 +173,6 @@ postgresql:
     persistence:
       enabled: true
       size: 8Gi
-      storageClass: "your-storage-class"
 
 # Django application environment variables
 env:
@@ -188,6 +189,6 @@ env:
   - name: POSTGRES_PASSWORD
     value: "di4d_password"
   - name: DJANGO_ALLOWED_HOSTS
-    value: "di4d.davidmaat.be,localhost,127.0.0.1,.cluster.local"
+    value: "di4d.davidmaat.be,localhost,127.0.0.1,.cluster.local,10.*"
   - name: SECRET_KEY_DJANGO
     value: "change-me-in-production"
