@@ -33,13 +33,17 @@ def home(request):
         if name and email and message:
             # Send email via SMTP
             if len(admin_emails) > 0:
-                send_mail(
+                result = send_mail(
                     subject=f"Contact Form DI4D Portal - Message from {name}",
                     message=f"Name : {name}\nEmail: {email}\nMessage:\n{message}",
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=admin_emails,
                     fail_silently=False
                 )
+                if result:
+                    data["success"] = "Your message has been sent successfully."
+                else:
+                    data["error"] = "There was an error sending your message. Please try again later."
 
     # Check if student can register himself
     application_setting = ApplicationSetting.objects.first()
@@ -54,7 +58,7 @@ def home(request):
         data["endDate"] = application_setting.endDate.strftime('%B %d, %Y')
     
     # Get news articles (- : for latest news articles, then we limit to 2 articles)
-    data["news"] = News.objects.all().order_by('-lastEditDate')[:2]
+    data["news"] = News.objects.filter(isPublic=True).order_by('-lastEditDate')[:2]
 
     return render(request, 'public/home.jinja',  data)
 
