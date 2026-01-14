@@ -44,15 +44,15 @@ jobs:
             ${{ steps.image.outputs.IMAGE_REPO }}:testing
             ${{ steps.image.outputs.IMAGE_REPO }}:${{ github.sha }}
 
-      - name: Install Helm (v3.11.3)
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: "v3.11.3"
+
+      - name: Helm debug
         run: |
           set -euo pipefail
-          HELM_VERSION="v3.11.3"
-          echo "Installing helm ${HELM_VERSION}"
-          curl -fsSL "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" -o helm.tar.gz
-          tar -xzf helm.tar.gz
-          sudo mv linux-amd64/helm /usr/local/bin/helm
-          rm -rf helm.tar.gz linux-amd64
+          which helm || true
           helm version
 
       - name: Login to GHCR (helm OCI)
