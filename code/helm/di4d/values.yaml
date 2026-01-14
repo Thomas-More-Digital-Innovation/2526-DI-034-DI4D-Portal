@@ -181,8 +181,6 @@ postgresql:
 env:
   - name: DB_ENGINE
     value: "postgres"
-  - name: POSTGRES_HOST
-    value: "{{ .Release.Name }}-postgresql"
   - name: POSTGRES_PORT
     value: "5432"
   - name: POSTGRES_DB
@@ -195,3 +193,5 @@ env:
     value: "di4d.davidmaat.be,localhost,127.0.0.1,*" # temporary wildcard, health check endpoint to be added for all hosts
   - name: SECRET_KEY_DJANGO
     value: "change-me-in-production"
+  - name: DJANGO_DEBUG
+    value: "False"
