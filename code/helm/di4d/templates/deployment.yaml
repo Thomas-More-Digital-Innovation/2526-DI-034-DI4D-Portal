@@ -48,7 +48,7 @@ spec:
           env:
             {{- toYaml . | nindent 12 }}
             - name: POSTGRES_HOST
-              value: "{{ .Release.Name }}-postgresql"
+              value: "{{ $.Release.Name }}-postgresql"
           {{- end }}
           {{- with .Values.livenessProbe }}
           livenessProbe:
