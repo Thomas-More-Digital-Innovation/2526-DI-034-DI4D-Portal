@@ -164,7 +164,9 @@ affinity: {}
 postgresql:
   enabled: true
   image:
-    tag: "16.6.0-debian-12-r0"
+    registry: docker.io
+    repository: postgres
+    tag: "16-alpine"
   auth:
     username: di4d
     password: di4d_password
@@ -173,7 +175,6 @@ postgresql:
     persistence:
       enabled: true
       size: 8Gi
-      storageClass: "your-storage-class"
 
 # Django application environment variables
 env:
