@@ -1,0 +1,71 @@
+{% extends "structure/structure_private.jinja"%}
+{% block title %}Settings - DI4D Portal{% endblock %}
+
+{% block content %}
+<div class="bg-white">
+    <h1 class="text-3xl lg:text-4xl font-bold text-black mb-8">Settings</h1>
+    <div class="flex flex-col lg:flex-row gap-8 lg:gap-16">
+        <div class="flex-1">
+            <h2 class="text-xl">Profile settings</h2>
+            <form method="POST" enctype="multipart/form-data">
+                {{ csrf_input }}
+                <label for="firstname" class="block mt-4 text-black text-md">Firstname</label>
+                <input required type="text" id="firstname" name="firstname" value="{{ request.user.firstname }}" class="w-full py-2 rounded-md border border-[var(--white_grey)] px-4 text-[var(--white_grey)]">
+
+                <label for="lastname" class="block mt-4 text-black text-md">Lastname</label>
+                <input required type="text" id="lastname" name="lastname" value="{{ request.user.lastname }}" class="w-full py-2 rounded-md border border-[var(--white_grey)] px-4 text-[var(--white_grey)]">
+                
+                <label for="email" class="block mt-4 text-black text-md">Email</label>
+                <input required type="email" id="email" name="email" value="{{ request.user.email }}" class="w-full py-2 rounded-md border border-[var(--white_grey)] px-4 text-[var(--white_grey)]">
+                
+                <p class="block mt-4 text-black">Profile picture</p>
+                {% if request.user.profilePicture %}
+                    <img src="{{ request.user.profilePicture.url }}" alt="Profile Picture" class="w-32 h-32 object-cover rounded-full my-2">
+                {% endif %}
+                <div x-data="{ hidden: false }">
+                    <div class="w-full py-2 rounded-md border border-[var(--white_grey)] py-6"
+                        x-show="!hidden">
+                        <input type="file" id="profilepicture" name="profilepicture" class="hidden" @change="hidden = true">
+                        <label for="profilepicture" class="text-md text-[var(--light_grey)] cursor-pointer">
+                            <i class="fa-solid fa-upload w-full"></i>
+                            <div class="text-center">
+                                Drag & drop your file here or
+                                <span class="text-[--orange_di4d]">choose file</span>
+                                to upload
+                            </div>
+                        </label>
+                    </div>
+                    <p x-show="hidden" class="text-center w-full py-2 rounded-md border border-[var(--white_grey)] py-6">Your file is uploaded, now you have to save the profile settings to apply the changes.</p>
+                </div>
+
+                <button type="submit" name="changeprofile" value="profilesettings" class="btn_primary_orange mt-2 w-full">Save profile settings</button>
+                {% if success_profile %}
+                    <p x-data="{show: true}" x-show="show" x-init="show=true; setTimeout(() => show=false, 3000)"
+                    class="bg-green-500 text-white p-2 rounded w-full mt-4">{{ success_profile }}</p>
+                {% endif %}
+            </form>
+        </div>
+        <div class="lg:w-px lg:bg-black"></div>
+        <div class="flex-1">
+            <h2 class="text-xl">Change Password</h2>
+            <form method="POST">
+                {{ csrf_input }}
+                <label for="newpassword" class="block mt-4 text-black">New password</label>
+                <input type="password" id="newpassword" name="newpassword" placeholder="New password" class="w-full py-2 rounded-md border border-[var(--white_grey)] px-4 text-[var(--white_grey)]">
+
+                <label for="confirmnewpassword" class="block mt-4 text-black">Confirm new password</label>
+                <input type="password" id="confirmnewpassword" name="confirmnewpassword" placeholder="Confirm new password" class="w-full py-2 rounded-md border border-[var(--white_grey)] px-4 text-[var(--white_grey)]">
+                
+                <button type="submit" name="changepassword" value="changepassword" class="btn_primary_orange mt-2 w-full">Change password</button>
+                {% if error_password %}
+                    <p x-data="{show: true}" x-show="show" x-init="show=true; setTimeout(() => show=false, 3000)"
+                    class="bg-red-500 text-white p-2 rounded w-full mt-4">{{ error_password }}</p>
+                {% endif %}
+                {% if success_password %}
+                    <p x-data="{show: true}" x-show="show" x-init="show=true; setTimeout(() => show=false, 3000)"
+                    class="bg-green-500 text-white p-2 rounded w-full mt-4">{{ success_password }}</p>
+                {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
