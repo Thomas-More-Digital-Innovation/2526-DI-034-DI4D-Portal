@@ -45,6 +45,10 @@ jobs:
             ${{ steps.image.outputs.IMAGE_REPO }}:testing
             ${{ steps.image.outputs.IMAGE_REPO }}:${{ github.sha }}
 
+      - name: Update Helm dependencies
+        run: |
+          helm dependency update code/helm/di4d
+
       - name: Publish Helm chart to GHCR
         uses: bsord/helm-push@v4
         with:
