@@ -116,4 +116,5 @@ def news(request):
 @login_required(login_url='login')
 def dashboard(request):
     active_page = 'dashboard'
-    return render(request, 'sharepoint/dashboard.jinja', {'active_page': active_page})
+    news = News.objects.all().order_by('-lastEditDate')[:2]
+    return render(request, 'sharepoint/dashboard.jinja', {'active_page': active_page, 'news': news})
