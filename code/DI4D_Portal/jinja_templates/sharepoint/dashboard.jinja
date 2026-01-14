@@ -2,5 +2,36 @@
 {% block title %}Dashboard - DI4D Portal{% endblock %}
 
 {% block content %}
-<h1>Dashboard</h1>
+<div class="bg-white flex flex-col">
+    <div class="">
+        <h1 class="text-3xl lg:text-4xl font-bold text-black">Dashboard</h1>
+        <p class="pb-4">Welcome inside our sharepoint. You can read the documentation of this application by clicking on the button below.</p>
+        <a class="btn_primary_orange text-xl" href="https://www.hier_komt_documentatie.be/" target="_blank">Documentation</a>   
+    </div>
+    <div class="max-w-2xl w-full mx-auto flex flex-col justify-center mt-20">
+        <p class="text-2xl font-bold text-black text-center mb-8">Fast actions</p>
+        <div class="flex flex-col lg:flex-row gap-8">
+            <a class="btn_primary_blue flex-1 px-10 text-xl text-center" href="#"><i class="fa-solid fa-folder text-2xl"></i> Files</a>
+            <a class="btn_primary_blue flex-1 px-10 text-xl text-center" href="{{ url('news') }}"><i class="fa-solid fa-newspaper text-2xl"></i> News</a>
+            <a class="btn_primary_blue flex-1 px-10 text-xl text-center" href="#"><i class="fa-solid fa-gear text-2xl"></i> Settings</a>
+        </div>
+    </div>
+    <div class="flex flex-col justify-center mt-20 mb-6">
+        <h2 class="text-center text-xl text-black font-bold px-6">Checkout our latest news!</h2>
+        {% if news|length == 0 %}
+            <h3 class="text-center text-black text-xl lg:text-2xl mt-6">No news articles available at the moment.</h3>
+        {% else %}
+            <div class="justify-center flex">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 mt-6 max-w-6xl w-full mx-auto">
+                    {% for article in news %}
+                        {{ news_item(article, "--white_grey") }}
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="w-full flex justify-center mt-8">
+                <a class="btn_primary_orange" href="{{ url('news') }}">Go to all our news articles</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}
