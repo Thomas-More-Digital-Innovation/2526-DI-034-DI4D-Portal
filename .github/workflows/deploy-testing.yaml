@@ -41,6 +41,8 @@ jobs:
           context: ./code
           file: ./code/Dockerfile
           push: true
+          cache-from: type=registry,ref=${{ steps.image.outputs.IMAGE_REPO }}:testing
+          cache-to: type=registry,ref=${{ steps.image.outputs.IMAGE_REPO }}:testing,mode=max
           tags: |
             ${{ steps.image.outputs.IMAGE_REPO }}:testing
             ${{ steps.image.outputs.IMAGE_REPO }}:${{ github.sha }}
