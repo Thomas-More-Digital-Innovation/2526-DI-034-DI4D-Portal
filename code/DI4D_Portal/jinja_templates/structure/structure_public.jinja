@@ -30,14 +30,14 @@
                     </div>
                     <div class="hidden sm:flex flex-1 justify-center ml-6">
                         <div class="flex space-x-4">
-                        <a href="/" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-white/5 hover:text-white">Home</a>
+                        <a href="{{ url('home') }}" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-white/5 hover:text-white">Home</a>
                         <a href="#" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-white/5 hover:text-white">Tech Talks</a>
-                        <a href="#" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-white/5 hover:text-white">News</a>
+                        <a href="{{ url('news') }}" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-white/5 hover:text-white">News</a>
                         </div>
                     </div>
                 </div>
                 <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-                    <a class="btn_primary_orange rounded-3xl"><i class="fa-regular fa-user"></i> Login</a>
+                    <a href="{{ url('login') }}" class="btn_primary_orange rounded-3xl"><i class="fa-regular fa-user"></i> Login</a>
                 </div>
             </div>
             </div>
@@ -47,9 +47,9 @@
             hidden
             class="sm:hidden absolute inset-x-0 top-16 z-50 bg-blue-di4d">
             <div class="space-y-1 px-2 pt-2 pb-3">
-                <a href="/" class="block rounded-md px-3 py-2 text-base font-medium text-white hover:bg-white/5 hover:text-white">Home</a>
+                <a href="{{ url('home') }}" class="block rounded-md px-3 py-2 text-base font-medium text-white hover:bg-white/5 hover:text-white">Home</a>
                 <a href="#" class="block rounded-md px-3 py-2 text-base font-medium text-white hover:bg-white/5 hover:text-white">Tech Talks</a>
-                <a href="#" class="block rounded-md px-3 py-2 text-base font-medium text-white hover:bg-white/5 hover:text-white">News</a>
+                <a href="{{ url('news') }}" class="block rounded-md px-3 py-2 text-base font-medium text-white hover:bg-white/5 hover:text-white">News</a>
             </div>
             </el-disclosure>
         </nav>
@@ -75,11 +75,11 @@
                 <div class="text-sm">
                 <p class="font-semibold mb-2">Pages</p>
                     <ul class="space-y-1 list-disc list-inside">
-                        <li><a href="/" class="hover:underline">Home</a></li>
+                        <li><a href="{{ url('home') }}" class="hover:underline">Home</a></li>
                         <li><a href="#" class="hover:underline">Tech Talks</a></li>
-                        <li><a href="#" class="hover:underline">News</a></li>
+                        <li><a href="{{ url('news') }}" class="hover:underline">News</a></li>
                         <li><a href="#" class="hover:underline">Student Registration</a></li>
-                        <li><a href="#" class="hover:underline">Login</a></li>
+                        <li><a href="{{ url('login') }}" class="hover:underline">Login</a></li>
                     </ul>
                 </div>
             </div>

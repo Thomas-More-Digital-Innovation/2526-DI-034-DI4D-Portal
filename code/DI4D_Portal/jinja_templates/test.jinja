@@ -3,6 +3,11 @@
 {% block content %}
     <h1 class="text-2xl">Hello world!</h1>
     <h2 class="text-xl mb-2">Buttons</h2>
+    {% if request.user.role_is_admin() %}
+        <p class="mb-2">You're an admin!</p>
+    {% else %}
+        <p class="mb-2">NOT ADMIN!</p>
+    {% endif %}
     <a class="btn_primary_orange">Click me</a>
     <a class="btn_primary_blue">Click me</a>
 {% endblock %}
