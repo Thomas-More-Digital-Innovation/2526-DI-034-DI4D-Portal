@@ -44,50 +44,15 @@ jobs:
             ${{ steps.image.outputs.IMAGE_REPO }}:testing
             ${{ steps.image.outputs.IMAGE_REPO }}:${{ github.sha }}
 
-      - name: Setup Helm
-        uses: azure/setup-helm@v3
+      - name: Publish Helm chart to GHCR
+        uses: bsord/helm-push@v4
         with:
-          version: "v3.11.3"
-
-      - name: Helm debug
-        run: |
-          set -euo pipefail
-          which helm || true
-          helm version
-
-      - name: Login to GHCR (helm OCI)
-        run: |
-          helm registry login ghcr.io -u "${{ github.actor }}" -p "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Package Helm chart and push to GHCR (OCI) using ORAS
-        shell: bash
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          CHART_DIR=./code/helm/di4d
-          if [ ! -d "$CHART_DIR" ]; then
-            echo "Chart directory $CHART_DIR not found" >&2
-            exit 1
-          fi
-          # Package chart
-          helm package "$CHART_DIR" -d /tmp
-          TGZ=$(ls /tmp/*.tgz | head -n1)
-          if [ -z "$TGZ" ]; then
-            echo "Failed to package chart" >&2
-            exit 1
-          fi
-          CHART_NAME=$(basename "$TGZ" | sed -E 's/^(.*)-([0-9].*)\.tgz$/\1/')
-          CHART_VERSION=$(basename "$TGZ" | sed -E 's/^(.*)-([0-9].*)\.tgz$/\2/' | sed 's/\.tgz$//')
-          OWNER=${GITHUB_REPOSITORY%%/*}
-          REPO=${GITHUB_REPOSITORY##*/}
-          CHART_REF=ghcr.io/${OWNER}/${REPO}-charts/${CHART_NAME}:${CHART_VERSION}
-          echo "Chart packaged: $TGZ -> $CHART_REF"
-
-          # Push chart as OCI artifact using Helm's native OCI support
-          OCI_REPO="oci://ghcr.io/${OWNER}/${REPO}-charts"
-          echo "Pushing chart $TGZ to $OCI_REPO"
-          helm push "$TGZ" "$OCI_REPO"
+          useOCIRegistry: true
+          registry-url: oci://ghcr.io/${{ github.repository_owner }}
+          username: ${{ github.actor }}
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+          force: true
+          chart-folder: code/helm/di4d
 
       - name: Output published artifacts
         run: |
