@@ -3,12 +3,13 @@ from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from .models import ApplicationSetting, News, User
+from .models import ApplicationSetting, News, User, Question, FormAnswer
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.contrib.auth import update_session_auth_hash
+
 
 # Create your views here.
 def hello_world(request):
@@ -86,7 +87,62 @@ def logout_view(request):
     return redirect('home')
 
 def student_registration(request):
-    return render(request, 'test.jinja')
+    """
+    Display and handle student registration form application.
+    Uses the form configuration from ApplicationSetting.
+    """
+    
+    data = {}
+    today = timezone.now().date()
+    
+    # Get the application setting (form configuration)
+    application_setting = ApplicationSetting.objects.first()
+    
+    # Check if registration is currently open
+    if not application_setting or not (application_setting.startDate <= today <= application_setting.endDate):
+        data['registration_closed'] = True
+        return render(request, 'public/student_registration.jinja', data)
+    
+    # Get the form and its questions
+    form = application_setting.studentApplicationFormId
+    questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
+    
+    data['form'] = form
+    data['questions'] = questions
+    data['registration_open'] = True
+    
+    # Handle form submission
+    if request.method == 'POST':
+        try:
+            # Get current user if authenticated, otherwise create temporary user data
+            user = request.user if request.user.is_authenticated else None
+            
+            # Save answers for each question
+            for question in questions:
+                question_id = f'question_{question.id}'
+                answer_value = request.POST.get(question_id)
+                
+                # Handle file upload for the last question
+                if question == questions.last() and f'{question_id}_file' in request.FILES:
+                    uploaded_file = request.FILES[f'{question_id}_file']
+                    # Save file path instead of content for file uploads
+                    answer_value = uploaded_file.name
+                
+                # Only save if answer is provided or question is not mandatory
+                if answer_value:
+                    if user:
+                        FormAnswer.objects.create(
+                            answer=answer_value,
+                            questionId=question,
+                            userId=user,
+                            answerDate=today
+                        )
+            
+            data['success'] = "Your application has been submitted successfully!"
+        except Exception as e:
+            data['error'] = f"An error occurred while submitting the form: {str(e)}"
+    
+    return render(request, 'public/student_registration.jinja', data)
 
 def news(request):
     search_query = ""
