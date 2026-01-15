@@ -44,7 +44,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     lastname = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
     partnerId = models.ForeignKey(Partner, on_delete=models.RESTRICT, null=True, blank=True)
-    profilePicture = models.CharField(null=True, blank=True)
+    profilePicture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_alumni = models.BooleanField(default=False, null=True, blank=True)
@@ -52,6 +52,19 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email"]
+
+    # Security check methods
+    def role_is_admin(self):
+        return self.userTypeId and self.userTypeId.name == "admin"
+    
+    def role_is_sharepoint_user(self):
+        return self.userTypeId.name == "sharepoint_user"
+    
+    def role_is_partner(self):
+        return self.userTypeId and self.userTypeId.name == "partner"
+    
+    def role_is_student(self):
+        return self.userTypeId and self.userTypeId.name == "student"
 
 class UserSettings(models.Model):
     settingJson = models.CharField()

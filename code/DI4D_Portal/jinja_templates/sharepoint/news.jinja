@@ -1,0 +1,31 @@
+{% extends "structure/structure_private.jinja"%}
+{% block title %}News - DI4D Portal{% endblock %}
+
+{% block content %}
+<div class="bg-white min-h-screen">
+    <h1 class="text-3xl lg:text-4xl font-bold text-black">News</h1>
+    <form class="mt-6 flex flex-row max-w-xl gap-4" method="POST" hx-post="{{ url('news') }}" hx-target="#news-grid">
+        {{ csrf_input }}
+        <div class="relative flex-1">
+            <input type="text" 
+                    id="q" 
+                    name="q"
+                    placeholder="Search News Item" 
+                    value="{{ search_query }}"
+                    class="bg-[--white_grey] rounded-md w-full px-4 py-1 pr-12"
+                    hx-trigger="keyup changed delay:300ms" hx-sync="closest form:abort">
+            <button class="absolute right-0 top-0 bottom-0 px-3 text-[var(--light_gray)]" type="submit">        
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+        </div>
+        <select class="bg-[--white_grey] rounded-md" name="sort_by" id="sort_by"
+             hx-trigger="change" hx-target="#news-grid" hx-post="{{ url('news') }}">
+            <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}{% if not sort_by %}selected{% endif %}>Sort by Newest</option>
+            <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Sort by Oldest</option>
+        </select>
+    </form>
+    <div class="mt-6" id="news-grid">
+        {% include 'components/news_htmx.jinja' %}
+    </div>
+</div>
+{% endblock %}
