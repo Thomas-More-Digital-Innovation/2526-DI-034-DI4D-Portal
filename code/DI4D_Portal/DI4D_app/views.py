@@ -120,9 +120,23 @@ def news(request):
         return render(request, 'public/news.jinja', {"all_articles": all_articles, "total_articles": total_articles, "search_query": search_query, "active_page": active_page})
 
 def tech_talks(request):
-    data = {}
-    data["techtalks"] = TechTalk.objects.filter(isPublic=True).all()
-    return render(request, 'public/techtalks.jinja', data)
+    search_query = ""
+    
+    # Get all public tech talks
+    all_techtalks = TechTalk.objects.filter(isPublic=True).order_by("-id")
+    total_techtalks = all_techtalks.count()
+    
+    # Check if somebody searched for something
+    if request.method == "POST":
+        search_query = request.POST.get("q", "").strip()
+        # Check if search query is not empty
+        if search_query:
+            all_techtalks = all_techtalks.filter(Q(title__icontains=search_query) | Q(speaker__icontains=search_query) | Q(description__icontains=search_query))
+        # Check if there is HTMX request
+        if request.headers.get("HX-Request") == "true":
+            return render(request, 'components/techtalks_htmx.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query})
+    
+    return render(request, 'public/techtalks.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query})
 
 @login_required(login_url='login')
 def dashboard(request):
