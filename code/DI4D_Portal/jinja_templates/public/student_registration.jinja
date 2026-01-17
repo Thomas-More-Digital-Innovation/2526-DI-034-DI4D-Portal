@@ -15,14 +15,17 @@ Fill in as much as possible. Good luck!</p>
 
         <!-- Registration Status Messages -->
         {% if registration_closed %}
-        <div class="bg-[var(--blue_di4d)] border border-amber-200 rounded-lg p-6 mb-8">
+        <div class="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 rounded-lg shadow-lg p-8 mb-8">
             <div class="flex items-start gap-4">
-                <svg class="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
-                <div>
-                    <h3 class="font-semibold text-amber-800">Registration Closed</h3>
-                    <p class="text-amber-700 mt-1">The registration period is currently closed. Please check back during the next registration window.</p>
+                <div class="flex-shrink-0">
+                    <svg class="w-8 h-8 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h2 class="text-2xl font-bold text-amber-900 mb-2">Registration Currently Closed</h2>
+                    <p class="text-amber-800 text-base mb-4">The registration period is currently closed. Please check back during the next registration window to submit your application.</p>
+                    <p class="text-amber-700 text-sm italic">If you have any questions, please contact our support team.</p>
                 </div>
             </div>
         </div>
@@ -58,11 +61,12 @@ Fill in as much as possible. Good luck!</p>
 
         <!-- Form -->
         {% if registration_open and questions %}
-        <form method="POST" enctype="multipart/form-data" class="bg-[var(--blue_di4d)] rounded-lg shadow-md p-8 space-y-8">
-            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+        <div id="registration-form-container">
+            <form method="POST" enctype="multipart/form-data" hx-post="{{ url('student_registration') }}" hx-target="#registration-form-container" hx-encoding="multipart/form-data" class="bg-[var(--blue_di4d)] rounded-lg shadow-md p-8 space-y-8" id="registration-form">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 
             {% for question in questions %}
-            <div class="form-group border-b border-gray-200 pb-8 last:border-b-0">
+            <div class="form-group border-b border-gray-200 pb-8 last:border-b-0" id="question-group-{{ question.id }}">
                 <!-- Question Label with Mandatory Indicator -->
                 <div class="flex items-baseline gap-2 mb-3">
                     <label class="block text-lg font-medium text-white">
@@ -72,6 +76,12 @@ Fill in as much as possible. Good luck!</p>
                     <span class="text-red-500 font-bold text-sm" title="This field is mandatory">*</span>
                     {% endif %}
                 </div>
+                {% if errors and ('question_' ~ question.id) in errors %}
+                <div class="bg-red-600 border border-red-700 text-white px-3 py-2 rounded-md text-sm mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-exclamation-circle flex-shrink-0"></i>
+                    <span>{{ errors['question_' ~ question.id] }}</span>
+                </div>
+                {% endif %}
 
                 <!-- Form Input Based on DataType -->
                 {% if loop.last %}
@@ -87,16 +97,14 @@ Fill in as much as possible. Good luck!</p>
                             accept=".pdf,.doc,.docx,.xls,.xlsx,.zip,.jpg,.jpeg,.png,.txt"
                         />
                         
-                        <div id="dropzone_{{ question.id }}" 
-                             class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-di4d hover:bg-blue-50 transition-all bg-white"
+                        <div id="dropzone" 
+                             class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-di4d hover:bg-blue-50 transition-all bg-white"
                              ondrop="handleDrop(event, 'question_{{ question.id }}_file')"
                              ondragover="handleDragOver(event)"
                              ondragleave="handleDragLeave(event)"
                              onclick="document.getElementById('question_{{ question.id }}_file').click()">
                             
-                            <svg class="mx-auto h-8 w-8 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                            </svg>
+                            <i class="fa-solid fa-cloud-arrow-up text-gray-400 text-2xl mb-2"></i>
                             
                             <p class="text-gray-700 text-sm">
                                 Drag & Drop or <span class="text-orange-di4d font-medium">Choose file</span> to upload
@@ -156,12 +164,13 @@ Fill in as much as possible. Good luck!</p>
             <div class="pt-8 border-t border-gray-200">
                 <button 
                     type="submit"
-                    class="w-full btn_primary_orange py-3 rounded-lg font-semibold text-white hover:opacity-90 transition"
+                    class="w-auto px-8 btn_primary_orange py-3 rounded-lg font-semibold text-white hover:opacity-90 transition"
                 >
-                    Submit Application
+                    Send Student Registration
                 </button>
             </div>
-        </form>
+            </form>
+        </div>
         {% elif not registration_closed %}
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
             <p class="text-gray-600 text-lg">No questions available for this form.</p>

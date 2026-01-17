@@ -9,6 +9,8 @@ from django.contrib.auth import logout
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.contrib.auth import update_session_auth_hash
+import os
+from django.core.files.storage import default_storage
 
 
 # Create your views here.
@@ -117,6 +119,28 @@ def student_registration(request):
             # Get current user if authenticated, otherwise create temporary user data
             user = request.user if request.user.is_authenticated else None
             
+            # Validate all mandatory questions are answered
+            errors = {}
+            for question in questions:
+                question_id = f'question_{question.id}'
+                answer_value = request.POST.get(question_id, '').strip()
+                
+                # Check file upload for the last question
+                if question == questions.last():
+                    if f'{question_id}_file' not in request.FILES and question.isMandatory:
+                        errors[question_id] = "Please upload a file for this required field."
+                else:
+                    if not answer_value and question.isMandatory:
+                        errors[question_id] = "This field is required."
+            
+            # If there are validation errors, return them
+            if errors:
+                data['errors'] = errors
+                # Return HTMX response with updated form
+                if request.headers.get("HX-Request") == "true":
+                    return render(request, 'components/student_registration_form.jinja', data)
+                return render(request, 'public/student_registration.jinja', data)
+            
             # Save answers for each question
             for question in questions:
                 question_id = f'question_{question.id}'
@@ -125,10 +149,23 @@ def student_registration(request):
                 # Handle file upload for the last question
                 if question == questions.last() and f'{question_id}_file' in request.FILES:
                     uploaded_file = request.FILES[f'{question_id}_file']
-                    # Save file path instead of content for file uploads
-                    answer_value = uploaded_file.name
+                    
+                    # Create unique filename with user info and timestamp
+                    if user:
+                        timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+                        filename = f"{user.username}_{timestamp}_{uploaded_file.name}"
+                    else:
+                        timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+                        filename = f"anonymous_{timestamp}_{uploaded_file.name}"
+                    
+                    # Save file to media/studentregistration/
+                    file_path = f'studentregistration/{filename}'
+                    default_storage.save(file_path, uploaded_file)
+                    
+                    # Store the file path in the answer
+                    answer_value = file_path
                 
-                # Only save if answer is provided or question is not mandatory
+                # Only save if answer is provided
                 if answer_value:
                     if user:
                         FormAnswer.objects.create(
