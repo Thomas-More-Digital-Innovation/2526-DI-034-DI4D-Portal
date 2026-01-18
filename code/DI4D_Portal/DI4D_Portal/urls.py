@@ -28,6 +28,7 @@ urlpatterns = [
     path('news/', views.news, name='news'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('logout/', views.logout_view, name='logout'),
+    path('users/', views.users, name='users'),
 
     # Docs : https://docs.djangoproject.com/en/6.0/topics/auth/default/#all-authentication-views
     path("password_reset/", auth_views.PasswordResetView.as_view(

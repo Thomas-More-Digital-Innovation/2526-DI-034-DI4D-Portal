@@ -1,0 +1,83 @@
+{% extends "structure/structure_private.jinja"%}
+{% block title %}Users - DI4D Portal{% endblock %}
+
+{% block content %}
+<div class="bg-white w-full max-w-full"  x-data="{ currentDeleteId: null, currentDeleteName: null, open_edit_user: false, currentEditId: null, username: '', firstname: '', lastname: '', email: '', usertype: '', isalumni: false, partner: '' }">
+    <h1 class="text-3xl lg:text-4xl font-bold text-black">Users</h1>
+    <form class="mt-6 flex flex-row max-w-xl gap-4" method="POST" hx-post="{{ url('users') }}" hx-target="#users-grid">
+        {{ csrf_input }}
+        <div class="relative flex-1">
+            <input type="text" 
+                    id="q" 
+                    name="q"
+                    placeholder="Search Users" 
+                    value="{{ search_query }}"
+                    class="bg-[--white_grey] rounded-md w-full px-4 py-1 pr-12"
+                    hx-trigger="keyup changed delay:300ms" hx-sync="closest form:abort">
+            <button class="absolute right-0 top-0 bottom-0 px-3 text-[var(--light_gray)]" type="submit">        
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+        </div>
+        <select class="bg-[--white_grey] rounded-md px-4" name="usertype" id="usertype"
+             hx-trigger="change" hx-target="#users-grid" hx-post="{{ url('users') }}">
+                <option value="nofilter"  {% if filteredusertype == "nofilter" %}selected{% endif %}>No Filter</option>
+            {% for usertype in usertypes %}
+                <option value="{{ usertype.name }}" {% if filteredusertype == usertype.name %}selected{% endif %}>{{ usertype.name }}</option>
+            {% endfor %}
+        </select>
+        <button class="px-4 bg-[--white_grey] rounded-md" @click ="currentEditId = 'newuser', open_edit_user = true">
+            <i class="fa-solid fa-plus text-[--green]"></i>
+        </button>
+    </form>
+    {% if error %}
+        <div class="mt-4 p-4 bg-[--red_light] text-[--red] rounded-md">
+            <p>{{ error }}</p>
+        </div>
+    {% endif %}
+    <div class="mt-6" id="users-grid">
+        {% include 'components/user_htmx.jinja' %}
+    </div>
+
+    {{ delete_confirm_modal("Delete User", csrf_token) }}
+    {% call empty_modal('edit_user', 'User') %}
+        <form method="post">
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
+            <input type="hidden" name="user_id" x-bind:value="currentEditId"/>
+            <label for="username" class="text-white w-full">Username</label>
+            <input required type="text" id="username" name="username" x-bind:value="username" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg text-lg px-4 py-1"/>
+            <label for="firstname" class="text-white w-full mt-2">Firstname</label>
+            <input required type="text" id="firstname" name="firstname" x-bind:value="firstname" class="w-full text-[var(var(--input_text))] bg-[var(--input_bg_color)] rounded-lg text-lg px-4 py-1"/>
+            <label for="lastname" class="text-white w-full mt-2">Lastname</label>
+            <input required type="text" id="lastname" name="lastname" x-bind:value="lastname" class="w-full text-[var(var(--input_text))] bg-[var(--input_bg_color)] rounded-lg text-lg px-4 py-1"/>
+            <label for="email" class="text-white w-full mt-2">Email</label>
+            <input required type="email" id="email" name="email" x-bind:value="email" class="w-full text-[var(var(--input_text))] bg-[var(--input_bg_color)] rounded-lg text-lg px-4 py-1"/>
+            <label for="usertype" class="text-white w-full mt-2">Type</label>
+            <select required id="usertype" name="usertype" x-bind:value="usertype" class="w-full text-[var(var(--input_text))] bg-[var(--input_bg_color)] rounded-lg text-lg px-4 py-1">
+                {% for usertype in usertypes %}
+                    <option value="{{ usertype.id }}">{{ usertype.name }}</option>
+                {% endfor %}
+            </select>
+            {% if request.user.role_is_admin() %}
+                <label for="partner" class="text-white w-full mt-2">Partner</label>
+                <select id="partner" name="partner" x-bind:value="partner" class="w-full text-[var(var(--input_text))] bg-[var(--input_bg_color)] rounded-lg text-lg px-4 py-1">
+                    <option value="">No Partner</option>
+                    {% for partner in partners %}
+                        <option value="{{ partner.id }}">{{ partner.name }}</option>
+                    {% endfor %}
+                </select>
+            {% else %}
+                <input type="hidden" id="partner" name="partner" placeholder="{{ request.user.partnerId.id }}" class="w-full text-[var(var(--input_text))] bg-[var(--input_bg_color)] rounded-lg text-lg px-4 py-1" readonly/>
+            {% endif %}
+            <div class="w-full flex flex-row gap-2 mt-2 items-center">
+                <input type="checkbox" id="isalumni" name="isalumni" x-bind:checked="isalumni" class="w-auto h-auto"/>
+                <label for="isalumni" class="text-white">Is Alumni?</label>
+            </div>
+            <div class="flex flex-row gap-4 mt-4">
+                <button @click="open_edit_user = false, currentEditId = null, username = '', firstname = '', lastname = '', email = '', usertype = '', isalumni = false, partner = ''" class="btn text-[--button_text_modal] bg-[--white_grey] flex-1">Cancel</button>
+                <button type="submit" class="btn flex-1 text-white bg-[--green]"><span x-text="currentEditId === 'newuser' ? 'Create' : 'Save'"></span></button>
+                
+            </div>
+        </form>
+    {% endcall %}
+</div>
+{% endblock %}
