@@ -134,9 +134,8 @@ Fill in as much as possible. Good luck!</p>
                 </div>
 
                 {% else %}
-                {# Other questions: Text input (can be extended for different datatypes) #}
-                {% if loop.index > 2 %}
-                    {# Larger textarea for questions after name and email #}
+                {% if question.question|length > 12 %}
+                    {# Larger textarea for longer questions #}
                     <textarea
                         id="question_{{ question.id }}"
                         name="question_{{ question.id }}"
@@ -146,7 +145,7 @@ Fill in as much as possible. Good luck!</p>
                         {% if question.isMandatory %}required{% endif %}
                     ></textarea>
                 {% else %}
-                    {# Regular input for name and email #}
+                    {# Regular input for shorter questions #}
                     <input 
                         type="text"
                         id="question_{{ question.id }}"
