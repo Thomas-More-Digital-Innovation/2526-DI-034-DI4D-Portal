@@ -1,3 +1,4 @@
+from urllib import request
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
@@ -103,7 +104,7 @@ def news(request):
 
     # Check if somebody searched for something
     if request.method == "POST":
-        search_query = request.POST.get("q").strip()
+        search_query = request.POST.get("q").strip() or request.GET.get("q").strip()
         # Check if search query is not empty
         if search_query:
             all_articles = all_articles.filter(Q(title__icontains=search_query) | Q(lastEditDate__icontains=search_query))
@@ -124,6 +125,7 @@ def dashboard(request):
 @login_required(login_url='login')
 def users(request):
     search_query = ""
+    items_per_page = int(request.GET.get('items_per_page', 10))
     active_page = 'users'
     usertypes = UserType.objects.all()
     partners = Partner.objects.all()
@@ -145,7 +147,7 @@ def users(request):
             if user_to_delete:
                 user_to_delete.is_active = False
                 user_to_delete.save()
-                return  render(request, 'admin/users.jinja', {"users": users, "search_query": search_query, "active_page": active_page, "usertypes": usertypes, "filteredusertype": filteredusertype, "partners": partners})
+                return  redirect('users')
         user_id = request.POST.get("user_id")
         if user_id:
             # Check if we want to create or edit a user
@@ -172,10 +174,12 @@ def users(request):
                 user.lastname = request.POST.get("lastname")
                 user.email = request.POST.get("email")
                 user.userTypeId = UserType.objects.get(id=request.POST.get("usertype"))
-                user.isAlumni = True if request.POST.get("isalumni") == "on" else False
+                user.is_alumni = True if request.POST.get("isalumni") == "on" else False
                 # Check if partner is set or empty
                 if request.POST.get("partner") != "":
                     user.partnerId = Partner.objects.get(id=request.POST.get("partner"))
+                else:
+                    user.partnerId = None
                 user.save()
             except Exception as e:
                 error_message = str(e)
@@ -185,30 +189,46 @@ def users(request):
                     error = "Email already exists!"
                 else:
                     error = "An error occurred while saving the user. Please check the entered data."
-                # Return with error message
-                return  render(request, 'admin/users.jinja', {"users": users, "search_query": search_query, "active_page": active_page, "usertypes": usertypes, "filteredusertype": filteredusertype, "partners": partners, "error": error})
-            return  render(request, 'admin/users.jinja', {"users": users, "search_query": search_query, "active_page": active_page, "usertypes": usertypes, "filteredusertype": filteredusertype, "partners": partners})
+                # Return with error message + pagination
+                paginator = Paginator(users, items_per_page)
+                page_number = request.GET.get('page', 1)
+                users = paginator.get_page(page_number)
+                return  render(request, 'admin/users.jinja', {"users": users, "search_query": search_query, "active_page": active_page, "usertypes": usertypes, "filteredusertype": filteredusertype, "partners": partners, "error": error, "items_per_page": items_per_page})
+            return  redirect('users')
 
     # Check if user is  admin or partner (otherwise redirect to home)
     if request.user.role_is_admin() or request.user.role_is_partner():
         # Check if somebody used a filter
-        if request.POST.get("usertype") != "nofilter" and request.POST.get("usertype"):
+        usertype = request.POST.get("usertype") or request.GET.get("usertype")
+        if usertype and usertype != "nofilter":
             if request.user.role_is_admin():
-                users = User.objects.filter(userTypeId__name=request.POST.get("usertype"), is_active=True)
+                users = User.objects.filter(userTypeId__name=usertype, is_active=True)
             if request.user.role_is_partner():
-                users = User.objects.filter(userTypeId__name=request.POST.get("usertype"), partnerId=request.user.partnerId, is_active=True)
-            filteredusertype = request.POST.get("usertype")
+                users = User.objects.filter(userTypeId__name=usertype, partnerId=request.user.partnerId, is_active=True)
+            filteredusertype = usertype
 
         # Check if somebody searched for something
         if request.method == "POST":
             search_query = request.POST.get("q").strip()
             # Check if search query is not empty
             if search_query:
-                users = users.filter(Q(username__icontains=search_query) | Q(firstname__icontains=search_query) | Q(lastname__icontains=search_query) | Q(email__icontains=search_query), is_active=True)
-            # Check if there is HTMX request
-            if request.headers.get("HX-Request") == "true":
-                return render(request, 'components/user_htmx.jinja', {"users": users, "search_query": search_query, "active_page": active_page, "usertypes": usertypes, "filteredusertype": filteredusertype, "partners": partners})
+                if request.POST.get("usertype") != "nofilter":
+                    users = users.filter(Q(username__icontains=search_query) | Q(firstname__icontains=search_query) | Q(lastname__icontains=search_query) | Q(email__icontains=search_query), is_active=True)
+                else:
+                    users = User.objects.filter(Q(username__icontains=search_query) | Q(firstname__icontains=search_query) | Q(lastname__icontains=search_query) | Q(email__icontains=search_query), is_active=True)
+        
+        # Check if there is HTMX request
+        if request.headers.get("HX-Request") == "true":
+            # Pagination 
+            paginator = Paginator(users, items_per_page)
+            page_number = request.GET.get('page', 1)
+            users = paginator.get_page(page_number)
+            return render(request, 'components/user_htmx.jinja', {"users": users, "search_query": search_query, "active_page": active_page, "usertypes": usertypes, "filteredusertype": filteredusertype, "partners": partners, "items_per_page": items_per_page})
+        # Pagination
+        paginator = Paginator(users, items_per_page)
+        page_number = request.GET.get('page', 1)
+        users = paginator.get_page(page_number)
 
-        return render(request, 'admin/users.jinja', {"users": users, "search_query": search_query, "active_page": active_page, "usertypes": usertypes, "filteredusertype": filteredusertype, "partners": partners})
+        return render(request, 'admin/users.jinja', {"users": users, "search_query": search_query, "active_page": active_page, "usertypes": usertypes, "filteredusertype": filteredusertype, "partners": partners, "items_per_page": items_per_page})
     else:
         return redirect('home')
