@@ -206,10 +206,14 @@ OIDC_OP_TOKEN_ENDPOINT = os.getenv('OIDC_OP_TOKEN_ENDPOINT', 'http://localhost:8
 OIDC_OP_USER_ENDPOINT = os.getenv('OIDC_OP_USER_ENDPOINT', 'http://localhost:8080/realms/di4d/protocol/openid-connect/userinfo')
 OIDC_OP_JWKS_ENDPOINT = os.getenv('OIDC_OP_JWKS_ENDPOINT', 'http://localhost:8080/realms/di4d/protocol/openid-connect/certs')
 OIDC_OP_LOGOUT_ENDPOINT = os.getenv('OIDC_OP_LOGOUT_ENDPOINT', 'http://localhost:8080/realms/di4d/protocol/openid-connect/logout')
+print('DEBUG_SETTINGS: OIDC_OP_LOGOUT_ENDPOINT =', OIDC_OP_LOGOUT_ENDPOINT)
 # Store tokens in session so we can perform a proper provider logout (id_token_hint)
 OIDC_STORE_ACCESS_TOKEN = True
 OIDC_STORE_ID_TOKEN = True
 OIDC_STORE_REFRESH_TOKEN = True
+
+# Optionally force Keycloak to show the login screen (useful for testing switching user)
+OIDC_AUTH_REQUEST_EXTRA_PARAMS = {'prompt': 'login'}
 
 LOGIN_URL = '/accounts/login/'
 LOGOUT_URL = '/oidc/logout/'

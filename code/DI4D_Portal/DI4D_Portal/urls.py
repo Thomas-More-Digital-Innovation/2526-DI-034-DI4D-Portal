@@ -23,7 +23,17 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Broker provider logout override: ensure our provider logout clears the Django session
+    path('openid/logout/', views.provider_logout, name='provider_logout'),
+    path('openid/debug/', views.debug_oidc_settings, name='debug_oidc_settings'),
+    path('openid/session_debug/', views.session_debug, name='session_debug'),
     path('openid/', include('oidc_provider.urls', namespace='oidc_provider')),
+    # Override the default mozilla-django-oidc callback so we can capture id_token into the session
+    path('oidc/callback/', views.CustomOIDCAuthenticationCallbackView.as_view(), name='oidc_callback_override'),
+    # Also accept the Common 'login/callback/' redirect some clients use
+    path('login/callback/', views.CustomOIDCAuthenticationCallbackView.as_view(), name='oidc_callback_override_login'),
+    # Provide a quick prompt-login redirect to Keycloak to force login screen (avoid 'already authenticated' broker error)
+    path('oidc/prompt_login/', views.oidc_prompt_login, name='oidc_prompt_login'),
     path('oidc/', include('mozilla_django_oidc.urls')),
     path('test', views.hello_world, name='hello_world'),
     path('', views.home, name='home'),
