@@ -24,10 +24,10 @@
 {# TALK ITEM BOX #}
 {% macro talk_item(talk) %}
 <div class="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition flex flex-col h-full">
-  <div class="w-full h-56 overflow-hidden">
+  <div class="w-full h-40 overflow-hidden bg-gray-100 flex items-center justify-center">
     {% if talk.thubnail %}
       <img src="{{ talk.thubnail }}" alt="{{ talk.title }}" 
-           class="w-full h-full object-cover" />
+           class="w-full h-full object-contain" />
     {% else %}
       <div class="w-full h-full bg-gradient-to-r from-blue-600 to-blue-800 flex items-center justify-center">
         <span class="text-white text-lg font-bold text-center px-4">{{ talk.title }}</span>
@@ -36,11 +36,19 @@
   </div>
   <div class="p-4 flex flex-col flex-grow">
     <h3 class="text-lg font-bold mb-2 text-gray-900 line-clamp-2">{{ talk.title }}</h3>
-    <p class="text-sm text-gray-600 mb-4 flex-grow line-clamp-3">{{ talk.description }}</p>
+    <p class="text-sm text-gray-600 mb-4 flex-grow line-clamp-1">{{ talk.description }}</p>
     <div class="flex items-center justify-between gap-2">
-      <div class="text-sm text-gray-600 flex items-center w-1/2">
-        <i class="fa-solid fa-microphone mr-2"></i>
-        <span class="line-clamp-1">{{ talk.speaker }}</span>
+      <div class="flex flex-col gap-1 w-1/2">
+        <div class="text-sm text-gray-600 flex items-center">
+          <i class="fa-solid fa-microphone mr-2"></i>
+          <span class="line-clamp-1">{{ talk.speaker }}</span>
+        </div>
+        {% if talk.date %}
+        <div class="text-sm text-gray-600 flex items-center">
+          <i class="fa-solid fa-calendar mr-2"></i>
+          <span>{{ talk.date }}</span>
+        </div>
+        {% endif %}
       </div>
       <a class="btn_primary_orange px-4 py-2 text-center w-1/2" href="{{ talk.videoPath }}">Watch Talk</a>
     </div>
