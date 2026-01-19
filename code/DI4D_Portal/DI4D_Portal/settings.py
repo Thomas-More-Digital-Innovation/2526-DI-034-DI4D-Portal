@@ -186,7 +186,8 @@ OIDC_USERINFO = 'DI4D_app.oidc_userinfo'
 OIDC_EXTRA_SCOPE_CLAIMS = 'DI4D_app.oidc_claims.OIDCExtraScopeClaims'
 
 # Example: OIDC Provider URLs can be set via env if needed
-OIDC_ISSUER = os.getenv('OIDC_ISSUER', 'http://localhost:8000')
+# When running Keycloak in Docker, use host.docker.internal so the container can reach the host
+OIDC_ISSUER = os.getenv('OIDC_ISSUER', 'http://host.docker.internal:8000')
 
 # SMTP settings
 EMAIL_BACKEND  = os.getenv("EMAIL_BACKEND")
@@ -205,8 +206,11 @@ OIDC_OP_TOKEN_ENDPOINT = os.getenv('OIDC_OP_TOKEN_ENDPOINT', 'http://localhost:8
 OIDC_OP_USER_ENDPOINT = os.getenv('OIDC_OP_USER_ENDPOINT', 'http://localhost:8080/realms/di4d/protocol/openid-connect/userinfo')
 OIDC_OP_JWKS_ENDPOINT = os.getenv('OIDC_OP_JWKS_ENDPOINT', 'http://localhost:8080/realms/di4d/protocol/openid-connect/certs')
 OIDC_OP_LOGOUT_ENDPOINT = os.getenv('OIDC_OP_LOGOUT_ENDPOINT', 'http://localhost:8080/realms/di4d/protocol/openid-connect/logout')
-LOGIN_URL = '/oidc/authenticate/'
+LOGIN_URL = '/accounts/login/'
 LOGOUT_URL = '/oidc/logout/'
+# The application uses Keycloak for most logins (OIDC client)
+# but the Django OIDC provider needs a local login form at LOGIN_URL
+
 
 # Basic logging to console for debugging auth flow
 LOGGING = {

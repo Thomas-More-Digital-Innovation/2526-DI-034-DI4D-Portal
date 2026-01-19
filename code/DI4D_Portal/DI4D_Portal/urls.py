@@ -27,6 +27,7 @@ urlpatterns = [
     path('oidc/', include('mozilla_django_oidc.urls')),
     path('test', views.hello_world, name='hello_world'),
     path('', views.home, name='home'),
+    path('accounts/login/', views.login_view, name='accounts_login'),
     path('login/', include('mozilla_django_oidc.urls')),
     path('student_registration/', views.student_registration, name='student_registration'),
     path('news/', views.news, name='news'),

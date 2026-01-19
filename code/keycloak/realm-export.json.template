@@ -29,12 +29,12 @@
         "config": {
           "clientId": "keycloak-client-id",
           "clientSecret": "keycloak-client-secret",
-          "authorizationUrl": "https://your-public-hostname.com/openid/authorize/",
-          "tokenUrl": "https://your-public-hostname.com/openid/token/",
-          "logoutUrl": "https://your-public-hostname.com/openid/logout/",
-          "userInfoUrl": "https://your-public-hostname.com/openid/userinfo/",
-          "jwksUrl": "https://your-public-hostname.com/openid/jwks/",
-          "issuer": "https://your-public-hostname.com",
+          "authorizationUrl": "http://host.docker.internal:8000/openid/authorize/",
+          "tokenUrl": "http://host.docker.internal:8000/openid/token/",
+          "logoutUrl": "http://host.docker.internal:8000/openid/logout/",
+          "userInfoUrl": "http://host.docker.internal:8000/openid/userinfo/",
+          "jwksUrl": "http://host.docker.internal:8000/openid/jwks/",
+          "issuer": "http://host.docker.internal:8000",
           "defaultScope": "openid profile email"
         },
 

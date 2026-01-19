@@ -68,6 +68,25 @@ def logout_view(request):
     logout(request)
     return redirect('home')
 
+def login_view(request):
+    data={}
+    # If user is already logged in, redirect back
+    if request.user.is_authenticated:
+        next_url = request.GET.get('next') or request.POST.get('next') or 'dashboard'
+        return redirect(next_url)
+
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            next_url = request.GET.get('next') or request.POST.get('next') or 'dashboard'
+            return redirect(next_url)
+        else:
+            data['error'] = 'Invalid username and/or password'
+    return render(request, 'auth/login.jinja', data)
+
 def student_registration(request):
     return render(request, 'test.jinja')
 
@@ -107,7 +126,7 @@ def dashboard(request):
     active_page = 'dashboard'
     return render(request, 'sharepoint/dashboard.jinja', {'active_page': active_page})
 
-@login_required(login_url='login')
+@login_required(login_url='oidc_authentication_init')
 def settings(request):
     active_page = 'settings'
     if request.method == 'POST':
