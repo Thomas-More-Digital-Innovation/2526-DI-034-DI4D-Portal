@@ -3,7 +3,7 @@ from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from .models import ApplicationSetting, News, User, TechTalk
+from .models import ApplicationSetting, News, User, TechTalk, Form
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.core.paginator import Paginator
@@ -48,13 +48,13 @@ def home(request):
 
     # Check if student can register himself
     application_setting = ApplicationSetting.objects.first()
-    if application_setting and application_setting.startDate <= today <= application_setting.endDate:
+    if application_setting and application_setting.startDate and application_setting.endDate and application_setting.startDate <= today <= application_setting.endDate and application_setting.studentApplicationFormId:
         data["register"] = True
     else:
         data["register"] = False
 
     # If there is an application setting, give start and end date
-    if application_setting:
+    if application_setting and application_setting.startDate and application_setting.endDate and application_setting.studentApplicationFormId:
         data["startDate"] = application_setting.startDate.strftime('%B %d, %Y')
         data["endDate"] = application_setting.endDate.strftime('%B %d, %Y')
     
@@ -146,6 +146,16 @@ def dashboard(request):
 @login_required(login_url='login')
 def settings(request):
     active_page = 'settings'
+    
+    # Chek if application settings exist, otherwise create default one
+    application_setting, created = ApplicationSetting.objects.get_or_create(id=1)
+
+    current_application_setting = {
+        "startDate": application_setting.startDate,
+        "endDate": application_setting.endDate,
+        "studentApplicationFormId": application_setting.studentApplicationFormId
+    }
+    forms = Form.objects.filter(isActive=True)
     if request.method == 'POST':
         # Check if it is to change password
         if request.POST.get("changepassword"):
@@ -157,9 +167,9 @@ def settings(request):
                 # Keep the user logged in after changing password
                 update_session_auth_hash(request, request.user)
 
-                return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'success_password': "Password changed successfully"})
+                return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'success_password': "Password changed successfully", 'forms': forms, 'current_application_setting': current_application_setting})
             else:
-                return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'error_password': "Passwords do not match and/or are empty"})
+                return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'error_password': "Passwords do not match and/or are empty", 'forms': forms, 'current_application_setting': current_application_setting})
         # Check if it is to change profile settings
         if request.POST.get("changeprofile"):
             firstname = request.POST.get("firstname")
@@ -174,6 +184,19 @@ def settings(request):
                 # Image will be automatically saved to the correct location because of the ImageField in the User model (pillow)
                 request.user.profilePicture = request.FILES["profilepicture"]
             request.user.save()
-            return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'success_profile': "Profile updated successfully"})
-
-    return render(request, 'sharepoint/settings.jinja', {'active_page': active_page})
+            return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'success_profile': "Profile updated successfully", 'forms': forms, 'current_application_setting': current_application_setting})
+        # Check if application settings is changed
+        if request.POST.get("applicationsettings"):
+            applicationsetting = ApplicationSetting.objects.get(id=1)
+            applicationsetting.startDate = None if request.POST.get("startdatestudentregistrationform") == "" else request.POST.get("startdatestudentregistrationform")
+            applicationsetting.endDate = None if request.POST.get("enddatestudentregistrationform") == "" else request.POST.get("enddatestudentregistrationform")
+            applicationsetting.studentApplicationFormId = None if request.POST.get("studentregistrationform") == "noform" else Form.objects.get(id=request.POST.get("studentregistrationform"))
+            applicationsetting.save()
+            # Change current application setting
+            current_application_setting = {
+                "startDate": applicationsetting.startDate,
+                "endDate": applicationsetting.endDate,
+                "studentApplicationFormId": applicationsetting.studentApplicationFormId
+            }
+            return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'success_application': "Application settings updated successfully", 'forms': forms, 'current_application_setting': current_application_setting})
+    return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'forms': forms, 'current_application_setting': current_application_setting})
