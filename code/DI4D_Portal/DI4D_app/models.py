@@ -120,6 +120,7 @@ class TechTalk(models.Model):
     isPublic = models.BooleanField(default=False)
     speaker = models.CharField(max_length=100)
     description = models.CharField()
+    date = models.DateField()
 
 class UserTechTalk(models.Model):
     techTalkId = models.ForeignKey(TechTalk, on_delete=models.RESTRICT)
