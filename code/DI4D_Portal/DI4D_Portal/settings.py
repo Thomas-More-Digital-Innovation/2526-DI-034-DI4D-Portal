@@ -182,7 +182,7 @@ MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # OIDC Provider settings
-OIDC_USERINFO = 'DI4D_app.oidc_userinfo'
+OIDC_USERINFO = 'DI4D_app.oidc_userinfo.oidc_userinfo'
 OIDC_EXTRA_SCOPE_CLAIMS = 'DI4D_app.oidc_claims.OIDCExtraScopeClaims'
 
 # Example: OIDC Provider URLs can be set via env if needed
