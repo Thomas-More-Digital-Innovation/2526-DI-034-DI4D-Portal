@@ -14,6 +14,77 @@
       "user": "your-smtp-username",
       "password": "your-smtp-password"
     },
-    "users": []
+    "users": [],
+    "identityProviders": [
+      {
+        "alias": "django-oidc",
+        "providerId": "oidc",
+        "enabled": true,
+        "trustEmail": true,
+        "storeToken": true,
+        "addReadTokenRoleOnCreate": false,
+        "authenticateByDefault": false,
+        "linkOnly": false,
+        "firstBrokerLoginFlowAlias": "first broker login",
+        "config": {
+          "clientId": "keycloak-client-id",
+          "clientSecret": "keycloak-client-secret",
+          "authorizationUrl": "https://your-public-hostname.com/openid/authorize/",
+          "tokenUrl": "https://your-public-hostname.com/openid/token/",
+          "logoutUrl": "https://your-public-hostname.com/openid/logout/",
+          "userInfoUrl": "https://your-public-hostname.com/openid/userinfo/",
+          "jwksUrl": "https://your-public-hostname.com/openid/jwks/",
+          "issuer": "https://your-public-hostname.com",
+          "defaultScope": "openid profile email"
+        },
+
+      }
+    ],
+    "identityProviderMappers": [
+      {
+        "name": "username-template",
+        "identityProviderAlias": "django-oidc",
+        "identityProviderMapper": "oidc-username-idp-mapper",
+        "config": {
+          "template": "${CLAIM.preferred_username}",
+          "target": "BROKER_USERNAME"
+        }
+      },
+      {
+        "name": "email",
+        "identityProviderAlias": "django-oidc",
+        "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+        "config": {
+          "claim": "email",
+          "user.attribute": "email"
+        }
+      },
+      {
+        "name": "email_verified",
+        "identityProviderAlias": "django-oidc",
+        "identityProviderMapper": "oidc-user-attribute-idp-mapper",
+        "config": {
+          "claim": "email_verified",
+          "user.attribute": "email_verified"
+        }
+      }
+    ],
+    "clients": [
+      {
+        "clientId": "django-client-id",
+        "enabled": true,
+        "protocol": "openid-connect",
+        "redirectUris": [
+          "http://127.0.0.1:8000/login/callback/",
+          "http://localhost:8000/login/callback/"
+        ],
+        "publicClient": false,
+        "secret": "django-client-secret",
+        "webOrigins": [
+          "http://127.0.0.1:8000",
+          "http://localhost:8000"
+        ]
+      }
+    ]
   }
 ]

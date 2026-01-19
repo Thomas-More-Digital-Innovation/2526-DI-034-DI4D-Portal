@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'DI4D_app',
+    'oidc_provider',
+    'mozilla_django_oidc',
 ]
 
 if DEBUG:
@@ -55,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'DI4D_app.middleware.OIDCLoggingMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -178,6 +181,13 @@ MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# OIDC Provider settings
+OIDC_USERINFO = 'DI4D_app.oidc_userinfo'
+OIDC_EXTRA_SCOPE_CLAIMS = 'DI4D_app.oidc_claims.OIDCExtraScopeClaims'
+
+# Example: OIDC Provider URLs can be set via env if needed
+OIDC_ISSUER = os.getenv('OIDC_ISSUER', 'http://localhost:8000')
+
 # SMTP settings
 EMAIL_BACKEND  = os.getenv("EMAIL_BACKEND")
 EMAIL_HOST  = os.getenv("SMTP_HOST")
@@ -186,3 +196,36 @@ EMAIL_PORT   = os.getenv("SMTP_PORT")
 EMAIL_HOST_PASSWORD  = os.getenv("SMTP_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 EMAIL_USE_TLS = True
+
+# OIDC Client settings for Keycloak SSO
+OIDC_RP_CLIENT_ID = os.getenv('OIDC_RP_CLIENT_ID', 'django-client-id')
+OIDC_RP_CLIENT_SECRET = os.getenv('OIDC_RP_CLIENT_SECRET', 'django-client-secret')
+OIDC_OP_AUTHORIZATION_ENDPOINT = os.getenv('OIDC_OP_AUTHORIZATION_ENDPOINT', 'http://localhost:8080/realms/di4d/protocol/openid-connect/auth')
+OIDC_OP_TOKEN_ENDPOINT = os.getenv('OIDC_OP_TOKEN_ENDPOINT', 'http://localhost:8080/realms/di4d/protocol/openid-connect/token')
+OIDC_OP_USER_ENDPOINT = os.getenv('OIDC_OP_USER_ENDPOINT', 'http://localhost:8080/realms/di4d/protocol/openid-connect/userinfo')
+OIDC_OP_JWKS_ENDPOINT = os.getenv('OIDC_OP_JWKS_ENDPOINT', 'http://localhost:8080/realms/di4d/protocol/openid-connect/certs')
+OIDC_OP_LOGOUT_ENDPOINT = os.getenv('OIDC_OP_LOGOUT_ENDPOINT', 'http://localhost:8080/realms/di4d/protocol/openid-connect/logout')
+LOGIN_URL = '/oidc/authenticate/'
+LOGOUT_URL = '/oidc/logout/'
+
+# Basic logging to console for debugging auth flow
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'DI4D_app': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}

@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from DI4D_app import views
 from django.contrib.auth import views as auth_views
 from django.conf import settings
@@ -23,9 +23,11 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('openid/', include('oidc_provider.urls', namespace='oidc_provider')),
+    path('oidc/', include('mozilla_django_oidc.urls')),
     path('test', views.hello_world, name='hello_world'),
     path('', views.home, name='home'),
-    path('login/', views.login_view, name='login'),
+    path('login/', include('mozilla_django_oidc.urls')),
     path('student_registration/', views.student_registration, name='student_registration'),
     path('news/', views.news, name='news'),
     path('dashboard/', views.dashboard, name='dashboard'),

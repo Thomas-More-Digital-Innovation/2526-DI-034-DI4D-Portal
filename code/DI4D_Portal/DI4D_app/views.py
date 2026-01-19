@@ -63,23 +63,6 @@ def home(request):
 
     return render(request, 'public/home.jinja',  data)
 
-def login_view(request):
-    data={}
-    # Check if user is already logged in
-    if request.user.is_authenticated:
-        return redirect('dashboard')
-
-    # Handle login form
-    if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return redirect('dashboard')
-        else:
-            data["error"] = "Invalid username and/or password"
-    return render(request, 'auth/login.jinja', data)
 
 def logout_view(request):
     logout(request)
@@ -119,7 +102,7 @@ def news(request):
     else:
         return render(request, 'public/news.jinja', {"all_articles": all_articles, "total_articles": total_articles, "search_query": search_query, "active_page": active_page})
 
-@login_required(login_url='login')
+@login_required(login_url='oidc_authentication_init')
 def dashboard(request):
     active_page = 'dashboard'
     return render(request, 'sharepoint/dashboard.jinja', {'active_page': active_page})

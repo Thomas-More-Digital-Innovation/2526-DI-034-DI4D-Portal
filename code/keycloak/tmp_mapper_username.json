@@ -1,0 +1,8 @@
+{
+  "name": "username-template",
+  "identityProviderMapper": "oidc-username-idp-mapper",
+  "config": {
+    "template": "${CLAIM.preferred_username}",
+    "target": "BROKER_USERNAME"
+  }
+}
