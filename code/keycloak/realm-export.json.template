@@ -1,0 +1,19 @@
+[
+  {
+    "realm": "di4d",
+    "enabled": true,
+    "displayName": "DI4D Realm",
+    "loginTheme": "di4d",
+    "resetPasswordAllowed": true,
+    "smtpServer": {
+      "host": "smtp.resend.com",
+      "port": "465",
+      "from": "your-email@domain.com",
+      "auth": "true",
+      "ssl": "true",
+      "user": "your-smtp-username",
+      "password": "your-smtp-password"
+    },
+    "users": []
+  }
+]
