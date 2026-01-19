@@ -205,7 +205,7 @@ def logout_view(request):
     # Capture Django username before clearing session so we can find corresponding Keycloak user
     django_username = getattr(request.user, 'username', None)
 
-    # Attempt to terminate Keycloak sessions by searching users by username via Admin API
+    # Attempt to terminate Keycloak sessions by searching users by username via Admin API, I know this is REALLY dumb, but Keycloak doesn't provide a better way to do this
     try:
         kc_admin_user = os.getenv('KEYCLOAK_ADMIN_USER') or os.getenv('KC_BOOTSTRAP_ADMIN_USERNAME')
         kc_admin_pass = os.getenv('KEYCLOAK_ADMIN_PASSWORD') or os.getenv('KC_BOOTSTRAP_ADMIN_PASSWORD')
@@ -234,9 +234,17 @@ def logout_view(request):
                             logout_api = f"{kc_admin_base}/admin/realms/di4d/users/{kc_user_id}/logout"
                             r2 = requests.post(logout_api, headers={'Authorization': f'Bearer {admin_token}'}, timeout=5)
                             logger.info('Admin logout API for user %s response: %s %s', kc_user_id, r2.status_code, r2.text[:200])
-                            # Optionally unlink federated identity if present
-                            # delete_fed = requests.delete(f"{kc_admin_base}/admin/realms/di4d/users/{kc_user_id}/federated-identity/django-oidc", headers={'Authorization': f'Bearer {admin_token}'}, timeout=5)
-                            # logger.info('Unlink federated identity response: %s %s', delete_fed.status_code, delete_fed.text[:200])
+                            # Attempt to unlink federated identity (so a different external identity can be linked later)
+                            try:
+                                delete_fed = requests.delete(f"{kc_admin_base}/admin/realms/di4d/users/{kc_user_id}/federated-identity/django-oidc", headers={'Authorization': f'Bearer {admin_token}'}, timeout=5)
+                                if delete_fed.status_code in (200, 204):
+                                    logger.info('Unlinked federated identity for user %s', kc_user_id)
+                                elif delete_fed.status_code == 404:
+                                    logger.info('No federated identity to unlink for user %s', kc_user_id)
+                                else:
+                                    logger.warning('Unlink federated identity response for user %s: %s %s', kc_user_id, delete_fed.status_code, delete_fed.text[:200])
+                            except Exception:
+                                logger.exception('Failed to unlink federated identity for user %s', kc_user_id)
                 else:
                     logger.warning('Failed to search Keycloak users: %s %s', r_users.status_code, r_users.text[:200])
             else:
