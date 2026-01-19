@@ -171,7 +171,7 @@ if DEBUG:
         STATICFILES_DIRS.append(theme_static)
 
 # Use whitenoise for efficient static file serving
-# MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
