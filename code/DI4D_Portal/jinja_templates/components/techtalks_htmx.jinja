@@ -1,0 +1,12 @@
+{# This is a component for return of HTMX #}
+{% from 'structure/structure.jinja' import talk_item %}
+<div class="justify-center flex">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-6 w-full max-w-7xl">
+        {% for talk in all_techtalks %}
+            {{ talk_item(talk) }}
+        {% endfor %}
+    </div>
+</div>
+{% if not all_techtalks %}
+    <p class="text-white text-center">No tech talks found.</p>
+{% endif %}

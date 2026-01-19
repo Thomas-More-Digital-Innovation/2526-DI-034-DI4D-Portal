@@ -1,0 +1,25 @@
+{% extends "structure/structure_public.jinja" %}
+
+{% block title %}DI4D Portal - Tech Talks{% endblock %}
+
+{% block content %}
+<div class="bg-[var(--blue_di4d)] min-h-screen p-8">
+    <h1 class="text-3xl lg:text-4xl font-bold text-white text-center">Tech Talks</h1>
+    <form class="mt-6 max-w-xl mx-auto relative" method="POST" hx-post="{{ url('tech_talks') }}" hx-target="#techtalks-grid">
+        {{ csrf_input }}
+        <input type="text" 
+                id="q" 
+                name="q"
+                placeholder="Search Tech Talks" 
+                value="{{ search_query }}"
+                class="bg-white rounded-xl w-full px-4 py-1 pr-12"
+                hx-trigger="keyup changed delay:300ms" hx-sync="closest form:abort">
+        <button class="absolute right-0 top-0 bottom-0 px-3 text-[var(--light_gray)]" type="submit">        
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+    </form>
+    <div class="mt-6 mx-auto" id="techtalks-grid">
+        {% include 'components/techtalks_htmx.jinja' %}
+    </div>
+</div>
+{% endblock %}

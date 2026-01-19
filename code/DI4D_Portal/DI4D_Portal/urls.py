@@ -18,6 +18,8 @@ from django.contrib import admin
 from django.urls import path
 from DI4D_app import views
 from django.contrib.auth import views as auth_views
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -26,9 +28,11 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('student_registration/', views.student_registration, name='student_registration'),
     path('news/', views.news, name='news'),
+    path('techtalks/', views.tech_talks, name='tech_talks'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('logout/', views.logout_view, name='logout'),
     path('users/', views.users, name='users'),
+    path('settings/', views.settings, name='settings'),
 
     # Docs : https://docs.djangoproject.com/en/6.0/topics/auth/default/#all-authentication-views
     path("password_reset/", auth_views.PasswordResetView.as_view(
@@ -44,3 +48,5 @@ urlpatterns = [
         template_name="auth/reset_complete.jinja"
     ), name="password_reset_complete"),
 ]
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

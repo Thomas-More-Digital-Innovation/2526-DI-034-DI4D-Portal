@@ -4,7 +4,7 @@
 {% block content_structure %}
 {# Docs : https://flyonui.com/docs/navigations/sidebar/ #}
 <div class="flex min-h-screen">
-  <aside id="collapsible-sidebar" class="overlay [--body-scroll:true] border-base-content/20 overlay-open:translate-x-0 drawer drawer-start hidden w-64 [--auto-close:lg] [--is-layout-affect:true] [--opened:lg] absolute z-10 flex shadow-lg lg:[--overlay-backdrop:false] lg:fixed lg:left-0 lg:top-0 lg:h-screen lg:overflow-y-auto lg:shadow-none bg-[--blue_di4d]" role="dialog" tabindex="-1">
+  <aside id="collapsible-sidebar" class="overlay [--body-scroll:true] border-base-content/20 overlay-open:translate-x-0 drawer drawer-start hidden w-64 [--auto-close:lg] [--is-layout-affect:true] [--opened:lg] absolute z-10 flex shadow-lg lg:[--overlay-backdrop:false] lg:fixed lg:left-0 lg:top-0 lg:h-screen lg:overflow-y-auto lg:shadow-none bg-[var(--blue_di4d)]!" role="dialog" tabindex="-1">
     <div class="drawer-body px-2 pt-4 h-full flex flex-col">
       {# Logo #}
       <div>
@@ -27,7 +27,7 @@
           </a>
         </li>
         <li class="{% if active_page == 'Tech Talks' %}border-2 border-white bg-[--orange_di4d]{% endif %} rounded-lg mb-2">
-          <a href="#" class="text-white text-md">
+          <a href="{{ url('tech_talks') }}" class="text-white text-md">
             <i class="fa-brands fa-kakao-talk text-xl"></i>
             Tech Talks
           </a>
@@ -45,7 +45,7 @@
           </a>
         </li>
         <li class="{% if active_page == 'settings' %}border-2 border-white bg-[--orange_di4d]{% endif %} rounded-lg mb-2">
-          <a href="#" class="text-white text-md">
+          <a href="{{ url('settings') }}" class="text-white text-md">
             <i class="fa-solid fa-gear text-xl"></i>
             Settings
           </a>
