@@ -58,6 +58,15 @@
             Settings
           </a>
         </li>
+        {% if request.user.role_is_admin() or request.user.role_is_partner() %}
+        <li class="{% if active_page == 'users' %}border-2 border-white bg-[--orange_di4d]{% endif %} rounded-lg mb-2">
+          <a href="{{ url('users') }}" class="text-white text-md">
+            <i class="fa-solid fa-user text-xl"></i>
+            Users
+          </a>
+        </li>
+        {% endif %}
+        
       </ul>
       <div class="mt-auto pb-4">
         <a href="{{ url('logout') }}" class="flex items-center gap-3 px-4 py-2 text-black rounded-lg bg-white font-bold hover:bg-black hover:text-white transition-colors">

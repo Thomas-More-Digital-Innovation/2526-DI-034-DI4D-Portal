@@ -83,6 +83,58 @@
 </div>
 {% endmacro %}
 
+{# Empty modal #}
+{% macro empty_modal(id, title) %}
+<div x-show="open_{{ id }}" 
+     x-cloak
+     style="display:none" 
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
+    <div @click.stop class="bg-[--light_grey] rounded-xl p-4 max-w-lg w-full max-h-[90vh] overflow-auto">
+        <h2 class="text-2xl font-bold text-white mb-4">{{ title }}</h2>
+        <div class="mt-4">
+          {{ caller() }}
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{# Info modal #}
+{% macro info_modal(id, title, message) %}
+<div x-show="open_{{ id }}" 
+     x-cloak
+     style="display:none" 
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+     @click="open_{{ id }} = false">
+    <div @click.stop class="bg-[--light_grey] rounded-xl p-4 max-w-lg w-full max-h-[90vh] overflow-auto">
+        <h2 class="text-2xl font-bold text-white mb-4">{{ title }}</h2>
+        <p class="text-white">{{ message }}</p>
+        <button @click="open_{{ id }} = false" class="btn w-full text-[--button_text_modal] mt-4 bg-[--white_grey]">Continue</button>
+      </div>
+</div>
+{% endmacro %}
+
+{# Delete confirm modal#}
+{% macro delete_confirm_modal(title, csrf_token) %}
+<div x-show="currentDeleteId !== null, currentDeleteName !== null" 
+     x-cloak
+     style="display:none" 
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+     @click="currentDeleteId = null, currentDeleteName = null">
+    <div @click.stop class="bg-[--light_grey] rounded-xl p-4 max-w-lg w-full max-h-[90vh] overflow-auto">
+        <h2 class="text-2xl font-bold text-white mb-4">{{ title }}</h2>
+        <p class="text-white">Are you sure you want to delete <span x-text="currentDeleteName"></span>? This action is irreversible.</p>
+        <div class="w-full flex flex-row gap-2 mt-4">
+          <button @click="currentDeleteId = null, currentDeleteName = null" class="btn text-[--button_text_modal] flex-1 bg-[--white_grey]">Cancel</button>
+          <form method="post" class="flex-1 flex">
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
+            <input type="hidden" name="delete_id" x-bind:value="currentDeleteId"/>
+            <button type="submit" class="btn flex-1 text-white bg-[--red]">Delete</button>
+          </form>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
 {# PAGE #}
 <!DOCTYPE html>
 <html>
