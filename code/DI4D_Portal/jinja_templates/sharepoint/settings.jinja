@@ -45,7 +45,7 @@
                 {% endif %}
             </form>
         </div>
-        <div class="lg:w-px lg:bg-black"></div>
+        <div class="lg:border lg:border-black lg:opacity-65"></div>
         <div class="flex-1">
             <h2 class="text-xl">Change Password</h2>
             <form method="POST">
@@ -67,5 +67,34 @@
                 {% endif %}
         </div>
     </div>
+    {% if request.user.role_is_admin() %}
+    <div class="lg:border lg:border-black lg:my-8 lg:opacity-65"></div>
+        <div class="flex flex-col lg:flex-row gap-8 lg:gap-16"> 
+            <div class="mt-8 lg:mt-0 flex-1">
+                <h2 class="text-xl">Application Settings</h2>
+                <form method="POST">
+                    {{ csrf_input }}
+                    <label for="studentregistrationform" class="block max-w-half w-full mt-4">Student registration form</label>
+                    <select id="studentregistrationform" name="studentregistrationform" class="w-full py-2 rounded-md border border-[var(--white_grey)] px-4 text-[var(--white_grey)] mt-2">
+                        <option value="noform">No Form</option>
+                        {% for form in forms %}
+                            <option value="{{ form.id }}" {% if form.id == current_application_setting.studentApplicationFormId.id %}selected{% endif %}>{{ form.title }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="startdatestudentregistrationform" class="block mt-4">Start date student registration form</label>
+                    <input type="date" id="startdatestudentregistrationform" value="{{ current_application_setting.startDate }}" name="startdatestudentregistrationform" class="w-full py-2 rounded-md border border-[var(--white_grey)] px-4 text-[var(--white_grey)] mt-2">
+                    <label for="enddatestudentregistrationform" class="block mt-4">End date student registration form</label>
+                    <input type="date" id="enddatestudentregistrationform" value="{{ current_application_setting.endDate }}" name="enddatestudentregistrationform" class="w-full py-2 rounded-md border border-[var(--white_grey)] px-4 text-[var(--white_grey)] mt-2">
+                    <button type="submit" name="applicationsettings" value="applicationsettings" class="btn_primary_orange mt-2 w-full">Save application settings</button>
+                    {% if success_application %}
+                    <p x-data="{show: true}" x-show="show" x-init="show=true; setTimeout(() => show=false, 3000)"
+                    class="bg-green-500 text-white p-2 rounded w-full mt-4">{{ success_application }}</p>
+                {% endif %}
+                </form>
+            </div>
+            <div></div>
+            <div class="flex-1"></div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
