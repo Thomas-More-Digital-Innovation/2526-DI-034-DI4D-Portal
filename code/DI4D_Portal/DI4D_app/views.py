@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
@@ -177,3 +178,28 @@ def settings(request):
             return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'success_profile': "Profile updated successfully"})
 
     return render(request, 'sharepoint/settings.jinja', {'active_page': active_page})
+
+@login_required(login_url='login')
+def export_data(request):
+    active_page = 'export_data'
+    # Check if user is admin
+    if request.user.role_is_admin():
+        return render(request, 'admin/export.jinja', {'active_page': active_page})
+    else:
+        return redirect('dashboard')
+
+@login_required(login_url='login')
+def users_data(request):
+    # Check if user is admin
+    if request.user.role_is_admin():        
+        # Get all users
+        all_users = User.objects.all().order_by("username")
+        csv_data = "Username,FirstName,LastName,Email,IsActive,UserType,Partner,IsActive,IsAlumni\n"
+        
+        for user in all_users:
+            csv_data += f"{user.username},{user.firstname},{user.lastname},{user.email},{user.is_active},{user.userTypeId.name},{user.partnerId.name if user.partnerId else ''},{user.is_active},{user.is_alumni}\n"
+
+        # Create response with CSV data
+        response = HttpResponse(csv_data, content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="users_data.csv"'
+        return response
