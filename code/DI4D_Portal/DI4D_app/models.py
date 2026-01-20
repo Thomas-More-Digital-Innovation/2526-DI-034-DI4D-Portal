@@ -92,9 +92,9 @@ class HistoryStudentApplicationForm(models.Model):
     year = models.IntegerField()
 
 class ApplicationSetting(models.Model):
-    studentApplicationFormId = models.ForeignKey(Form, on_delete=models.RESTRICT)
-    startDate = models.DateField()
-    endDate = models.DateField()
+    studentApplicationFormId = models.ForeignKey(Form, on_delete=models.RESTRICT, null=True, blank=True)
+    startDate = models.DateField(null=True, blank=True)
+    endDate = models.DateField(null=True, blank=True)
 
 class DataType(models.Model):
     name = models.CharField(max_length=100)
