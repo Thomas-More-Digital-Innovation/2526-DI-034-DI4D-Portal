@@ -4,8 +4,7 @@ from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from .models import ApplicationSetting, News, User, TechTalk, Form, Partner, TechTalk
-
+from .models import ApplicationSetting, News, User, TechTalk, Form, UserType, Partner, TechTalk
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.core.paginator import Paginator
