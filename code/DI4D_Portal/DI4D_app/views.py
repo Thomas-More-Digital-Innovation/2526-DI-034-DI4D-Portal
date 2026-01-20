@@ -4,7 +4,7 @@ from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from .models import ApplicationSetting, News, User, TechTalk
+from .models import ApplicationSetting, News, User, TechTalk, LearningGoal, LearninggoalCourse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.core.paginator import Paginator
@@ -202,4 +202,24 @@ def users_data(request):
         # Create response with CSV data
         response = HttpResponse(csv_data, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="users_data.csv"'
+        return response
+
+@login_required(login_url='login')
+def learninggoals_data(request):
+    # Check if user is admin
+    if request.user.role_is_admin():        
+        # Get all learning goals
+        all_learninggoals = LearningGoal.objects.all().order_by("id")
+        csv_data = "Objective,learningPath,IsActive,Courses\n"
+
+        for learninggoal in all_learninggoals:
+            courses = LearninggoalCourse.objects.filter(learningGoalId=learninggoal)
+            courses_list = [course.courseId.name for course in courses]
+            # Split courses by ;
+            courses_list = ";".join(courses_list)
+            csv_data += f"{learninggoal.objective},{learninggoal.learningPath.name},{learninggoal.isActive},{courses_list}\n"
+
+        # Create response with CSV data
+        response = HttpResponse(csv_data, content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="learninggoals_data.csv"'
         return response
