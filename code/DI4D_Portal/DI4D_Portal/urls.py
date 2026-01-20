@@ -33,7 +33,9 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('users/', views.users, name='users'),
     path('settings/', views.settings, name='settings'),
-
+    path('export_data/', views.export_data, name='export_data'),
+    path('users_data/', views.users_data, name='users_data'),
+    path('learninggoals_data/', views.learninggoals_data, name='learninggoals_data'),
     # Docs : https://docs.djangoproject.com/en/6.0/topics/auth/default/#all-authentication-views
     path("password_reset/", auth_views.PasswordResetView.as_view(
         template_name="auth/forgot_password.jinja"

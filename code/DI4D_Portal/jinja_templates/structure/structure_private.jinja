@@ -44,6 +44,14 @@
             Forms
           </a>
         </li>
+        {% if request.user.role_is_admin() %}
+        <li class="{% if active_page == 'export_data' %}border-2 border-white bg-[--orange_di4d]{% endif %} rounded-lg mb-2">
+          <a href="{{ url('export_data') }}" class="text-white text-md">
+            <i class="fa-solid fa-file-export text-xl"></i>
+            Exports
+          </a>
+        </li>
+        {% endif %}
         <li class="{% if active_page == 'settings' %}border-2 border-white bg-[--orange_di4d]{% endif %} rounded-lg mb-2">
           <a href="{{ url('settings') }}" class="text-white text-md">
             <i class="fa-solid fa-gear text-xl"></i>
