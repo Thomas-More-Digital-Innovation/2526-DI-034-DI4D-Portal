@@ -1,10 +1,11 @@
+from django.http import HttpResponse
 from urllib import request
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from .models import ApplicationSetting, News, User, Question, FormAnswer, TechTalk, Form, UserType, Partner
+from .models import ApplicationSetting, News, User, Question, FormAnswer, TechTalk, Form, UserType, Partner, LearningGoal, LearninggoalCourse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.core.paginator import Paginator
@@ -420,6 +421,7 @@ def settings(request):
                 request.user.profilePicture = request.FILES["profilepicture"]
             request.user.save()
             return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'success_profile': "Profile updated successfully", 'forms': forms, 'current_application_setting': current_application_setting})
+        
         # Check if application settings is changed
         if request.POST.get("applicationsettings"):
             applicationsetting = ApplicationSetting.objects.get(id=1)
@@ -435,3 +437,48 @@ def settings(request):
             }
             return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'success_application': "Application settings updated successfully", 'forms': forms, 'current_application_setting': current_application_setting})
     return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'forms': forms, 'current_application_setting': current_application_setting})
+
+@login_required(login_url='login')
+def export_data(request):
+    active_page = 'export_data'
+    # Check if user is admin
+    if request.user.role_is_admin():
+        return render(request, 'admin/export.jinja', {'active_page': active_page})
+    else:
+        return redirect('dashboard')
+
+@login_required(login_url='login')
+def users_data(request):
+    # Check if user is admin
+    if request.user.role_is_admin():        
+        # Get all users
+        all_users = User.objects.all().order_by("username")
+        csv_data = "Username,FirstName,LastName,Email,IsActive,UserType,Partner,IsActive,IsAlumni\n"
+        
+        for user in all_users:
+            csv_data += f"{user.username},{user.firstname},{user.lastname},{user.email},{user.is_active},{user.userTypeId.name},{user.partnerId.name if user.partnerId else ''},{user.is_active},{user.is_alumni}\n"
+
+        # Create response with CSV data
+        response = HttpResponse(csv_data, content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="users_data.csv"'
+        return response
+
+@login_required(login_url='login')
+def learninggoals_data(request):
+    # Check if user is admin
+    if request.user.role_is_admin():        
+        # Get all learning goals
+        all_learninggoals = LearningGoal.objects.all().order_by("id")
+        csv_data = "Objective,learningPath,IsActive,Courses\n"
+
+        for learninggoal in all_learninggoals:
+            courses = LearninggoalCourse.objects.filter(learningGoalId=learninggoal)
+            courses_list = [course.courseId.name for course in courses]
+            # Split courses by ;
+            courses_list = ";".join(courses_list)
+            csv_data += f"{learninggoal.objective},{learninggoal.learningPath.name},{learninggoal.isActive},{courses_list}\n"
+
+        # Create response with CSV data
+        response = HttpResponse(csv_data, content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="learninggoals_data.csv"'
+        return response
