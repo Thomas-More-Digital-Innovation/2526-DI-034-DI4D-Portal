@@ -107,8 +107,8 @@ def preview_files(request):
         existing = request.session.get('preview_files', [])
         existing.extend(file_names)
         request.session['preview_files'] = existing
-        return render(request, 'components/file_list_preview.jinja', {'file_names': existing})
-    return render(request, 'components/file_list_preview.jinja', {'file_names': []})
+        return render(request, 'components/file_list_preview_htmx.jinja', {'file_names': existing})
+    return render(request, 'components/file_list_preview_htmx.jinja', {'file_names': []})
 
 def delete_preview_file(request):
     """
@@ -120,8 +120,8 @@ def delete_preview_file(request):
         if filename in existing:
             existing.remove(filename)
         request.session['preview_files'] = existing
-        return render(request, 'components/file_list_preview.jinja', {'file_names': existing})
-    return render(request, 'components/file_list_preview.jinja', {'file_names': []})
+        return render(request, 'components/file_list_preview_htmx.jinja', {'file_names': existing})
+    return render(request, 'components/file_list_preview_htmx.jinja', {'file_names': []})
 
 def student_registration(request):
     """
