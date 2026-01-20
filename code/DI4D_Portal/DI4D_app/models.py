@@ -103,6 +103,7 @@ class Question(models.Model):
     datatype = models.ForeignKey(DataType, on_delete=models.RESTRICT)
     question = models.CharField()
     explanation = models.CharField(null=True, blank=True)
+    content = models.TextField(null=True, blank=True)  # For storing options (comma-separated)
     isActive = models.BooleanField(default=True)
     formId = models.ForeignKey(Form, on_delete=models.RESTRICT)
     isMandatory = models.BooleanField(default=False)
@@ -110,7 +111,7 @@ class Question(models.Model):
 class FormAnswer(models.Model):
     answer = models.CharField()
     questionId = models.ForeignKey(Question, on_delete=models.RESTRICT)
-    userId = models.ForeignKey(User, on_delete=models.RESTRICT)
+    userId = models.ForeignKey(User, on_delete=models.RESTRICT, null=True, blank=True)
     answerDate = models.DateField()
 
 class TechTalk(models.Model):
