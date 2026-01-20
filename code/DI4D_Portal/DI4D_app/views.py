@@ -10,6 +10,9 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.contrib.auth import update_session_auth_hash
 
+def page_not_found(request, exception=None):
+    return render(request, 'errors/404.jinja', status=404)
+
 # Create your views here.
 def hello_world(request):
     return render(request, 'test.jinja')
