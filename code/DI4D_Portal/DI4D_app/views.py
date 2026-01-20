@@ -4,7 +4,7 @@ from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from .models import ApplicationSetting, News, User, Question, FormAnswer, TechTalk, Form, UserType, Partner,
+from .models import ApplicationSetting, News, User, Question, FormAnswer, TechTalk, Form, UserType, Partner
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.core.paginator import Paginator
@@ -13,6 +13,7 @@ from django.utils.crypto import get_random_string
 from django.contrib.auth import update_session_auth_hash
 import os
 from django.core.files.storage import default_storage
+import json
 
 
 def page_not_found(request, exception=None):
@@ -93,6 +94,34 @@ def logout_view(request):
     logout(request)
     return redirect('home')
 
+def preview_files(request):
+    """
+    HTMX endpoint to preview selected files.
+    Stores file names in session and returns HTML with file names for display.
+    """
+    if request.method == 'POST':
+        files = request.FILES.getlist(list(request.FILES.keys())[0]) if request.FILES else []
+        file_names = [f.name for f in files]
+        # Store in session (append to existing)
+        existing = request.session.get('preview_files', [])
+        existing.extend(file_names)
+        request.session['preview_files'] = existing
+        return render(request, 'components/file_list_preview.jinja', {'file_names': existing})
+    return render(request, 'components/file_list_preview.jinja', {'file_names': []})
+
+def delete_preview_file(request):
+    """
+    HTMX endpoint to remove a file from the preview list.
+    """
+    if request.method == 'POST':
+        filename = request.POST.get('filename', '')
+        existing = request.session.get('preview_files', [])
+        if filename in existing:
+            existing.remove(filename)
+        request.session['preview_files'] = existing
+        return render(request, 'components/file_list_preview.jinja', {'file_names': existing})
+    return render(request, 'components/file_list_preview.jinja', {'file_names': []})
+
 def student_registration(request):
     """
     Display and handle student registration form application.
@@ -101,6 +130,10 @@ def student_registration(request):
     
     data = {}
     today = timezone.now().date()
+    
+    # Clear preview files from session on initial GET request
+    if request.method == 'GET':
+        request.session.pop('preview_files', None)
     
     # Get the application setting (form configuration)
     application_setting = ApplicationSetting.objects.first()
@@ -121,66 +154,58 @@ def student_registration(request):
     # Handle form submission
     if request.method == 'POST':
         try:
-            # Get current user if authenticated, otherwise create temporary user data
-            user = request.user if request.user.is_authenticated else None
             
-            # Validate all mandatory questions are answered
-            errors = {}
-            for question in questions:
-                question_id = f'question_{question.id}'
-                answer_value = request.POST.get(question_id, '').strip()
-                
-                # Check file upload for the last question
-                if question == questions.last():
-                    if f'{question_id}_file' not in request.FILES and question.isMandatory:
-                        errors[question_id] = "Please upload a file for this required field."
-                else:
-                    if not answer_value and question.isMandatory:
-                        errors[question_id] = "This field is required."
-            
-            # If there are validation errors, return them
-            if errors:
-                data['errors'] = errors
-                # Return HTMX response with updated form
-                if request.headers.get("HX-Request") == "true":
-                    return render(request, 'components/student_registration_form.jinja', data)
-                return render(request, 'public/student_registration.jinja', data)
+            # Get the user's name from the first question
+            first_question = questions.first()
+            user_name = request.POST.get(f'question_{first_question.id}', '').strip()
+            # Clean the name for use in filename (replace spaces and special chars)
+            user_name_clean = user_name.replace(' ', '_').replace('/', '_').replace('\\', '_')
             
             # Save answers for each question
             for question in questions:
                 question_id = f'question_{question.id}'
-                answer_value = request.POST.get(question_id)
+                datatype_name = question.datatype.name.lower()
+                answer_value = None
                 
-                # Handle file upload for the last question
-                if question == questions.last() and f'{question_id}_file' in request.FILES:
-                    uploaded_file = request.FILES[f'{question_id}_file']
+                # Handle file upload (multiple files allowed)
+                if datatype_name == 'file' and f'{question_id}_file' in request.FILES:
+                    uploaded_files = request.FILES.getlist(f'{question_id}_file')
+                    file_paths = []
                     
-                    # Create unique filename with user info and timestamp
-                    if user:
+                    for uploaded_file in uploaded_files:
+                        # Create unique filename with user info and timestamp
                         timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-                        filename = f"{user.username}_{timestamp}_{uploaded_file.name}"
-                    else:
-                        timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-                        filename = f"anonymous_{timestamp}_{uploaded_file.name}"
+                        filename = f"{user_name_clean}_{timestamp}_{uploaded_file.name}"
+                        
+                        # Save file to media/studentregistration/
+                        file_path = f'studentregistration/{filename}'
+                        default_storage.save(file_path, uploaded_file)
+                        file_paths.append(file_path)
                     
-                    # Save file to media/studentregistration/
-                    file_path = f'studentregistration/{filename}'
-                    default_storage.save(file_path, uploaded_file)
-                    
-                    # Store the file path in the answer
-                    answer_value = file_path
+                    # Store the file paths as JSON array in the answer
+                    answer_value = json.dumps(file_paths) if len(file_paths) > 1 else file_paths[0]
+                elif datatype_name == 'multiple_choice':
+                    # Multiple choice: store as JSON array
+                    selected_values = request.POST.getlist(question_id)
+                    if selected_values:
+                        answer_value = json.dumps(selected_values)
+                else:
+                    # Text, Email, Singular_Choice, Bool
+                    answer_value = request.POST.get(question_id)
                 
                 # Only save if answer is provided
                 if answer_value:
-                    if user:
-                        FormAnswer.objects.create(
-                            answer=answer_value,
-                            questionId=question,
-                            userId=user,
-                            answerDate=today
-                        )
+                    FormAnswer.objects.create(
+                    answer=answer_value,
+                    questionId=question,
+                    answerDate=today
+                    )
             
-            data['success'] = "Your application has been submitted successfully!"
+            # Clear session preview files after successful submission
+            request.session.pop('preview_files', None)
+            
+            # Redirect to home on successful submission
+            return redirect('home')
         except Exception as e:
             data['error'] = f"An error occurred while submitting the form: {str(e)}"
     
