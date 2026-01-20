@@ -139,8 +139,13 @@ def student_registration(request):
     # Get the application setting (form configuration)
     application_setting = ApplicationSetting.objects.first()
     
+    # Check if registration is properly configured
+    if not application_setting or not application_setting.studentApplicationFormId or not application_setting.startDate or not application_setting.endDate:
+        data['registration_closed'] = True
+        return render(request, 'public/student_registration.jinja', data)
+    
     # Check if registration is currently open
-    if not application_setting or not (application_setting.startDate <= today <= application_setting.endDate):
+    if not (application_setting.startDate <= today <= application_setting.endDate):
         data['registration_closed'] = True
         return render(request, 'public/student_registration.jinja', data)
     
@@ -206,6 +211,10 @@ def student_registration(request):
             request.session.pop('preview_files', None)
             
             # Redirect to home on successful submission
+            if request.headers.get('HX-Request') == 'true':
+                response = HttpResponse()
+                response['HX-Redirect'] = '/'
+                return response
             return redirect('home')
         except Exception as e:
             data['error'] = f"An error occurred while submitting the form: {str(e)}"
