@@ -9,6 +9,7 @@ from django.contrib.auth import logout
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.contrib.auth import update_session_auth_hash
+from urllib.parse import urlparse, parse_qs
 
 # Create your views here.
 def hello_world(request):
@@ -123,7 +124,7 @@ def tech_talks(request):
     search_query = ""
     
     # Get all public tech talks
-    all_techtalks = TechTalk.objects.filter(isPublic=True).order_by("-id")
+    all_techtalks = TechTalk.objects.filter(isPublic=True).order_by("-date", "-id")
     total_techtalks = all_techtalks.count()
     
     # Check if somebody searched for something
@@ -137,6 +138,48 @@ def tech_talks(request):
             return render(request, 'components/techtalks_htmx.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query})
     
     return render(request, 'public/techtalks.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query})
+
+def tech_talk_detail(request, talk_id):
+
+    talk = TechTalk.objects.get(id=talk_id, isPublic=True)
+    recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
+
+    video_url = (talk.videoPath or "").strip()
+    is_mp4 = video_url.lower().endswith(".mp4") or ".mp4?" in video_url.lower()
+    is_youtube = "youtube.com" in video_url.lower() or "youtu.be" in video_url.lower()
+    embed_url = video_url
+
+    if is_youtube:
+        parsed = urlparse(video_url)
+        host = (parsed.netloc or "").lower()
+        path = parsed.path or ""
+
+        video_id = ""
+        if "youtu.be" in host:
+            video_id = path.strip("/")
+        elif "youtube.com" in host:
+            if path.startswith("/watch"):
+                qs = parse_qs(parsed.query)
+                video_id = qs.get("v", [""])[0]
+            elif path.startswith("/embed/"):
+                video_id = path.split("/embed/")[1].split("/")[0]
+
+        if video_id:
+            embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}"
+
+    context = {
+        "talk": talk,
+        "recent_talks": recent_talks,
+        "video_url": video_url,
+        "embed_url": embed_url,
+        "is_mp4": is_mp4,
+        "is_youtube": is_youtube,
+    }
+
+    if request.headers.get("HX-Request") == "true":
+        return render(request, 'components/techtalk_detail_htmx.jinja', context)
+
+    return render(request, 'public/techtalk_detail.jinja', context)
 
 @login_required(login_url='login')
 def dashboard(request):

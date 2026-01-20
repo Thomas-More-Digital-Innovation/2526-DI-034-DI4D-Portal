@@ -29,6 +29,7 @@ urlpatterns = [
     path('student_registration/', views.student_registration, name='student_registration'),
     path('news/', views.news, name='news'),
     path('techtalks/', views.tech_talks, name='tech_talks'),
+    path('techtalks/<int:talk_id>/', views.tech_talk_detail, name='tech_talk_detail'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('logout/', views.logout_view, name='logout'),
     path('settings/', views.settings, name='settings'),
