@@ -31,6 +31,7 @@ urlpatterns = [
     path('techtalks/', views.tech_talks, name='tech_talks'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('logout/', views.logout_view, name='logout'),
+    path('users/', views.users, name='users'),
     path('settings/', views.settings, name='settings'),
 
     # Docs : https://docs.djangoproject.com/en/6.0/topics/auth/default/#all-authentication-views
