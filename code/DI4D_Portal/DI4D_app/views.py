@@ -294,6 +294,11 @@ def settings(request):
                 firstname = request.POST.get("firstname")
                 lastname = request.POST.get("lastname")
                 email = request.POST.get("email")
+
+                # Check if email already exists (for another user)
+                if User.objects.filter(email=email).exclude(id=request.user.id).exists():
+                    return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'error_profile': "Email already exists!", 'forms': forms, 'current_application_setting': current_application_setting})
+
                 # Update user info
                 request.user.first_name = firstname
                 request.user.last_name = lastname
@@ -304,8 +309,6 @@ def settings(request):
                     request.user.profilePicture = request.FILES["profilepicture"]
                 request.user.save()
             except Exception as e:
-                if 'UNIQUE constraint failed: DI4D_app_user.email' in str(e):
-                    return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'error_profile': "Email already exists!", 'forms': forms, 'current_application_setting': current_application_setting})
                 return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'error_profile': f"An error occurred while updating profile: {e}", 'forms': forms, 'current_application_setting': current_application_setting})
             return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'success_profile': "Profile updated successfully", 'forms': forms, 'current_application_setting': current_application_setting})
         
