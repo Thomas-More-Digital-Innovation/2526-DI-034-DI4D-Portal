@@ -136,6 +136,9 @@ def student_registration(request):
     if request.method == 'GET':
         request.session.pop('preview_files', None)
     
+    # Check for success message from previous submission
+    data['show_success_modal'] = request.session.pop('show_success_modal', False)
+
     # Get the application setting (form configuration)
     application_setting = ApplicationSetting.objects.first()
     
@@ -210,12 +213,16 @@ def student_registration(request):
             # Clear session preview files after successful submission
             request.session.pop('preview_files', None)
             
+            # Set success modal for next request
+            request.session['show_success_modal'] = True
+
             # Redirect to home on successful submission
             if request.headers.get('HX-Request') == 'true':
+                request.session['show_success_modal'] = True
                 response = HttpResponse()
-                response['HX-Redirect'] = '/'
+                response['HX-Redirect'] = '/student_registration'
                 return response
-            return redirect('home')
+            return redirect('student_registration')
         except Exception as e:
             data['error'] = f"An error occurred while submitting the form: {str(e)}"
     

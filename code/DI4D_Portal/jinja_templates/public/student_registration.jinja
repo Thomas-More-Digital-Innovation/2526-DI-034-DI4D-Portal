@@ -1,4 +1,5 @@
 {% extends "structure/structure_public.jinja" %}
+{% from 'structure/structure.jinja' import info_modal %}
 
 {% block title %}Student Registration - DI4D Portal{% endblock %}
 
@@ -57,4 +58,9 @@ Fill in as much as possible. Good luck!</p>
         {% endif %}
     </div>
 </div>
+
+<div x-data="{ open_send_student_registration: {{ 'true' if show_success_modal else 'false' }} }">
+    {{ info_modal("send_student_registration", "Send Student Registration", "Your student registration is successfully registered.") }}
+</div>
+
 {% endblock %}
