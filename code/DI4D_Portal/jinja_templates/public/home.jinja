@@ -42,6 +42,48 @@
         </div>
     </div>
     <!-- Section 2 -->
+    <div class="bg-[var(--white_grey)]">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center gap-10 
+                    px-6 py-12 lg:px-20 lg:py-15">
+            <!-- Text -->
+            <div class="w-full lg:w-3/5">
+                <h1 class="text-3xl lg:text-4xl font-bold mb-4 text-black">
+                    VLIRUOS - bridging Flemish and global partnerships
+                </h1>
+                <p class="text-black text-base lg:text-lg mb-4">
+                    VLIRUOS is the leading funding body for scholarships for and partnerships between academics from Flanders 
+                    and partner institutions in Africa, Latin America, and Asia, focused on global sustainable development.
+                </p>
+                <a class="btn_primary_orange" href="https://www.vliruos.be" target="_blank">Read more</a>
+            </div>
+            <!-- Image -->
+            <div class="w-full lg:w-2/5">
+                <img 
+                    src="{{ static('images/vliruos.png') }}" 
+                    alt="Vliruos - Sharing minds, changing lives" 
+                    class="w-full h-auto rounded-lg">
+            </div>
+        </div>
+    </div>
+    <!-- Section 3 -->
+    <div class="bg-[var(--blue_di4d)] px-6 py-12 lg:px-20 lg:py-15">
+        <h2 class="text-center text-3xl lg:text-4xl text-white font-bold px-6">Checkout our latest news!</h2>
+        {% if news|length == 0 %}
+            <h3 class="text-center text-white text-xl lg:text-2xl mt-6">No news articles available at the moment.</h3>
+        {% else %}
+            <div class="justify-center flex">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 mt-6 max-w-6xl w-full mx-auto">
+                    {% for article in news %}
+                        {{ news_item(article) }}
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="w-full flex justify-center mt-3">
+                <a class="btn_primary_orange" href="{{ url('news') }}">Go to all our news articles</a>
+            </div>
+        {% endif %}
+    </div>
+    <!-- Section 4 -->
     <div class="bg-[var(--white_grey)] px-6 py-12 lg:px-20 lg:py-15">
         <h2 class="text-center text-3xl lg:text-4xl text-black font-bold px-6">Our Academic Partners</h2>
         {{ logo_box([
@@ -56,7 +98,7 @@
             {'src': static('images/partners/partner9.png'), 'alt': 'partner 9'}
         ]) }}
     </div>
-    <!-- Section 3 -->
+    <!-- Section 5 -->
     <div class="bg-[var(--blue_di4d)]">
         <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-10 
                     px-6 py-12 lg:px-20 lg:py-15">
@@ -96,7 +138,7 @@
                 </div>
         </div>
     </div>
-    <!-- Section 4 -->
+    <!-- Section 6 -->
     <div class="bg-[var(--white_grey)] px-6 py-12 lg:px-20 lg:py-15">
         <h2 class="text-center text-3xl lg:text-4xl text-black font-bold px-6">Our Stakeholders</h2>
         {{ logo_box([
@@ -104,7 +146,6 @@
             {'src': static('images/stakeholders/stakeholder2.png'), 'alt': 'stakeholder 2'},
             {'src': static('images/stakeholders/stakeholder3.png'), 'alt': 'stakeholder 3'},
             {'src': static('images/stakeholders/stakeholder4.jpg'), 'alt': 'stakeholder 4'},
-            {'src': static('images/stakeholders/stakeholder5.png'), 'alt': 'stakeholder 5'},
             {'src': static('images/stakeholders/stakeholder6.png'), 'alt': 'stakeholder 6'},
             {'src': static('images/stakeholders/stakeholder7.png'), 'alt': 'stakeholder 7'},
             {'src': static('images/stakeholders/stakeholder8.jpg'), 'alt': 'stakeholder 8'},
@@ -116,36 +157,18 @@
             {'src': static('images/stakeholders/stakeholder14.png'), 'alt': 'stakeholder 14'}
         ]) }}
     </div>
-    <!-- Section 5 -->
+    <!-- Section 7 -->
     <div class="bg-[var(--blue_di4d)] px-6 py-12 lg:px-20 lg:py-15">
-        <h2 class="text-center text-3xl lg:text-4xl text-white font-bold px-6">Checkout our latest news!</h2>
-        {% if news|length == 0 %}
-            <h3 class="text-center text-white text-xl lg:text-2xl mt-6">No news articles available at the moment.</h3>
-        {% else %}
-            <div class="justify-center flex">
-                <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 mt-6 max-w-6xl w-full mx-auto">
-                    {% for article in news %}
-                        {{ news_item(article) }}
-                    {% endfor %}
-                </div>
-            </div>
-            <div class="w-full flex justify-center mt-3">
-                <a class="btn_primary_orange" href="{{ url('news') }}">Go to all our news articles</a>
-            </div>
-        {% endif %}
-    </div>
-    <!-- Section 6 -->
-    <div class="bg-[var(--white_grey)] px-6 py-12 lg:px-20 lg:py-15">
-        <h2 class="text-center text-3xl lg:text-4xl text-black font-bold px-6">Contact</h2>
+        <h2 class="text-center text-3xl lg:text-4xl text-white font-bold px-6">Contact</h2>
         <div class="flex flex-col lg:flex-row gap-10 mt-6 justify-center mx-auto max-w-6xl">
             <div class="flex-1">
                 <form method="post" class="flex flex-col">
                     {{ csrf_input }}
-                    <label class="text-black" for="name">Name</label>
+                    <label class="text-white" for="name">Name</label>
                     <input required type="text" placeholder="Name" id="name" name="name" class="mb-4 p-2 rounded-lg w-full lg:w-150 bg-white text-[var(--light-grey)] w-full"/>
-                    <label class="text-black" for="email">Email</label>
+                    <label class="text-white" for="email">Email</label>
                     <input required type="email" placeholder="Email" id="email" name="email" class="mb-4 p-2 rounded-lg w-full lg:w-150 bg-white text-[var(--light-grey)] w-full"/>
-                    <label class="text-black" for="message">Message</label>
+                    <label class="text-white" for="message">Message</label>
                     <textarea required rows="5" placeholder="Message" id="message" name="message" class="mb-4 p-2 rounded-lg w-full lg:w-150 bg-white text-[var(--light-grey)] w-full"></textarea>
                     <div class="flex justify-end">
                         <button class="btn_primary_orange w-40" type="submit">Send Message</button>
@@ -168,9 +191,9 @@
                         loading="lazy">
                     </iframe>
                 </div>
-                <p class="text-black mt-4"><i class="fa-solid fa-location-dot"></i> Kleinhoefstraat 4, 2440 Geel</p>
-                <p class="text-black mt-4"><a href="mailto:digitalinnovation@thomasmore.be"><i class="fa-solid fa-envelope"></i> digitalinnovation@thomasmore.be</a></p>
-                <p class="text-black mt-4"><a href="tel:+32014562310"><i class="fa-solid fa-phone"></i> +32 014 56 23 10</a></p>
+                <p class="text-white mt-4"><i class="fa-solid fa-location-dot"></i> Kleinhoefstraat 4, 2440 Geel</p>
+                <p class="text-white mt-4"><a href="mailto:digitalinnovation@thomasmore.be"><i class="fa-solid fa-envelope"></i> digitalinnovation@thomasmore.be</a></p>
+                <p class="text-white mt-4"><a href="tel:+32014562310"><i class="fa-solid fa-phone"></i> +32 014 56 23 10</a></p>
             </div>
         </div>
     </div>
