@@ -127,22 +127,24 @@
                     solve real-world challenges, and shape a sustainable future. Join our Bachelor in Applied Computer Science specialisation track Digital Innovation!
                 </p>
                 <!-- Check for button if it is possible to register -->
-                {% if register %}
-                <a class="btn_primary_orange" href="{{ url('student_registration') }}">
-                    Register yourself
-                </a>
-                {% else %}
-                    {%if startDate and endDate %}
-                    <a class="btn_primary_orange">
-                        Registration from {{ startDate }} to {{ endDate }}
+                <div class="flex flex-row">
+                    {% if register %}
+                    <a class="btn_primary_orange" href="{{ url('student_registration') }}">
+                        Register yourself
                     </a>
                     {% else %}
-                    <a class="btn_primary_orange">
-                        Not possible to register now
-                    </a>
+                        {%if startDate and endDate %}
+                        <a class="btn_primary_orange">
+                            Registration from {{ startDate }} to {{ endDate }}
+                        </a>
+                        {% else %}
+                        <a class="btn_primary_orange">
+                            Not possible to register now
+                        </a>
+                        {% endif %}
                     {% endif %}
-                {% endif %}
-                <a href="https://www.vliruos.be/get-funded/bachelor-applied-computer-science" target="_blank" class="ml-5 btn_secondary">More information</a>
+                    <a href="https://www.vliruos.be/get-funded/bachelor-applied-computer-science block" target="_blank" class="ml-5 btn_secondary">More information</a>
+                </div>
             </div>
             <!-- Image -->
                 <div class="w-full lg:w-2/5">
