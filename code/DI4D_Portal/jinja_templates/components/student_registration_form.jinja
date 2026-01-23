@@ -1,0 +1,147 @@
+{# Student Registration Form Component - Used by HTMX #}
+<form method="POST" enctype="multipart/form-data" hx-post="{{ url('student_registration') }}" hx-target="#registration-form-container" hx-encoding="multipart/form-data" class="bg-[var(--blue_di4d)] rounded-lg p-8" id="registration-form">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+    {% for question in questions %}
+    <div class="form-group pb-2 last:pb-0" id="question-group-{{ question.id }}">
+        <!-- Question Label with Mandatory Indicator -->
+        <div class="flex items-baseline gap-2 mb-3">
+            <label class="block text-lg font-medium text-white">
+                {{ question.question }}
+            </label>
+            {% if question.isMandatory %}
+            <span class="text-red-500 font-bold text-sm" title="This field is mandatory">*</span>
+            {% endif %}
+        </div>
+
+
+        <!-- Form Input Based on DataType -->
+        {% set datatype_name = question.datatype.name|lower %}
+        
+        {% if datatype_name == 'file' %}
+        {# File Upload - Multiple files allowed #}
+        <div class="space-y-3">
+            <label class="flex flex-col items-center justify-center w-full border-2 border-dashed rounded-lg bg-white hover:bg-gray-50 transition-colors border-gray-300 hover:border-blue-di4d">
+                <div class="flex flex-col items-center justify-center pt-5 pb-3">
+                    <i class="fa-solid fa-cloud-arrow-up text-gray-400 text-3xl mb-3"></i>
+                    <p class="mb-2 text-sm text-gray-700">
+                        <span class="font-semibold">Choose files</span> to upload
+                    </p>
+                    <p class="text-xs text-gray-500 mb-3">PDF, DOC, DOCX, XLS, XLSX, ZIP, JPG, JPEG, PNG, TXT</p>
+                </div>
+                <input 
+                    type="file" 
+                    id="question_{{ question.id }}_file" 
+                    name="question_{{ question.id }}_file"
+                    class="sr-only"
+                    {% if question.isMandatory %}required{% endif %}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.zip,.jpg,.jpeg,.png,.txt"
+                    multiple
+                    hx-post="{{ url('preview_files') }}"
+                    hx-trigger="change"
+                    hx-target="#file_list_container"
+                    hx-encoding="multipart/form-data"
+                    hx-swap="innerHTML"
+                />
+            <div id="file_list_container">
+                {# File list will be populated by HTMX - hidden when empty #}
+            </div>
+            </label>
+           
+        </div>
+
+        {% elif datatype_name == 'singular_choice' %}
+        {# Dropdown for singular choice #}
+        {% set options = question.content.split(',') if question.content else [] %}
+        <select 
+            id="question_{{ question.id }}"
+            name="question_{{ question.id }}"
+            class="w-full px-4 py-3 border bg-white rounded-lg outline-none transition border-gray-300 focus:ring-2 focus:ring-blue-di4d focus:border-transparent"
+            {% if question.isMandatory %}required{% endif %}
+        >
+            <option value="">-- Select an option --</option>
+            {% for option in options %}
+            <option value="{{ option.strip() }}">{{ option.strip() }}</option>
+            {% endfor %}
+        </select>
+
+        {% elif datatype_name == 'multiple_choice' %}
+        {# Checkboxes for multiple choice #}
+        {% set options = question.content.split(',') if question.content else [] %}
+        <div class="space-y-2 bg-white p-4 rounded-lg border border-gray-300">
+            {% for option in options %}
+            <label class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                <input 
+                    type="checkbox" 
+                    name="question_{{ question.id }}" 
+                    value="{{ option.strip() }}"
+                    class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span class="text-gray-900">{{ option.strip() }}</span>
+            </label>
+            {% endfor %}
+        </div>
+
+        {% elif datatype_name == 'bool' %}
+        {# Yes/No radio buttons #}
+        <div class="flex items-center gap-6 bg-white p-4 rounded-lg widt w-fit border border-gray-300">
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input 
+                    type="radio" 
+                    name="question_{{ question.id }}" 
+                    value="Yes"
+                    class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    {% if question.isMandatory %}required{% endif %}
+                />
+                <span class="text-gray-900">Yes</span>
+            </label>
+            <label class="flex items-center gap-4
+ cursor-pointer">
+                <input 
+                    type="radio" 
+                    name="question_{{ question.id }}" 
+                    value="No"
+                    class="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    {% if question.isMandatory %}required{% endif %}
+                />
+                <span class="text-gray-900">No</span>
+            </label>
+        </div>
+
+        {% else %}
+        {# Text input (default) - use email type for second question #}
+        {% if question.question|length > 12 %}
+            {# Larger textarea for longer questions #}
+            <textarea
+                id="question_{{ question.id }}"
+                name="question_{{ question.id }}"
+                class="w-full px-4 py-4 border bg-white rounded-lg outline-none transition resize-none border-gray-300 focus:ring-2 focus:ring-blue-di4d focus:border-transparent"
+                rows="4"
+                placeholder="{% if question.explanation %}{{ question.explanation }}{% else %}Enter your answer...{% endif %}"
+                {% if question.isMandatory %}required{% endif %}
+            ></textarea>
+        {% else %}
+            {# Regular input for shorter questions - email type for second question #}
+            <input 
+                type="{% if loop.index == 2 %}email{% else %}text{% endif %}"
+                id="question_{{ question.id }}"
+                name="question_{{ question.id }}"
+                class="w-1/2 px-4 py-3 border bg-white rounded-lg outline-none transition border-gray-300 focus:ring-2 focus:ring-blue-di4d focus:border-transparent"
+                placeholder="{% if question.explanation %}{{ question.explanation }}{% else %}{% if loop.index == 2 %}Enter your email address...{% else %}Enter your answer...{% endif %}{% endif %}"
+                {% if question.isMandatory %}required{% endif %}
+            />
+        {% endif %}
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <!-- Submit Button -->
+    <div class="pt-8 border-gray-200">
+        <button 
+            type="submit"
+            class="w-auto px-8 btn_primary_orange py-3 rounded-lg font-semibold text-white hover:opacity-90 transition"
+        >
+            Send Student Registration
+        </button>
+    </div>
+</form>

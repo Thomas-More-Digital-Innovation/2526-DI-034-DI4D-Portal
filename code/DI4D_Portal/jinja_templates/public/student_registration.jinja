@@ -1,0 +1,66 @@
+{% extends "structure/structure_public.jinja" %}
+{% from 'structure/structure.jinja' import info_modal %}
+
+{% block title %}Student Registration - DI4D Portal{% endblock %}
+
+{% block content %}
+<div class="w-full bg-[var(--blue_di4d)] min-h-screen py-12 px-6 lg:px-20">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-1">
+            <h1 class="text-4xl font-bold text-white mb-4">Student Registration</h1>
+            <p class="text-white text-lg">You can do this student registration to apply for Digital Innovation. After you fill this out we will check your information. If you get this nice chance to do this we will contact you.
+
+Fill in as much as possible. Good luck!</p>
+        </div>
+
+        <!-- Registration Status Messages -->
+        {% if registration_closed %}
+        <div class="bg-white from-amber-50 to-orange-50 border-l-4 border-amber-500 rounded-lg p-8 mb-8">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0">
+                    <svg class="w-8 h-8 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h2 class="text-2xl font-bold text-amber-900 mb-2">Registration Currently Closed</h2>
+                    <p class="text-amber-800 text-base mb-4">The registration period is currently closed. Please check back during the next registration window to submit your application.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+
+        {% if error %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+            <div class="flex items-start gap-4">
+                <svg class="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+                <div>
+                    <h3 class="font-semibold text-red-800">Error</h3>
+                    <p class="text-red-700 mt-1">{{ error }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Form -->
+        {% if registration_open and questions %}
+        <div id="registration-form-container">
+            {% include 'components/student_registration_form_htmx.jinja' %}
+        </div>
+        {% elif not registration_closed %}
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+            <p class="text-gray-600 text-lg">No questions available for this form.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div x-data="{ open_send_student_registration: {{ 'true' if show_success_modal else 'false' }} }">
+    {{ info_modal("send_student_registration", "Send Student Registration", "Your student registration is successfully registered.") }}
+</div>
+
+{% endblock %}

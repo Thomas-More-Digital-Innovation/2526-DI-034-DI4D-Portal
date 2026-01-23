@@ -5,7 +5,7 @@ from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from .models import ApplicationSetting, News, User, TechTalk, LearningGoal, LearninggoalCourse, Form, UserType, Partner, TechTalk
+from .models import ApplicationSetting, News, User, Question, FormAnswer, TechTalk, Form, UserType, Partner, LearningGoal, LearninggoalCourse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.core.paginator import Paginator
@@ -13,6 +13,10 @@ from django.db.models import Q
 from django.utils.crypto import get_random_string
 from django.contrib.auth import update_session_auth_hash
 from urllib.parse import urlparse, parse_qs
+import os
+from django.core.files.storage import default_storage
+import json
+
 
 def page_not_found(request, exception=None):
     return render(request, 'errors/404.jinja', status=404)
@@ -92,8 +96,138 @@ def logout_view(request):
     logout(request)
     return redirect('home')
 
+def preview_files(request):
+    """
+    HTMX endpoint to preview selected files.
+    Stores file names in session and returns HTML with file names for display.
+    """
+    if request.method == 'POST':
+        files = request.FILES.getlist(list(request.FILES.keys())[0]) if request.FILES else []
+        file_names = [f.name for f in files]
+        # Store in session (append to existing)
+        existing = request.session.get('preview_files', [])
+        existing.extend(file_names)
+        request.session['preview_files'] = existing
+        return render(request, 'components/file_list_preview_htmx.jinja', {'file_names': existing})
+    return render(request, 'components/file_list_preview_htmx.jinja', {'file_names': []})
+
+def delete_preview_file(request):
+    """
+    HTMX endpoint to remove a file from the preview list.
+    """
+    if request.method == 'POST':
+        filename = request.POST.get('filename', '')
+        existing = request.session.get('preview_files', [])
+        if filename in existing:
+            existing.remove(filename)
+        request.session['preview_files'] = existing
+        return render(request, 'components/file_list_preview_htmx.jinja', {'file_names': existing})
+    return render(request, 'components/file_list_preview_htmx.jinja', {'file_names': []})
+
 def student_registration(request):
-    return render(request, 'test.jinja')
+    """
+    Display and handle student registration form application.
+    Uses the form configuration from ApplicationSetting.
+    """
+    
+    data = {}
+    today = timezone.now().date()
+    
+    # Clear preview files from session on initial GET request
+    if request.method == 'GET':
+        request.session.pop('preview_files', None)
+    
+    # Check for success message from previous submission
+    data['show_success_modal'] = request.session.pop('show_success_modal', False)
+
+    # Get the application setting (form configuration)
+    application_setting = ApplicationSetting.objects.first()
+    
+    # Check if registration is properly configured
+    if not application_setting or not application_setting.studentApplicationFormId or not application_setting.startDate or not application_setting.endDate:
+        data['registration_closed'] = True
+        return render(request, 'public/student_registration.jinja', data)
+    
+    # Check if registration is currently open
+    if not (application_setting.startDate <= today <= application_setting.endDate):
+        data['registration_closed'] = True
+        return render(request, 'public/student_registration.jinja', data)
+    
+    # Get the form and its questions
+    form = application_setting.studentApplicationFormId
+    questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
+    
+    data['form'] = form
+    data['questions'] = questions
+    data['registration_open'] = True
+    
+    # Handle form submission
+    if request.method == 'POST':
+        try:
+            
+            # Get the user's name from the first question
+            first_question = questions.first()
+            user_name = request.POST.get(f'question_{first_question.id}', '').strip()
+            # Clean the name for use in filename (replace spaces and special chars)
+            user_name_clean = user_name.replace(' ', '_').replace('/', '_').replace('\\', '_')
+            
+            # Save answers for each question
+            for question in questions:
+                question_id = f'question_{question.id}'
+                datatype_name = question.datatype.name.lower()
+                answer_value = None
+                
+                # Handle file upload (multiple files allowed)
+                if datatype_name == 'file' and f'{question_id}_file' in request.FILES:
+                    uploaded_files = request.FILES.getlist(f'{question_id}_file')
+                    file_paths = []
+                    
+                    for uploaded_file in uploaded_files:
+                        # Create unique filename with user info and timestamp
+                        timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+                        filename = f"{user_name_clean}_{timestamp}_{uploaded_file.name}"
+                        
+                        # Save file to media/studentregistration/
+                        file_path = f'studentregistration/{filename}'
+                        default_storage.save(file_path, uploaded_file)
+                        file_paths.append(file_path)
+                    
+                    # Store the file paths as JSON array in the answer
+                    answer_value = json.dumps(file_paths) if len(file_paths) > 1 else file_paths[0]
+                elif datatype_name == 'multiple_choice':
+                    # Multiple choice: store as JSON array
+                    selected_values = request.POST.getlist(question_id)
+                    if selected_values:
+                        answer_value = json.dumps(selected_values)
+                else:
+                    # Text, Email, Singular_Choice, Bool
+                    answer_value = request.POST.get(question_id)
+                
+                # Only save if answer is provided
+                if answer_value:
+                    FormAnswer.objects.create(
+                    answer=answer_value,
+                    questionId=question,
+                    answerDate=today
+                    )
+            
+            # Clear session preview files after successful submission
+            request.session.pop('preview_files', None)
+            
+            # Set success modal for next request
+            request.session['show_success_modal'] = True
+
+            # Redirect to home on successful submission
+            if request.headers.get('HX-Request') == 'true':
+                request.session['show_success_modal'] = True
+                response = HttpResponse()
+                response['HX-Redirect'] = '/student_registration'
+                return response
+            return redirect('student_registration')
+        except Exception as e:
+            data['error'] = f"An error occurred while submitting the form: {str(e)}"
+    
+    return render(request, 'public/student_registration.jinja', data)
 
 def news(request):
     search_query = ""
