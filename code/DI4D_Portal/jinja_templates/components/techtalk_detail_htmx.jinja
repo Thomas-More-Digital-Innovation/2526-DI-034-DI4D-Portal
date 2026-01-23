@@ -1,6 +1,6 @@
 {% from 'structure/structure.jinja' import techtalk_detail %}
 {% if request.user.is_authenticated %}
-    {{ techtalk_detail(talk, recent_talks, video_url, embed_url, is_mp4, is_youtube, "--white_grey", "text-gray-700", "text-black") }}
+    {{ techtalk_detail(talk, recent_talks, video_url, embed_url, is_local_video, "--white_grey", "text-gray-700", "text-black") }}
 {% else %}
-    {{ techtalk_detail(talk, recent_talks, video_url, embed_url, is_mp4, is_youtube) }}
+    {{ techtalk_detail(talk, recent_talks, video_url, embed_url, is_local_video) }}
 {% endif %}

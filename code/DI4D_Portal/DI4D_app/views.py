@@ -145,35 +145,24 @@ def tech_talk_detail(request, talk_id):
     recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
 
     video_url = (talk.videoPath or "").strip()
-    is_mp4 = video_url.lower().endswith(".mp4") or ".mp4?" in video_url.lower()
-    is_youtube = "youtube.com" in video_url.lower() or "youtu.be" in video_url.lower()
-    embed_url = video_url
+    # Normalize backslashes to forward slashes for URL
+    video_url = video_url.replace("\\", "/")
+    
+    # Supported video extensions
+    video_extensions = ('.mp4', '.webm', '.ogg', '.ogv')
+    is_local_video = video_url.lower().endswith(video_extensions) or any(ext + "?" in video_url.lower() for ext in video_extensions)
 
-    if is_youtube:
-        parsed = urlparse(video_url)
-        host = (parsed.netloc or "").lower()
-        path = parsed.path or ""
-
-        video_id = ""
-        if "youtu.be" in host:
-            video_id = path.strip("/")
-        elif "youtube.com" in host:
-            if path.startswith("/watch"):
-                qs = parse_qs(parsed.query)
-                video_id = qs.get("v", [""])[0]
-            elif path.startswith("/embed/"):
-                video_id = path.split("/embed/")[1].split("/")[0]
-
-        if video_id:
-            embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}"
+    # Build full media URL for local videos
+    if is_local_video and not video_url.startswith(('http://', 'https://')):
+        # Remove leading slash if present to avoid double slashes
+        video_url = video_url.lstrip('/')
+        video_url = settings.MEDIA_URL + video_url
 
     context = {
         "talk": talk,
         "recent_talks": recent_talks,
         "video_url": video_url,
-        "embed_url": embed_url,
-        "is_mp4": is_mp4,
-        "is_youtube": is_youtube,
+        "is_local_video": is_local_video,
     }
 
     if request.headers.get("HX-Request") == "true":
@@ -187,7 +176,7 @@ def dashboard(request):
     return render(request, 'sharepoint/dashboard.jinja', {'active_page': active_page})
 
 @login_required(login_url='login')
-def settings(request):
+def settings_view(request):
     active_page = 'settings'
     if request.method == 'POST':
         # Check if it is to change password
