@@ -10,4 +10,16 @@
     {% endif %}
     <a class="btn_primary_orange">Click me</a>
     <a class="btn_primary_blue">Click me</a>
+    
+    <div x-data="{ open_data: false, open_info: false, open_delete: false }" class="mt-5">
+        <button @click="open_data = true" class="btn_primary_orange">Open Empty Modal</button>
+        <button @click="open_info = true" class="btn_primary_blue">Open Info Modal</button>
+        <button @click="open_delete = true" class="btn_primary_orange">Open Delete Confirm Modal</button>
+        
+        {% call empty_modal("data", "What this works????") %}
+            <p class="text-white">No joke this works...</p>
+        {% endcall %}
+        
+        {{ info_modal("info", "Settings", "Change your settings here.") }}
+    </div>
 {% endblock %}
