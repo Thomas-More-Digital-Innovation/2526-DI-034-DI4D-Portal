@@ -1,6 +1,8 @@
+import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.models import BaseUserManager
+from ckeditor.fields import RichTextField
 
 # Create your models here.
 class UserType(models.Model):
@@ -70,15 +72,19 @@ class UserSettings(models.Model):
     settingJson = models.CharField()
     userId = models.ForeignKey(User, on_delete=models.RESTRICT)
 
+def media_path_default():
+    return uuid.uuid4().hex[:20]
+
 class News(models.Model):
-    mediaPath = models.CharField()
+    mediaPath = models.CharField(max_length=30, unique=True, default=media_path_default)
     isPublic = models.BooleanField(default=False)
     title = models.CharField(max_length=200)
     lastEditDate = models.DateField()
     description = models.CharField()
     author = models.ForeignKey(User, on_delete=models.RESTRICT)
     showAuthor = models.BooleanField(default=False)
-    picture = models.CharField()
+    picture = models.ImageField(upload_to='news_pictures/')
+    content = RichTextField(verbose_name="content")
 
 class Form(models.Model):
     userId = models.ForeignKey(User, on_delete=models.RESTRICT)
@@ -223,4 +229,3 @@ class Course(models.Model):
 class LearninggoalCourse(models.Model):
     learningGoalId = models.ForeignKey(LearningGoal, on_delete=models.RESTRICT)
     courseId = models.ForeignKey(Course, on_delete=models.RESTRICT)
-   
