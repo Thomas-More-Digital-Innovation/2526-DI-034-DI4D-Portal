@@ -4,8 +4,18 @@
   <div class="max-w-7xl w-full px-6">
     <div class="w-full bg-white rounded-xl flex flex-wrap items-center justify-center gap-8 px-8 py-6">
       {% for logo in logos %}
-        <img src="{{ logo.src }}" alt="{{ logo.alt }}"
-             class="h-20 w-auto object-contain" />
+        <div>
+            {% if logo.url %}
+                <a href="{{ logo.url }}" target="_blank" class="flex flex-col gap-4">
+                    <img src="{{ logo.src }}" alt="{{ logo.alt }}"
+                    class="h-20 w-auto object-contain" />
+                    {% if logo.name %}<p class="text-center text-xs">{{ logo.name }}</p>{% endif %}
+                </a>
+            {% else %}
+                <img src="{{ logo.src }}" alt="{{ logo.alt }}"
+                class="h-20 w-auto object-contain" />
+            {% endif %}
+        </div>
       {% endfor %}
     </div>
   </div>
@@ -22,7 +32,7 @@
                 <!-- Image -->
                 <div class="w-full lg:w-2/5">
                 <img 
-                    src="{{ static('images/techtalks.jpg') }}" 
+                    src="{{ static('images/welcome.jpg') }}" 
                     alt="People are presenting their tech talks" 
                     class="w-full h-auto rounded-lg">
                 </div>
@@ -30,93 +40,48 @@
                 <!-- Text -->
                 <div class="w-full lg:w-3/5">
                 <h1 class="text-3xl lg:text-4xl font-bold mb-4 text-white">
-                    What is DI4D?
+                    Digital Innovation for Development
                 </h1>
                 <p class="text-white text-base lg:text-lg">
-                    DI4D offers students from the Global South a unique opportunity to study in Belgium through an innovative and hands-on learning track. 
-                    Our program focuses on practical experience, creativity, and real-world application. Students enroll in Computer Science within the 
-                    Digital Innovation program at Thomas More University in Geel, where learning happens by doing — through real projects, modern technologies, 
-                    and guidance from experienced professionals.
+                    Digital Innovation for Development (DI4D) builds on Thomas More's English taught Digital Innovation programme and transforms it 
+                    into a co created, practice oriented, innovative track focused on advancing the Sustainable Development Goals (SDGs). The programme 
+                    brings real world challenges, especially from partners in Cuba, Ethiopia, Kenya, Tanzania, and Uganda, directly into the curriculum 
+                    through Problem Based Learning (PBL) and Work Integrated Learning (WIL), ensuring solutions are beneficial for local communities.
+                    DI4D strengthens digital skills and innovation capacity, promotes inclusive participation with a particular focus on women and 
+                    learners with fewer opportunities. It fosters long term collaborations across academia, civil society, government, and the private sector.
                 </p>
             </div>
         </div>
     </div>
     <!-- Section 2 -->
-    <div class="bg-[var(--white_grey)] px-6 py-12 lg:px-20 lg:py-15">
-        <h2 class="text-center text-3xl lg:text-4xl text-black font-bold px-6">Our Academic Partners</h2>
-        {{ logo_box([
-            {'src': static('images/partners/partner1.jpg'), 'alt': 'partner 1'},
-            {'src': static('images/partners/partner2.jpg'), 'alt': 'partner 2'},
-            {'src': static('images/partners/partner3.jpg'), 'alt': 'partner 3'},
-            {'src': static('images/partners/partner4.png'), 'alt': 'partner 4'},
-            {'src': static('images/partners/partner5.jpg'), 'alt': 'partner 5'},
-            {'src': static('images/partners/partner6.avif'), 'alt': 'partner 6'},
-            {'src': static('images/partners/partner7.png'), 'alt': 'partner 7'},
-            {'src': static('images/partners/partner8.jpg'), 'alt': 'partner 8'},
-            {'src': static('images/partners/partner9.png'), 'alt': 'partner 9'}
-        ]) }}
-    </div>
-    <!-- Section 3 -->
-    <div class="bg-[var(--blue_di4d)]">
-        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-10 
+    <div class="bg-[var(--white_grey)]">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-10 
                     px-6 py-12 lg:px-20 lg:py-15">
-                <!-- Text -->
-                <div class="w-full lg:w-3/5">
-                <h2 class="text-3xl lg:text-4xl font-bold mb-4 text-white">
-                    The opportunity of Digital Innovation
-                </h2>
-                <p class="text-white text-base lg:text-lg mb-4">
-                    Digital Innovation is a chance to study computer science by doing projects for real clients. 
-                    You as a student make impact for a community of people with problems that have to be solved. Do you want to 
-                    join us? Click on the button below to fill in your student registration.
+            <!-- Text -->
+            <div class="w-full lg:w-3/5">
+                <h1 class="text-3xl lg:text-4xl font-bold mb-4 text-black">
+                    VLIRUOS - bridging Flemish and global partnerships
+                </h1>
+                <p class="text-black text-base lg:text-lg mb-4">
+                    VLIRUOS is the leading funding body for scholarships for and partnerships between academics from Flanders 
+                    and partner institutions in Africa, Latin America, and Asia, focused on global sustainable development.
                 </p>
-                <!-- Check for button if it is possible to register -->
-                {% if register %}
-                <a class="btn_primary_orange" href="{{ url('student_registration') }}">
-                    Register yourself
-                </a>
-                {% else %}
-                    {%if startDate and endDate %}
-                    <a class="btn_primary_orange">
-                        Registration from {{ startDate }} to {{ endDate }}
-                    </a>
-                    {% else %}
-                    <a class="btn_primary_orange">
-                        Not possible to register now
-                    </a>
-                    {% endif %}
-                {% endif %}
+                <a class="btn_primary_orange" href="https://www.vliruos.be" target="_blank">Read more</a>
             </div>
             <!-- Image -->
-                <div class="w-full lg:w-2/5">
+            <div class="w-full lg:w-2/5 flex flex-col gap-4">
                 <img 
-                    src="{{ static('images/class_di.jpg') }}" 
-                    alt="Class with people of DI" 
-                    class="w-full h-auto rounded-lg">
-                </div>
+                    src="{{ static('images/vliruos_thomas_more.png') }}" 
+                    alt="Vliruos Thomas More" 
+                    class="w-auto h-auto rounded-lg">
+                <img 
+                    src="{{ static('images/vliruos.png') }}" 
+                    alt="Vliruos - Sharing minds, changing lives" 
+                    class="w-50 mx-auto h-auto rounded-lg">
+            </div>
         </div>
     </div>
-    <!-- Section 4 -->
-    <div class="bg-[var(--white_grey)] px-6 py-12 lg:px-20 lg:py-15">
-        <h2 class="text-center text-3xl lg:text-4xl text-black font-bold px-6">Our Stakeholders</h2>
-        {{ logo_box([
-            {'src': static('images/stakeholders/stakeholder1.jpg'), 'alt': 'stakeholder 1'},
-            {'src': static('images/stakeholders/stakeholder2.png'), 'alt': 'stakeholder 2'},
-            {'src': static('images/stakeholders/stakeholder3.png'), 'alt': 'stakeholder 3'},
-            {'src': static('images/stakeholders/stakeholder4.jpg'), 'alt': 'stakeholder 4'},
-            {'src': static('images/stakeholders/stakeholder5.png'), 'alt': 'stakeholder 5'},
-            {'src': static('images/stakeholders/stakeholder6.png'), 'alt': 'stakeholder 6'},
-            {'src': static('images/stakeholders/stakeholder7.png'), 'alt': 'stakeholder 7'},
-            {'src': static('images/stakeholders/stakeholder8.jpg'), 'alt': 'stakeholder 8'},
-            {'src': static('images/stakeholders/stakeholder9.jpg'), 'alt': 'stakeholder 9'},
-            {'src': static('images/stakeholders/stakeholder10.png'), 'alt': 'stakeholder 10'},
-            {'src': static('images/stakeholders/stakeholder11.webp'), 'alt': 'stakeholder 11'},
-            {'src': static('images/stakeholders/stakeholder12.png'), 'alt': 'stakeholder 12'},
-            {'src': static('images/stakeholders/stakeholder13.png'), 'alt': 'stakeholder 13'},
-            {'src': static('images/stakeholders/stakeholder14.png'), 'alt': 'stakeholder 14'}
-        ]) }}
-    </div>
-    <!-- Section 5 -->
+    <!-- Section 3 -->
     <div class="bg-[var(--blue_di4d)] px-6 py-12 lg:px-20 lg:py-15">
         <h2 class="text-center text-3xl lg:text-4xl text-white font-bold px-6">Checkout our latest news!</h2>
         {% if news|length == 0 %}
@@ -134,18 +99,93 @@
             </div>
         {% endif %}
     </div>
+    <!-- Section 4 -->
+    <div class="bg-[var(--white_grey)] px-6 py-12 lg:px-20 lg:py-15">
+        <h2 class="text-center text-3xl lg:text-4xl text-black font-bold px-6">Our Academic Partners</h2>
+        {{ logo_box([
+            {'src': static('images/partners/partner1.jpg'), 'alt': 'partner 1', 'name':'Cujae', 'url':'https://cujae.edu.cu/'},
+            {'src': static('images/partners/partner2.jpg'), 'alt': 'partner 2', 'name': 'Nairobi', 'url': 'https://www.uonbi.ac.ke/'},
+            {'src': static('images/partners/partner3.jpg'), 'alt': 'partner 3', 'name': 'KYU', 'url': 'https://kyu.ac.ke/'},
+            {'src': static('images/partners/partner4.png'), 'alt': 'partner 4', 'name': 'Ardhi', 'url': 'https://www.aru.ac.tz/'},
+            {'src': static('images/partners/partner5.jpg'), 'alt': 'partner 5', 'name': 'Makerere', 'url': 'https://mubs.ac.ug/'},
+            {'src': static('images/partners/partner6.avif'), 'alt': 'partner 6', 'name': 'Mbarara', 'url': 'https://www.must.ac.ug/'},
+            {'src': static('images/partners/partner7.png'), 'alt': 'partner 7', 'name' : 'Mekelle', 'url': 'https://www.mu.edu.et/'},
+            {'src': static('images/partners/partner8.jpg'), 'alt': 'partner 8', 'name' : 'Hawassa', 'url' : 'https://hu.edu.et/'},
+            {'src': static('images/partners/partner9.png'), 'alt': 'partner 9', 'name' : 'Addis Ababa',  'url' : 'https://www.aau.edu.et/'}
+        ]) }}
+    </div>
+    <!-- Section 5 -->
+    <div class="bg-[var(--blue_di4d)]">
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-10 
+                    px-6 py-12 lg:px-20 lg:py-15">
+                <!-- Text -->
+                <div class="w-full lg:w-3/5">
+                <h2 class="text-3xl lg:text-4xl font-bold mb-4 text-white">
+                    Be tomorrow’s changemaker with VLIRUOS' ICP Connect scholarships!</h2>
+                <p class="text-white text-base lg:text-lg mb-4">
+                    Boost <span class="underline"><a target="_blank" href="https://www.vliruos.be/">VLIRUOS’</a></span> Digital Innovation for Development ICP Connect project at <span class="underline"><a target="_blank" href="https://www.thomasmore.be/en">Thomas More University of Applied Sciences</a></span> campus Geel: engage with cutting-edge digital innovation, 
+                    solve real-world challenges, and shape a sustainable future. Join our Bachelor in Applied Computer Science specialisation track Digital Innovation!
+                </p>
+                <!-- Check for button if it is possible to register -->
+                <div class="flex flex-row">
+                    {% if register %}
+                    <a class="btn_primary_orange" href="{{ url('student_registration') }}">
+                        Register yourself
+                    </a>
+                    {% else %}
+                        {%if startDate and endDate %}
+                        <a class="btn_primary_orange">
+                            Registration from {{ startDate }} to {{ endDate }}
+                        </a>
+                        {% else %}
+                        <a class="btn_primary_orange">
+                            Not possible to register now
+                        </a>
+                        {% endif %}
+                    {% endif %}
+                    <a href="https://www.vliruos.be/get-funded/bachelor-applied-computer-science" target="_blank" class="ml-5 btn_secondary">More information</a>
+                </div>
+            </div>
+            <!-- Image -->
+                <div class="w-full lg:w-2/5">
+                <img 
+                    src="{{ static('images/class_di.jpg') }}" 
+                    alt="Class with people of DI" 
+                    class="w-full h-auto rounded-lg">
+                </div>
+        </div>
+    </div>
     <!-- Section 6 -->
     <div class="bg-[var(--white_grey)] px-6 py-12 lg:px-20 lg:py-15">
-        <h2 class="text-center text-3xl lg:text-4xl text-black font-bold px-6">Contact</h2>
+        <h2 class="text-center text-3xl lg:text-4xl text-black font-bold px-6">Our Stakeholders</h2>
+        {{ logo_box([
+            {'src': static('images/stakeholders/stakeholder1.jpg'), 'alt': 'stakeholder 1'},
+            {'src': static('images/stakeholders/stakeholder2.png'), 'alt': 'stakeholder 2'},
+            {'src': static('images/stakeholders/stakeholder3.png'), 'alt': 'stakeholder 3'},
+            {'src': static('images/stakeholders/stakeholder4.jpg'), 'alt': 'stakeholder 4'},
+            {'src': static('images/stakeholders/stakeholder6.png'), 'alt': 'stakeholder 6'},
+            {'src': static('images/stakeholders/stakeholder7.png'), 'alt': 'stakeholder 7'},
+            {'src': static('images/stakeholders/stakeholder8.jpg'), 'alt': 'stakeholder 8'},
+            {'src': static('images/stakeholders/stakeholder9.jpg'), 'alt': 'stakeholder 9'},
+            {'src': static('images/stakeholders/stakeholder10.png'), 'alt': 'stakeholder 10'},
+            {'src': static('images/stakeholders/stakeholder11.webp'), 'alt': 'stakeholder 11'},
+            {'src': static('images/stakeholders/stakeholder12.png'), 'alt': 'stakeholder 12'},
+            {'src': static('images/stakeholders/stakeholder13.png'), 'alt': 'stakeholder 13'},
+            {'src': static('images/stakeholders/stakeholder14.png'), 'alt': 'stakeholder 14'}
+        ]) }}
+    </div>
+    <!-- Section 7 -->
+    <div class="bg-[var(--blue_di4d)] px-6 py-12 lg:px-20 lg:py-15">
+        <h2 class="text-center text-3xl lg:text-4xl text-white font-bold px-6">Contact</h2>
         <div class="flex flex-col lg:flex-row gap-10 mt-6 justify-center mx-auto max-w-6xl">
             <div class="flex-1">
                 <form method="post" class="flex flex-col">
                     {{ csrf_input }}
-                    <label class="text-black" for="name">Name</label>
+                    <label class="text-white" for="name">Name</label>
                     <input required type="text" placeholder="Name" id="name" name="name" class="mb-4 p-2 rounded-lg w-full lg:w-150 bg-white text-[var(--light-grey)] w-full"/>
-                    <label class="text-black" for="email">Email</label>
+                    <label class="text-white" for="email">Email</label>
                     <input required type="email" placeholder="Email" id="email" name="email" class="mb-4 p-2 rounded-lg w-full lg:w-150 bg-white text-[var(--light-grey)] w-full"/>
-                    <label class="text-black" for="message">Message</label>
+                    <label class="text-white" for="message">Message</label>
                     <textarea required rows="5" placeholder="Message" id="message" name="message" class="mb-4 p-2 rounded-lg w-full lg:w-150 bg-white text-[var(--light-grey)] w-full"></textarea>
                     <div class="flex justify-end">
                         <button class="btn_primary_orange w-40" type="submit">Send Message</button>
@@ -168,9 +208,9 @@
                         loading="lazy">
                     </iframe>
                 </div>
-                <p class="text-black mt-4"><i class="fa-solid fa-location-dot"></i> Kleinhoefstraat 4, 2440 Geel</p>
-                <p class="text-black mt-4"><a href="mailto:digitalinnovation@thomasmore.be"><i class="fa-solid fa-envelope"></i> digitalinnovation@thomasmore.be</a></p>
-                <p class="text-black mt-4"><a href="tel:+32014562310"><i class="fa-solid fa-phone"></i> +32 014 56 23 10</a></p>
+                <p class="text-white mt-4"><i class="fa-solid fa-location-dot"></i> Kleinhoefstraat 4, 2440 Geel</p>
+                <p class="text-white mt-4"><a href="mailto:digitalinnovation@thomasmore.be"><i class="fa-solid fa-envelope"></i> digitalinnovation@thomasmore.be</a></p>
+                <p class="text-white mt-4"><a href="tel:+32014562310"><i class="fa-solid fa-phone"></i> +32 014 56 23 10</a></p>
             </div>
         </div>
     </div>

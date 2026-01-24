@@ -26,9 +26,11 @@
                 </div>
                 <div class="flex flex-1 items-center sm:items-stretch justify-center sm:justify-start">
                     <div class="flex items-center">
-                        <p class="text-white">DI4D</p>
+                        <a href="{{ url('home') }}">
+                            <img src="{{ static('images/DI4D_new.png') }}" class="w-32 h-auto rounded-lg">
+                        </a>
                     </div>
-                    <div class="hidden sm:flex flex-1 justify-center ml-6">
+                    <div class="hidden sm:flex flex-1 justify-center items-center ml-6">
                         <div>
                         <a href="{{ url('home') }}" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-white/5 hover:text-white">Home</a>
                         <a href="{{ url('tech_talks') }}" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-white/5 hover:text-white">Tech Talks</a>
@@ -60,8 +62,8 @@
         <footer class="bg-footer-blue-di4d text-white py-10">
             <div class="max-w-4xl mx-auto px-4 flex flex-col md:flex-row md:items-start md:justify-between gap-8">
                 <div class="flex items-start gap-6">
-                <div class="w-28 h-28 rounded-full overflow-hidden bg-orange-di4d flex items-center justify-center">
-                    <img src="{{ static('images/DI4D.png') }}" alt="DI4D" class="w-full h-full object-cover">
+                <div class="w-36 h-auto flex items-center justify-center">
+                    <img src="{{ static('images/thomas_more.png') }}" alt="DI4D" class="w-full h-full">
                 </div>
                 <div class="text-sm space-y-1">
                     <p class="font-semibold">Thomas More Geel</p>

@@ -40,6 +40,13 @@ body{
     border-radius: 10px;
 }
 
+.btn_secondary{
+    background-color: var(--light_grey);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+}
+
 .btn_primary_blue{
     background-color: var(--blue_di4d);
     color: white;
