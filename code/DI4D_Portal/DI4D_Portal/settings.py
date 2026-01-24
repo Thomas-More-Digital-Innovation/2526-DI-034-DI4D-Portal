@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'DI4D_app',
+    'ckeditor',
+    'ckeditor_uploader',
 ]
 
 if DEBUG:
@@ -153,6 +155,8 @@ USE_TZ = True
 # Media files (Uploaded by users)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+# CKEditor configuration
+CKEDITOR_UPLOAD_PATH = "uploads/news"
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

@@ -13,7 +13,8 @@
     --green: #116745;
     --input_text: #706C6C;
     --input_bg_color: #D9D9D9;
-    
+    --light_blue : #2F97D5;
+
     --normal_text: 16px;
     --normal_bigger_text: 24px;
     --title_h1_text: 40px;
@@ -45,4 +46,37 @@ body{
     color: white;
     padding: 10px 20px;
     border-radius: 10px;
+}
+
+.btn_primary_red{
+    background-color: var(--red);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+}
+
+.btn_primary_green{
+    background-color: var(--green);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+}
+
+.btn_primary_light_blue{
+    background-color: var(--light_blue);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+}
+
+.news-content img {
+    max-width: 100%;
+    width: 200px;
+    height: auto;
+}
+
+.news-content table {
+    width: 100%;
+    overflow-x: auto;
+    display: block;
 }

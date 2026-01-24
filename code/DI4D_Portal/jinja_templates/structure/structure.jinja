@@ -57,10 +57,10 @@
 {% endmacro %}
 
 {# NEW VERSION OF NEWS ITEM BOX #}
-{% macro news_item(article, color) %}
+{% macro news_item(article, color, request) %}
 <div class="{% if color%} bg-[{{ color }}] {% else %}bg-white{% endif %} rounded-lg news w-full h-full flex flex-col p-6">
   <div class="flex flex-col md:flex-row gap-2 items-stretch h-full">
-      <img src="{{ article.picture }}" alt="{{ article.title }}" 
+      <img src="{{ article.picture.url }}" alt="{{ article.title }}" 
           class="w-32 h-32 md:w-48 md:h-48 md:basis-2/5 aspect-square object-cover rounded mx-auto" />
       <div class="md:basis-3/5 flex flex-col h-full">
         <div class="flex-1">
@@ -68,18 +68,37 @@
           {# Line clamp is to limit the number of lines shown for the description (add also ...) #}
           <p class="mb-4 text-[var(--light_grey)] line-clamp-4">{{ article.description }}</p>
         </div>
-        <div class="flex items-end justify-between">
+        {% if request and request.user.is_authenticated and request.user.role_is_admin() %}
           <div class="text-[var(--light_grey)] text-sm">
-            <p><i class="fa-regular fa-calendar"></i> {{ article.lastEditDate }}</p>
+              <p><i class="fa-regular fa-calendar"></i> {{ article.lastEditDate }}</p>
               {% if article.showAuthor %}
                 <p><i class="fa-solid fa-file-pen"></i> {{ article.author.firstname }} {{ article.author.lastname }}</p>
               {% endif %}
           </div>
-            <a class="btn_primary_orange px-6 py-2" 
-            href="{{ article.mediaPath }}">Read it here</a>
-        </div>
+        {% else %}
+          <div class="flex items-end justify-between">
+            <div class="text-[var(--light_grey)] text-sm">
+              <p><i class="fa-regular fa-calendar"></i> {{ article.lastEditDate }}</p>
+                {% if article.showAuthor %}
+                  <p><i class="fa-solid fa-file-pen"></i> {{ article.author.firstname }} {{ article.author.lastname }}</p>
+                {% endif %}
+            </div>
+              <a class="btn_primary_orange px-6 py-2" 
+              href="{{ url('view_news_item', args=[article.mediaPath]) }}">Read it here</a>
+          </div>
+        {% endif %}
       </div>
     </div>
+    {% if request and request.user.is_authenticated and request.user.role_is_admin() %}
+      <div x-data="{currentDeleteId: null, currentDeleteName: null}">
+        <div class="mt-6 flex flex-row items-center gap-4 w-full mx-auto items-stretch justify-center">
+          <div class="flex-1 flex items-center justify-center"><a class="btn_primary_light_blue h-full" href="{{ url('edit_news', args=[article.mediaPath]) }}"><i class="fa-solid fa-pencil"></i> Edit</a></div>
+          <div class="flex-1 flex items-center justify-center"><a class="btn_primary_red h-full cursor-pointer" @click="currentDeleteId={{ article.id }}; currentDeleteName='{{ article.title }}'"><i class="fa-solid fa-trash"></i> Delete</a></div>
+          <div class="flex-1 flex items-center justify-center"><a class="btn_primary_orange h-full" href="{{ url('view_news_item', args=[article.mediaPath]) }}">Read it here</a></div>
+        </div>
+        {{ delete_confirm_modal("Delete News Article", request.META.CSRF_COOKIE) }}
+      </div>
+    {% endif %}
 </div>
 {% endmacro %}
 

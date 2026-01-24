@@ -1,0 +1,30 @@
+{% extends "structure/structure_public.jinja" %}
+
+{% block title %}News - Tech Talks{% endblock %}
+
+{% block content %}
+<div class="min-h-screen">
+    <div class="h-32 w-full bg-cover bg-center border-4 border border-[--orange_di4d]" style="background-image: url('{{ news_article.picture.url }}')"></div>
+    <div class="p-8 max-w-6xl mx-auto">
+        <div>
+            <a href="{{ url('news') }}" class="btn_primary_blue"><i class="fa-solid fa-arrow-left"></i> Back to all news articles</a>
+            <h1 class="mt-8 text-3xl lg:text-4xl font-bold text-black">{{ news_article.title }}</h1>
+        </div>
+        <div class="mt-4 max-w-full break-words news-content">
+            {{ news_article.content | safe }}
+        </div>
+        <div class="mt-20">
+            <h2 class="text-center text-2xl text-black px-6">Read another news article</h2>
+            {% if news|length == 0 %}
+                <h3 class="text-center text-black text-xl lg:text-2xl mt-6">No other news articles available at the moment.</h3>
+            {% else %}
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 mt-6 max-w-6xl w-full mx-auto">
+                    {% for article in news %}
+                        {{ news_item(article, '--white_grey') }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
