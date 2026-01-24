@@ -43,6 +43,10 @@
                     <p x-data="{show: true}" x-show="show" x-init="show=true; setTimeout(() => show=false, 3000)"
                     class="bg-green-500 text-white p-2 rounded w-full mt-4">{{ success_profile }}</p>
                 {% endif %}
+                {% if error_profile %}
+                    <p x-data="{show: true}" x-show="show" x-init="show=true; setTimeout(() => show=false, 3000)"
+                    class="bg-red-500 text-white p-2 rounded w-full mt-4">{{ error_profile }}</p>
+                {% endif %}
             </form>
         </div>
         <div class="lg:border lg:border-black lg:opacity-65"></div>
