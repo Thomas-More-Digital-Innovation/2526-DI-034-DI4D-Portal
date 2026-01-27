@@ -50,9 +50,46 @@
         </div>
         {% endif %}
       </div>
-      <a class="btn_primary_orange px-4 py-2 text-center w-1/2" href="{{ talk.videoPath }}">Watch Talk</a>
+      <a class="btn_primary_orange w-1/2 text-center" href="{{ url('tech_talk_detail', kwargs={'talk_id': talk.id}) }}">View Talk</a>
     </div>
   </div>
+</div>
+{% endmacro %}
+
+{# TECH TALK DETAIL BOX #}
+{% macro techtalk_detail(talk, recent_talks, video_url, embed_url, is_local_video, is_youtube, info_bg="--blue_di4d", text_class="text-white", heading_class="text-white") %}
+<div>
+  <div class="w-full lg:w-3/4 mx-auto bg-[var(--blue_di4d)] flex items-center justify-center h-[32rem]">
+    {% if is_local_video %}
+      <video class="w-full h-full" controls controlslist="nodownload" disablepictureinpicture oncontextmenu="return false;">
+        <source src="{{ video_url }}" type="video/mp4" />
+        <source src="{{ video_url }}" type="video/webm" />
+        <source src="{{ video_url }}" type="video/ogg" />
+        Your browser does not support the video tag.
+      </video>
+    {% else %}
+      <div class="text-white text-center">No video available.</div>
+    {% endif %}
+  </div>
+  <div class="p-6 text-white w-full lg:w-3/4 mx-auto bg-[var(--blue_di4d)] flex-collum items-center justify-center">
+    <h2 class="text-lg font-semibold mb-2 text-white">Information:</h2>
+    <p class="text-sm text-white">{{ talk.description }}</p>
+  </div>
+</div>
+
+<div class="mt-10">
+  <h2 class="text-2xl font-bold text-white text-center mb-6">Most recent tech talks</h2>
+  {% if recent_talks %}
+    <div class="w-full lg:w-2/3 mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% for recent in recent_talks %}
+        {{ talk_item(recent) }}
+      {% endfor %}
+      </div>
+    </div>
+  {% else %}
+    <p class="{{ heading_class }} text-center">No other tech talks found.</p>
+  {% endif %}
 </div>
 {% endmacro %}
 

@@ -12,6 +12,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils.crypto import get_random_string
 from django.contrib.auth import update_session_auth_hash
+from urllib.parse import urlparse, parse_qs
 import os
 from django.core.files.storage import default_storage
 import json
@@ -380,7 +381,7 @@ def tech_talks(request):
     search_query = ""
     
     # Get all public tech talks
-    all_techtalks = TechTalk.objects.filter(isPublic=True).order_by("-id")
+    all_techtalks = TechTalk.objects.filter(isPublic=True).order_by("-date", "-id")
     total_techtalks = all_techtalks.count()
     
     # Check if somebody searched for something
@@ -395,8 +396,39 @@ def tech_talks(request):
     
     return render(request, 'public/techtalks.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query})
 
+def tech_talk_detail(request, talk_id):
+
+    talk = TechTalk.objects.get(id=talk_id, isPublic=True)
+    recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
+
+    video_url = (talk.videoPath or "").strip()
+    # Normalize backslashes to forward slashes for URL
+    video_url = video_url.replace("\\", "/")
+    
+    # Supported video extensions
+    video_extensions = ('.mp4', '.webm', '.ogg', '.ogv')
+    is_local_video = video_url.lower().endswith(video_extensions) or any(ext + "?" in video_url.lower() for ext in video_extensions)
+
+    # Build full media URL for local videos
+    if is_local_video and not video_url.startswith(('http://', 'https://')):
+        # Remove leading slash if present to avoid double slashes
+        video_url = video_url.lstrip('/')
+        video_url = settings.MEDIA_URL + video_url
+
+    context = {
+        "talk": talk,
+        "recent_talks": recent_talks,
+        "video_url": video_url,
+        "is_local_video": is_local_video,
+    }
+
+    if request.headers.get("HX-Request") == "true":
+        return render(request, 'components/techtalk_detail_htmx.jinja', context)
+
+    return render(request, 'public/techtalk_detail.jinja', context)
+
 @login_required(login_url='login')
-def settings(request):
+def settings_view(request):
     active_page = 'settings'
     
     # Chek if application settings exist, otherwise create default one
