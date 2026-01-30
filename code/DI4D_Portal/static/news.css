@@ -1,0 +1,11 @@
+.news-content img {
+    max-width: 100%;
+    width: 200px;
+    height: auto;
+}
+
+.news-content table {
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+}

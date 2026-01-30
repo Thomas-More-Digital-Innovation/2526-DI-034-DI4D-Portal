@@ -171,6 +171,7 @@
     <script src="https://cdn.jsdelivr.net/npm/flyonui@2.4.1/flyonui.min.js" defer></script>
     <link rel="stylesheet" href="{{ static('style.css') }}">
     <title>{% block title %}DI4D Portal{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
     {% block content_structure %}

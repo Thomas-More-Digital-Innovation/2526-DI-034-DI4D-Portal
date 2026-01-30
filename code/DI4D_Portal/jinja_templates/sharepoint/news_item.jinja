@@ -1,5 +1,6 @@
 {% extends "structure/structure_private.jinja"%}
 {% block title %}News - DI4D Portal{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ static('news.css') }}">{% endblock %}
 
 {% block banner %}
 <div class="h-32 w-full bg-cover bg-center border-4 border-[--blue_di4d]" style="background-image: url('{{ news_article.picture.url }}')"></div>
