@@ -1,0 +1,77 @@
+{% extends "structure/structure_private.jinja"%}
+{% block title %}
+    {% if mediaPath %}
+        Edit News - DI4D Portal
+    {% else %}
+        Create News - DI4D Portal
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div>
+    <h1 class="text-3xl lg:text-4xl font-bold text-black mb-4">{% if mediaPath %}Edit News{% else %}Create News{% endif %}</h1>
+    <a href="{{ url('news') }}" class="btn_primary_blue">Go back to all news</a>
+    <form method="POST" enctype="multipart/form-data" class="max-w-3xl mt-4">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+        {# Load CKEditor media files #}
+        {{ form.media }}
+        <label for="{{ form.title.id_for_label }}" class="text-black w-full">Title</label>
+        <input required type="text" name="{{ form.title.name }}" id="{{ form.title.id_for_label }}" value="{{ form.title.value() or '' }}" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg text-lg px-4 py-1 mb-4"/>
+        <div class="flex flex-row gap-4">
+            <div>
+                <label for="{{ form.isPublic.id_for_label }}" class="text-black w-full">Is Public?</label>
+                <input type="checkbox" name="{{ form.isPublic.name }}" id="{{ form.isPublic.id_for_label }}" {% if form.isPublic.value() %}checked{% endif %} class="mb-4"/>
+            </div>
+            <div>
+                <label for="{{ form.showAuthor.id_for_label }}" class="text-black w-full">Show Author?</label>
+                <input type="checkbox" name="{{ form.showAuthor.name }}" id="{{ form.showAuthor.id_for_label }}" {% if form.showAuthor.value() %}checked{% endif %} class="mb-4"/>
+            </div>
+        </div>
+        <label for="{{ form.picture.id_for_label }}" class="text-black w-full">Picture</label>
+        {% if form.instance.picture %}
+        <div class="bg-[var(--input_bg_color)] p-4 rounded mb-4 flex justify-center">
+            <img src="{{ form.instance.picture.url }}" alt="Current" class="w-max h-auto object-contain rounded">
+        </div>
+        {% endif %}
+        <div x-data="{hidden:false, preview:'', filename:''}" class="w-full py-2 rounded-md border border-[var(--white_grey)] py-6">
+            <!-- Upload --> 
+            <div x-show="!hidden">
+                <input {% if not form.instance.picture %}required{% endif %} type="file" 
+                    id="{{ form.picture.id_for_label }}" name="{{ form.picture.name }}"
+                    class="opacity-0" x-ref="fileInput" accept="image/*"
+                    @change="
+                        hidden=true; 
+                        const f = $event.target.files[0]; 
+                        if(f){ filename=f.name; preview=URL.createObjectURL(f); }">
+                <label for="{{ form.picture.id_for_label }}" class="text-md text-[var(--light_grey)] cursor-pointer w-full flex flex-col items-center justify-center h-32">
+                    <i class="fa-solid fa-upload text-4xl mb-2"></i>
+                    <div class="text-center">
+                        Drag & drop or 
+                        <span class="text-[--orange_di4d]">choose file</span>
+                    </div>
+                </label>
+            </div>
+            <!-- Preview -->
+            <div x-show="hidden" class="p-4">
+                <img :src="preview" class="w-full h-48 rounded mb-2 object-contain object-center" alt="Image Preview"/>
+                <p class="text-sm text-[var(--light_grey)] truncate" x-text="filename"></p>
+                <button @click="hidden=false; preview=''; filename=''; $refs.fileInput.value=''"
+                        class="text-xs text-[--orange_di4d] hover:underline">
+                    Change
+                </button>
+            </div>
+        </div>
+        <label for="{{ form.description.id_for_label }}" class="text-black w-full">Description</label>
+        <textarea required rows="3" name="{{ form.description.name }}" id="{{ form.description.id_for_label }}" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg text-lg px-4 py-1 mb-4">{{ form.description.value() or '' }}</textarea>
+        <label for="{{ form.content.id_for_label }}" class="text-black w-full block">Content</label>
+        <div>
+            {{ form.content }}
+        </div>
+        <button type="submit" class="btn_primary_orange block mt-4 w-full">{% if mediaPath %}Update News{% else %}Create News{% endif %}</button>
+    </form>
+</div>
+
+<div x-data="{ open_saved: {{ 'true' if saved else 'false' }} }">
+    {{ info_modal("saved", "News item saved", "Your news item has been successfully saved.") }}
+</div>
+{% endblock %}

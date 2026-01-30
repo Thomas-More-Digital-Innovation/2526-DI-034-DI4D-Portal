@@ -22,7 +22,7 @@
             <h3 class="text-center text-black text-xl lg:text-2xl mt-6">No news articles available at the moment.</h3>
         {% else %}
             <div class="justify-center flex">
-                <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 mt-6 max-w-6xl w-full mx-auto">
+                <div class="grid grid-cols-1 {% if news|length > 1 %}xl:grid-cols-2{% endif %} gap-3 mt-6 max-w-6xl w-full mx-auto">
                     {% for article in news %}
                         {{ news_item(article, "--white_grey") }}
                     {% endfor %}
