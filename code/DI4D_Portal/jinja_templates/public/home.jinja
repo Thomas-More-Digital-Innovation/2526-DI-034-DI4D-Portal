@@ -27,14 +27,14 @@
 <div class="w-full">
     <!-- Section 1 -->
     <div class="bg-[var(--blue_di4d)]">
-        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-10 
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-stretch gap-10 
                     px-6 py-12 lg:px-20 lg:py-15">
                 <!-- Image -->
                 <div class="w-full lg:w-2/5">
                 <img 
                     src="{{ static('images/welcome.jpg') }}" 
                     alt="People are presenting their tech talks" 
-                    class="w-full h-auto rounded-lg">
+                    class="w-full h-full object-cover rounded-lg">
                 </div>
 
                 <!-- Text -->
@@ -47,6 +47,9 @@
                     into a co created, practice oriented, innovative track focused on advancing the Sustainable Development Goals (SDGs). The programme 
                     brings real world challenges, especially from partners in Cuba, Ethiopia, Kenya, Tanzania, and Uganda, directly into the curriculum 
                     through Problem Based Learning (PBL) and Work Integrated Learning (WIL), ensuring solutions are beneficial for local communities.
+                </p>
+                <br>
+                <p class="text-white text-base lg:text-lg">
                     DI4D strengthens digital skills and innovation capacity, promotes inclusive participation with a particular focus on women and 
                     learners with fewer opportunities. It fosters long term collaborations across academia, civil society, government, and the private sector.
                 </p>
@@ -66,7 +69,7 @@
                     VLIRUOS is the leading funding body for scholarships for and partnerships between academics from Flanders 
                     and partner institutions in Africa, Latin America, and Asia, focused on global sustainable development.
                 </p>
-                <a class="btn_primary_orange" href="https://www.vliruos.be" target="_blank">Read more</a>
+                <a class="btn_primary_orange" href="https://www.vliruos.be" target="_blank">Visit Vliruos <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
             </div>
             <!-- Image -->
             <div class="w-full lg:w-2/5 flex flex-col gap-4">
@@ -88,9 +91,11 @@
             <h3 class="text-center text-white text-xl lg:text-2xl mt-6">No news articles available at the moment.</h3>
         {% else %}
             <div class="justify-center flex">
-                <div class="grid grid-cols-1 {% if news|length > 1 %}xl:grid-cols-2{% endif %} gap-3 mt-6 max-w-6xl w-full mx-auto">
+                <div class="grid grid-cols-1 xl:grid-cols-2 w-full gap-3 mt-6 max-w-6xl mx-auto">
                     {% for article in news %}
-                        {{ news_item(article) }}
+                        <div class="{% if news|length == 1 %}xl:col-span-2 w-full xl:w-1/2 mx-auto{% endif %}">
+                            {{ news_item(article) }}
+                        </div>
                     {% endfor %}
                 </div>
             </div>
@@ -123,27 +128,41 @@
                 <h2 class="text-3xl lg:text-4xl font-bold mb-4 text-white">
                     Be tomorrow’s changemaker with VLIRUOS' ICP Connect scholarships!</h2>
                 <p class="text-white text-base lg:text-lg mb-4">
-                    Boost <span class="underline"><a target="_blank" href="https://www.vliruos.be/">VLIRUOS’</a></span> Digital Innovation for Development ICP Connect project at <span class="underline"><a target="_blank" href="https://www.thomasmore.be/en">Thomas More University of Applied Sciences</a></span> campus Geel: engage with cutting-edge digital innovation, 
+                    Boost <span class="underline text-[--light_blue]"><a target="_blank" href="https://www.vliruos.be/">VLIRUOS’</a></span> Digital Innovation for Development ICP Connect project at <span class="underline text-[--light_blue]"><a target="_blank" href="https://www.thomasmore.be/en">Thomas More University of Applied Sciences</a></span> campus Geel: engage with cutting-edge digital innovation, 
                     solve real-world challenges, and shape a sustainable future. Join our Bachelor in Applied Computer Science specialisation track Digital Innovation!
                 </p>
                 <!-- Check for button if it is possible to register -->
-                <div class="flex flex-row">
+                <div>
                     {% if register %}
-                    <a class="btn_primary_orange" href="{{ url('student_registration') }}">
-                        Register yourself
-                    </a>
+                        <div class="flex flex-row">
+                            <a class="btn_primary_orange" href="{{ url('student_registration') }}">
+                                Register yourself
+                             </a>
+                            <a href="https://www.vliruos.be/get-funded/bachelor-applied-computer-science" target="_blank" class="ml-5 btn_secondary">More information <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                        </div>
                     {% else %}
                         {%if startDate and endDate %}
-                        <a class="btn_primary_orange">
-                            Registration from {{ startDate }} to {{ endDate }}
-                        </a>
+                            <div class="flex flex-row">
+                                <p class="btn_primary_orange opacity-50 cursor-not-allowed">
+                                    Register yourself
+                                </p>
+                                <a href="https://www.vliruos.be/get-funded/bachelor-applied-computer-science" target="_blank" class="ml-5 btn_secondary">More information <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                            </div>
+                            <p class="text-white mt-4">
+                                Registration from {{ startDate }} to {{ endDate }}
+                            </p>
                         {% else %}
-                        <a class="btn_primary_orange">
-                            Not possible to register now
-                        </a>
+                            <div class="flex flex-row">
+                                <p class="btn_primary_orange opacity-50 cursor-not-allowed">
+                                    Register yourself
+                                </p>
+                                <a href="https://www.vliruos.be/get-funded/bachelor-applied-computer-science" target="_blank" class="ml-5 btn_secondary">More information <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                            </div>
+                            <p class="text-white mt-4">
+                                Not possible to register now
+                            </p>
                         {% endif %}
                     {% endif %}
-                    <a href="https://www.vliruos.be/get-funded/bachelor-applied-computer-science" target="_blank" class="ml-5 btn_secondary">More information</a>
                 </div>
             </div>
             <!-- Image -->

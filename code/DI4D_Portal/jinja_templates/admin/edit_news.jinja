@@ -28,14 +28,11 @@
             </div>
         </div>
         <label for="{{ form.picture.id_for_label }}" class="text-black w-full">Picture</label>
-        {% if form.instance.picture %}
-        <div class="bg-[var(--input_bg_color)] p-4 rounded mb-4 flex justify-center">
-            <img src="{{ form.instance.picture.url }}" alt="Current" class="w-max h-auto object-contain rounded">
-        </div>
-        {% endif %}
-        <div x-data="{hidden:false, preview:'', filename:''}" class="w-full py-2 rounded-md border border-[var(--white_grey)] py-6">
+        <div x-data="{hidden:false, preview:'', filename:''}" class="w-full py-2 rounded-md border border-[var(--white_grey)] py-6 relative" :style="hidden ? '' : ({% if form.instance.picture %}'background-image: url(\'{{ form.instance.picture.url }}\')'{% else %}''{% endif %})">
+            <div x-show="!hidden" class="absolute inset-0 bg-black opacity-50 rounded-md pointer-events-none"></div>
+            
             <!-- Upload --> 
-            <div x-show="!hidden">
+            <div x-show="!hidden" class="relative z-10">
                 <input {% if not form.instance.picture %}required{% endif %} type="file" 
                     id="{{ form.picture.id_for_label }}" name="{{ form.picture.name }}"
                     class="opacity-0" x-ref="fileInput" accept="image/*"
@@ -43,7 +40,7 @@
                         hidden=true; 
                         const f = $event.target.files[0]; 
                         if(f){ filename=f.name; preview=URL.createObjectURL(f); }">
-                <label for="{{ form.picture.id_for_label }}" class="text-md text-[var(--light_grey)] cursor-pointer w-full flex flex-col items-center justify-center h-32">
+                <label for="{{ form.picture.id_for_label }}" class="text-md text-white cursor-pointer w-full flex flex-col items-center justify-center h-32">
                     <i class="fa-solid fa-upload text-4xl mb-2"></i>
                     <div class="text-center">
                         Drag & drop or 
@@ -52,10 +49,10 @@
                 </label>
             </div>
             <!-- Preview -->
-            <div x-show="hidden" class="p-4">
-                <img :src="preview" class="w-full h-48 rounded mb-2 object-contain object-center" alt="Image Preview"/>
+            <div x-show="hidden" class="relative z-10 flex flex-col items-center justify-center h-32">
+                <img :src="preview" class="w-full h-full rounded mb-2 object-contain object-center" alt="Image Preview"/>
                 <p class="text-sm text-[var(--light_grey)] truncate" x-text="filename"></p>
-                <button @click="hidden=false; preview=''; filename=''; $refs.fileInput.value=''"
+                <button type="button" @click="hidden=false; preview=''; filename=''; $refs.fileInput.value=''"
                         class="text-xs text-[--orange_di4d] hover:underline">
                     Change
                 </button>

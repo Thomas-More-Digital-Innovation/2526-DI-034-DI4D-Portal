@@ -17,13 +17,13 @@
             {{ news_article.content | safe }}
         </div>
         <div class="mt-20">
-            <h2 class="text-center text-2xl text-black">Read another news article</h2>
-            {% if news|length == 0 %}
-                <h3 class="text-center text-black text-xl lg:text-2xl mt-6">No other news articles available at the moment.</h3>
-            {% else %}
+            {% if news|length > 0 %}
+                    <h2 class="text-center text-2xl text-black">Read another news article</h2>
                     <div class="grid grid-cols-1 gap-4 mt-6 w-full">
                         {% for article in news %}
-                            {{ news_item(article, '--white_grey') }}
+                            <div class="{% if news|length == 1 %}xl:col-span-2 w-full xl:w-1/2 mx-auto{% endif %}">
+                                {{ news_item(article, '--white_grey') }}
+                            </div>
                         {% endfor %}
                     </div>
             {% endif %}
