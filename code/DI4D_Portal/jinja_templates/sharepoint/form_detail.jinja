@@ -1,0 +1,91 @@
+{% extends "structure/structure_private.jinja" %}
+{% from 'structure/structure.jinja' import empty_modal %}
+
+{% block title %}{{ form.title }} - DI4D Portal{% endblock %}
+
+{% block content %}
+<div class="bg-white min-h-screen">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-6">
+            <a href="{{ url('forms') }}" class="text-[var(--blue_di4d)] hover:underline mb-4 inline-block">
+                <i class="fa-solid fa-arrow-left mr-2"></i>Back to Forms
+            </a>
+            <h1 class="text-3xl lg:text-4xl font-bold text-black">{{ form.title }}</h1>
+            {% if form.endDate %}
+                <p class="text-gray-600 mt-2">
+                    <i class="fa-regular fa-calendar mr-2"></i>Deadline: {{ form.endDate.strftime('%B %d, %Y') }}
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Status Messages -->
+        {% if form_closed %}
+        <div class="bg-[var(--white_grey)] border-l-4 border-amber-500 rounded-lg p-6 mb-6">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0">
+                    <svg class="w-6 h-6 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h2 class="text-xl font-bold text-gray-900 mb-2">Form Currently Closed</h2>
+                    <p class="text-gray-700">The deadline for this form has passed. You can no longer submit responses.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if already_completed %}
+        <div class="bg-green-50 border-l-4 border-green-500 rounded-lg p-6 mb-6">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0">
+                    <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h2 class="text-xl font-bold text-green-900 mb-2">Form Already Completed</h2>
+                    <p class="text-green-800">You have already submitted this form.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+            <div class="flex items-start gap-4">
+                <svg class="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+                <div>
+                    <h3 class="font-semibold text-red-800">Error</h3>
+                    <p class="text-red-700 mt-1">{{ error }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Form -->
+        {% if form_open and questions and not already_completed %}
+        <div id="form-container">
+            {% include 'components/sharepoint_form_htmx.jinja' %}
+        </div>
+        {% elif not form_closed and not already_completed %}
+        <div class="bg-[var(--white_grey)] border border-gray-200 rounded-lg p-8 text-center">
+            <p class="text-gray-600 text-lg">No questions available for this form.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div x-data="{ open_form_success: {{ 'true' if show_success_modal else 'false' }} }">
+    {% call empty_modal('form_success', 'Form Submitted') %}
+        <p class="text-white">Your form has been submitted successfully.</p>
+        <div class="mt-4 flex flex-col gap-2">
+            <a href="{{ url('forms') }}" class="btn w-full text-[--button_text_modal] bg-[--white_grey]">Continue</a>
+        </div>
+    {% endcall %}
+</div>
+
+{% endblock %}

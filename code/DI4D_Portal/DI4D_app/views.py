@@ -685,3 +685,186 @@ def view_news_item(request, mediaPath):
         # Take 2 other random news articles for suggestion at the bottom
         news = News.objects.filter(isPublic=True).exclude(id=news_article.id).order_by('?')[:2]
         return render(request, 'public/news_item.jinja', {'news_article': news_article, 'news': news})
+
+@login_required(login_url='login')
+def forms_view(request):
+    """
+    Display all available forms for SharePoint users.
+    Shows form status (not started, in progress, completed) and allows filtering.
+    """
+    active_page = 'forms'
+    search_query = ""
+    filter_status = request.POST.get('filter_status') or request.GET.get('filter_status') or 'all'
+    items_per_page = int(request.GET.get('items_per_page', 6))
+    today = timezone.now().date()
+    
+    # Get all active forms, excluding the student application forms from settings
+    all_forms = Form.objects.filter(isActive=True).order_by('-startDate', 'title')
+    
+    # Exclude all forms used for student registration (from all ApplicationSettings)
+    application_settings = ApplicationSetting.objects.filter(studentApplicationFormId__isnull=False)
+    excluded_form_ids = application_settings.values_list('studentApplicationFormId', flat=True)
+    if excluded_form_ids:
+        all_forms = all_forms.exclude(id__in=excluded_form_ids)
+    
+    # Search filter
+    if request.method == "POST":
+        search_query = request.POST.get("q", "").strip()
+        if search_query:
+            all_forms = all_forms.filter(Q(title__icontains=search_query))
+    
+    # Build form data with status for current user
+    forms_with_status = []
+    for form in all_forms:
+        # Check if user has answered any questions for this form
+        questions = Question.objects.filter(formId=form, isActive=True)
+        user_answers = FormAnswer.objects.filter(
+            questionId__in=questions,
+            userId=request.user
+        )
+        
+        # Determine status
+        deadline_passed = form.endDate and form.endDate < today
+        total_questions = questions.count()
+        answered_questions = user_answers.values('questionId').distinct().count()
+        
+        if answered_questions == 0:
+            status = 'not_started'
+        elif answered_questions >= total_questions:
+            status = 'completed'
+        else:
+            status = 'in_progress'
+        
+        forms_with_status.append({
+            'form': form,
+            'status': status,
+            'deadline_passed': deadline_passed,
+            'answered_count': answered_questions,
+            'total_count': total_questions
+        })
+    
+    # Filter by status
+    if filter_status and filter_status != 'all':
+        forms_with_status = [f for f in forms_with_status if f['status'] == filter_status]
+    
+    # Pagination
+    paginator = Paginator(forms_with_status, items_per_page)
+    page_number = request.GET.get('page', 1)
+    forms_page = paginator.get_page(page_number)
+    
+    context = {
+        'all_forms': forms_page,
+        'search_query': search_query,
+        'filter_status': filter_status,
+        'items_per_page': items_per_page,
+        'active_page': active_page
+    }
+    
+    # Check if HTMX request
+    if request.headers.get("HX-Request") == "true":
+        return render(request, 'components/forms_htmx.jinja', context)
+    
+    return render(request, 'sharepoint/forms.jinja', context)
+
+@login_required(login_url='login')
+def form_detail_view(request, form_id):
+    """
+    Display and handle form submission for SharePoint users.
+    Styled with white/grey theme.
+    """
+    active_page = 'forms'
+    data = {'active_page': active_page}
+    today = timezone.now().date()
+    
+    # Clear preview files from session on initial GET request
+    if request.method == 'GET':
+        request.session.pop('preview_files', None)
+    
+    # Check for success message from previous submission
+    data['show_success_modal'] = request.session.pop('show_form_success_modal', False)
+    
+    # Get the form
+    form = get_object_or_404(Form, id=form_id, isActive=True)
+    data['form'] = form
+    
+    # Check if form deadline has passed
+    if form.endDate and form.endDate < today:
+        data['form_closed'] = True
+        return render(request, 'sharepoint/form_detail.jinja', data)
+    
+    # Check if form hasn't started yet
+    if form.startDate and form.startDate > today:
+        data['form_closed'] = True
+        data['error'] = f"This form is not yet available. It opens on {form.startDate.strftime('%B %d, %Y')}."
+        return render(request, 'sharepoint/form_detail.jinja', data)
+    
+    # Get questions for this form
+    questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
+    data['questions'] = questions
+    
+    # Check if user has already completed the form
+    user_answers = FormAnswer.objects.filter(
+        questionId__in=questions,
+        userId=request.user
+    )
+    if user_answers.values('questionId').distinct().count() >= questions.count() and questions.count() > 0:
+        data['already_completed'] = True
+        return render(request, 'sharepoint/form_detail.jinja', data)
+    
+    data['form_open'] = True
+    
+    # Handle form submission
+    if request.method == 'POST':
+        try:
+            # Save answers for each question
+            for question in questions:
+                question_id = f'question_{question.id}'
+                datatype_name = question.datatype.name.lower()
+                answer_value = None
+                
+                # Handle file upload
+                if datatype_name == 'file' and f'{question_id}_file' in request.FILES:
+                    uploaded_files = request.FILES.getlist(f'{question_id}_file')
+                    file_paths = []
+                    
+                    for uploaded_file in uploaded_files:
+                        timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+                        filename = f"{request.user.username}_{timestamp}_{uploaded_file.name}"
+                        file_path = f'forms/{form_id}/{filename}'
+                        default_storage.save(file_path, uploaded_file)
+                        file_paths.append(file_path)
+                    
+                    answer_value = json.dumps(file_paths) if len(file_paths) > 1 else file_paths[0] if file_paths else None
+                elif datatype_name == 'multiple_choice':
+                    selected_values = request.POST.getlist(question_id)
+                    if selected_values:
+                        answer_value = json.dumps(selected_values)
+                else:
+                    answer_value = request.POST.get(question_id)
+                
+                # Only save if answer is provided
+                if answer_value:
+                    FormAnswer.objects.create(
+                        answer=answer_value,
+                        questionId=question,
+                        userId=request.user,
+                        answerDate=today
+                    )
+            
+            # Clear session preview files
+            request.session.pop('preview_files', None)
+            
+            # Set success modal
+            request.session['show_form_success_modal'] = True
+            
+            # Handle HTMX redirect
+            if request.headers.get('HX-Request') == 'true':
+                response = HttpResponse()
+                response['HX-Redirect'] = f'/forms/{form_id}/'
+                return response
+            return redirect('form_detail', form_id=form_id)
+            
+        except Exception as e:
+            data['error'] = f"An error occurred while submitting the form: {str(e)}"
+    
+    return render(request, 'sharepoint/form_detail.jinja', data)

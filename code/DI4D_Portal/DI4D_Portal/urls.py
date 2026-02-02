@@ -42,6 +42,8 @@ urlpatterns = [
     path('news/edit/', views.edit_news, name='edit_news'),
     path('news/edit/<str:mediaPath>/', views.edit_news, name='edit_news'),
     path('news/<str:mediaPath>/', views.view_news_item, name='view_news_item'),
+    path('forms/', views.forms_view, name='forms'),
+    path('forms/<int:form_id>/', views.form_detail_view, name='form_detail'),
     # Docs : https://docs.djangoproject.com/en/6.0/topics/auth/default/#all-authentication-views
     path("password_reset/", auth_views.PasswordResetView.as_view(
         template_name="auth/forgot_password.jinja"
