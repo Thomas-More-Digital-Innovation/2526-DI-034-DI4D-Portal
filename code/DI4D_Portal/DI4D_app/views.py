@@ -12,8 +12,8 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils.crypto import get_random_string
 from django.contrib.auth import update_session_auth_hash
-from urllib.parse import urlparse, parse_qs
 import os
+import filetype
 from django.core.files.storage import default_storage
 import json
 
@@ -456,9 +456,28 @@ def tech_talk_detail(request, talk_id):
     # Normalize backslashes to forward slashes for URL
     video_url = video_url.replace("\\", "/")
     
-    # Supported video extensions
-    video_extensions = ('.mp4', '.webm', '.ogg', '.ogv')
-    is_local_video = video_url.lower().endswith(video_extensions) or any(ext + "?" in video_url.lower() for ext in video_extensions)
+    def is_video_by_header(file_path: str) -> bool:
+        try:
+            kind = filetype.guess(file_path)
+            return kind is not None and kind.mime.startswith('video/')
+        except Exception:
+            return False
+
+    def is_video_by_url(url: str) -> bool:
+        try:
+            url_request = request.Request(url, method="HEAD")
+            with request.urlopen(url_request, timeout=5) as response:
+                content_type = response.headers.get('Content-Type', '')
+            return content_type.startswith('video/')
+        except Exception:
+            return False
+
+    is_local_video = False
+    if video_url.startswith(('http://', 'https://')):
+        is_local_video = is_video_by_url(video_url)
+    else:
+        local_path = os.path.join(settings.MEDIA_ROOT, video_url.lstrip('/'))
+        is_local_video = is_video_by_header(local_path)
 
     # Build full media URL for local videos
     if is_local_video and not video_url.startswith(('http://', 'https://')):
