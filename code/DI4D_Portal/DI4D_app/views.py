@@ -379,22 +379,73 @@ def users(request):
 
 def tech_talks(request):
     search_query = ""
+    active_page = 'Tech Talks'
     
-    # Get all public tech talks
-    all_techtalks = TechTalk.objects.filter(isPublic=True).order_by("-date", "-id")
+    # Get all tech talks (authenticated users) or public only
+    if request.user.is_authenticated:
+        all_techtalks = TechTalk.objects.all().order_by("-date", "-id")
+    else:
+        all_techtalks = TechTalk.objects.filter(isPublic=True).order_by("-date", "-id")
     total_techtalks = all_techtalks.count()
     
     # Check if somebody searched for something
     if request.method == "POST":
+        action = request.POST.get("action")
+        delete_id = request.POST.get("delete_id")
+        if request.user.is_authenticated and (action in ["create", "edit", "delete"] or delete_id):
+            if action == "delete" or delete_id:
+                if delete_id:
+                    TechTalk.objects.filter(id=delete_id).delete()
+                return redirect('tech_talks')
+
+            title = request.POST.get("title", "").strip()
+            speaker = request.POST.get("speaker", "").strip()
+            description = request.POST.get("description", "").strip()
+            date_value = request.POST.get("date")
+            thubnail = request.POST.get("thubnail", "").strip()
+            video_path = request.POST.get("videoPath", "").strip()
+            is_public = request.POST.get("isPublic") == "on"
+
+            if action == "create":
+                if title and speaker and description and date_value and thubnail and video_path:
+                    TechTalk.objects.create(
+                        title=title,
+                        speaker=speaker,
+                        description=description,
+                        date=date_value,
+                        thubnail=thubnail,
+                        videoPath=video_path,
+                        isPublic=is_public,
+                    )
+                return redirect('tech_talks')
+
+            if action == "edit":
+                talk_id = request.POST.get("talk_id")
+                if talk_id:
+                    talk = TechTalk.objects.filter(id=talk_id).first()
+                    if talk:
+                        talk.title = title
+                        talk.speaker = speaker
+                        talk.description = description
+                        if date_value:
+                            talk.date = date_value
+                        talk.thubnail = thubnail
+                        talk.videoPath = video_path
+                        talk.isPublic = is_public
+                        talk.save()
+                return redirect('tech_talks')
+
         search_query = request.POST.get("q", "").strip()
         # Check if search query is not empty
         if search_query:
             all_techtalks = all_techtalks.filter(Q(title__icontains=search_query) | Q(speaker__icontains=search_query) | Q(description__icontains=search_query))
         # Check if there is HTMX request
         if request.headers.get("HX-Request") == "true":
-            return render(request, 'components/techtalks_htmx.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query})
+            return render(request, 'components/techtalks_htmx.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query, "active_page": active_page})
     
-    return render(request, 'public/techtalks.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query})
+    if request.user.is_authenticated:
+        return render(request, 'sharepoint/techtalks.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query, "active_page": active_page})
+    return render(request, 'public/techtalks.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query, "active_page": active_page})
 
 def tech_talk_detail(request, talk_id):
 
@@ -423,8 +474,12 @@ def tech_talk_detail(request, talk_id):
     }
 
     if request.headers.get("HX-Request") == "true":
+        if request.user.is_authenticated:
+            return render(request, 'components/techtalk_detail_private_htmx.jinja', context)
         return render(request, 'components/techtalk_detail_htmx.jinja', context)
 
+    if request.user.is_authenticated:
+        return render(request, 'sharepoint/techtalk_detail.jinja', context)
     return render(request, 'public/techtalk_detail.jinja', context)
 
 @login_required(login_url='login')
