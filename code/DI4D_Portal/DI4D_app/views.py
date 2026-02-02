@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from urllib import request
 from django.utils import timezone
 from django.core.mail import send_mail
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from .models import ApplicationSetting, News, User, Question, FormAnswer, TechTalk, Form, UserType, Partner, LearningGoal, LearninggoalCourse
@@ -16,7 +16,8 @@ import os
 import filetype
 from django.core.files.storage import default_storage
 import json
-
+from django.forms import modelform_factory
+from ckeditor.widgets import CKEditorWidget
 
 def page_not_found(request, exception=None):
     return render(request, 'errors/404.jinja', status=404)
@@ -237,6 +238,16 @@ def news(request):
     if request.user.is_authenticated:
         all_articles = News.objects.filter().order_by("-lastEditDate")
         total_articles = all_articles.count()
+
+        # Check is user is admin
+        if request.user.role_is_admin():
+            # Check if admin want to delete a news article
+            if request.method == "POST" and request.POST.get("delete_id"):
+                delete_id = request.POST.get("delete_id")
+                news_to_delete = News.objects.get(id=delete_id)
+                if news_to_delete:
+                    news_to_delete.delete()
+                    return  redirect('news')
     # User not logged in
     else:
         all_articles = News.objects.filter(isPublic=True).order_by("-lastEditDate")
@@ -248,7 +259,7 @@ def news(request):
 
     # Check if somebody searched for something
     if request.method == "POST":
-        search_query = request.POST.get("q").strip() or request.GET.get("q").strip()
+        search_query = request.POST.get("q", "").strip() or request.GET.get("q", "").strip()
         # Check if search query is not empty
         if search_query:
             all_articles = all_articles.filter(Q(title__icontains=search_query) | Q(lastEditDate__icontains=search_query))
@@ -475,18 +486,26 @@ def settings_view(request):
                 return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'error_password': "Passwords do not match and/or are empty", 'forms': forms, 'current_application_setting': current_application_setting})
         # Check if it is to change profile settings
         if request.POST.get("changeprofile"):
-            firstname = request.POST.get("firstname")
-            lastname = request.POST.get("lastname")
-            email = request.POST.get("email")
-            # Update user info
-            request.user.first_name = firstname
-            request.user.last_name = lastname
-            request.user.email = email
-            # Check if there was a profile picture uploaded
-            if request.FILES.get("profilepicture"):
-                # Image will be automatically saved to the correct location because of the ImageField in the User model (pillow)
-                request.user.profilePicture = request.FILES["profilepicture"]
-            request.user.save()
+            try: 
+                firstname = request.POST.get("firstname")
+                lastname = request.POST.get("lastname")
+                email = request.POST.get("email")
+
+                # Check if email already exists (for another user)
+                if User.objects.filter(email=email).exclude(id=request.user.id).exists():
+                    return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'error_profile': "Email already exists!", 'forms': forms, 'current_application_setting': current_application_setting})
+
+                # Update user info
+                request.user.first_name = firstname
+                request.user.last_name = lastname
+                request.user.email = email
+                # Check if there was a profile picture uploaded
+                if request.FILES.get("profilepicture"):
+                    # Image will be automatically saved to the correct location because of the ImageField in the User model (pillow)
+                    request.user.profilePicture = request.FILES["profilepicture"]
+                request.user.save()
+            except Exception as e:
+                return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'error_profile': f"An error occurred while updating profile: {e}", 'forms': forms, 'current_application_setting': current_application_setting})
             return render(request, 'sharepoint/settings.jinja', {'active_page': active_page, 'success_profile': "Profile updated successfully", 'forms': forms, 'current_application_setting': current_application_setting})
         
         # Check if application settings is changed
@@ -549,3 +568,65 @@ def learninggoals_data(request):
         response = HttpResponse(csv_data, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="learninggoals_data.csv"'
         return response
+   
+@login_required(login_url='login')
+def edit_news(request, mediaPath=None):
+    active_page = 'news'
+    # Check if user is admin
+    if not request.user.role_is_admin():
+        return redirect('dashboard')
+
+    # Create form for editing/creating news without using a predefined form class
+    NewsForm = modelform_factory(News, fields=['title', 'isPublic', 'showAuthor', 'picture', 'description', 'content'], widgets={'content': CKEditorWidget()})
+    # check if there is an existing news article to edit
+    instance = get_object_or_404(News, mediaPath=mediaPath) if mediaPath else None
+    # Create the form instance
+    form = NewsForm(request.POST or None, request.FILES or None, instance=instance)
+
+    # Check if form is submitted
+    if request.method == "POST":
+        # Check if we are editing an existing news article
+        if mediaPath:
+            news_article = News.objects.get(mediaPath=mediaPath)
+        else:
+            news_article = News()
+        # Get data from form
+        news_article.title = request.POST.get("title")
+        news_article.isPublic = True if request.POST.get("isPublic") == "on" else False
+        news_article.showAuthor = True if request.POST.get("showAuthor") == "on" else False
+        news_article.description = request.POST.get("description")
+        news_article.content = request.POST.get("content")
+        news_article.lastEditDate = timezone.now()
+        news_article.author = request.user
+        picture = request.FILES.get("picture")
+        if picture:
+            news_article.picture = picture         
+        news_article.save()
+
+        # Redirect to news page after saving with saved in session
+        request.session['news_saved'] = True
+        return redirect(f'/news/edit/{news_article.mediaPath}/')
+
+    # Check if saved parameter is in session
+    saved = request.session.pop('news_saved', False)
+
+    # Check if mediaPath is provided
+    if mediaPath:
+        return render(request, 'admin/edit_news.jinja', {'mediaPath': mediaPath, 'active_page': active_page, 'form': form, 'saved': saved})
+    return render(request, 'admin/edit_news.jinja', {'active_page': active_page, 'form': form, 'saved': saved})
+
+def view_news_item(request, mediaPath):
+    # Check if user is logged in
+    if request.user.is_authenticated:
+        active_page = 'news'
+        # Get the news article by mediaPath (private + public)
+        news_article = get_object_or_404(News, mediaPath=mediaPath)
+        # Take 2 other random news articles for suggestion at the bottom
+        news = News.objects.all().exclude(id=news_article.id).order_by('?')[:2]
+        return render(request, 'sharepoint/news_item.jinja', {'news_article': news_article, 'news': news, 'active_page': active_page})
+    else:
+        # Get the news article by mediaPath (only public)
+        news_article = get_object_or_404(News, mediaPath=mediaPath, isPublic=True)
+        # Take 2 other random news articles for suggestion at the bottom
+        news = News.objects.filter(isPublic=True).exclude(id=news_article.id).order_by('?')[:2]
+        return render(request, 'public/news_item.jinja', {'news_article': news_article, 'news': news})

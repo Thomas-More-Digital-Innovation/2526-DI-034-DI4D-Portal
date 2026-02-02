@@ -1,0 +1,33 @@
+{% extends "structure/structure_private.jinja"%}
+{% block title %}News - DI4D Portal{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ static('news.css') }}">{% endblock %}
+
+{% block banner %}
+<div class="h-32 w-full bg-cover bg-center border-4 border-[--blue_di4d]" style="background-image: url('{{ news_article.picture.url }}')"></div>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white min-h-screen w-80 md:w-full mx-auto">
+    <div class="w-full mx-auto flex flex-col">
+        <div>
+            <h1 class="text-3xl lg:text-4xl font-bold text-black mb-4 break-words">{{ news_article.title }}</h1>
+            <a href="{{ url('news') }}" class="btn_primary_orange mb-4"><i class="fa-solid fa-arrow-left"></i> Back</a>
+        </div>
+        <div class="mt-4 break-words news-content">
+            {{ news_article.content | safe }}
+        </div>
+        <div class="mt-20">
+            {% if news|length > 0 %}
+                    <h2 class="text-center text-2xl text-black">Read another news article</h2>
+                    <div class="grid grid-cols-1 gap-4 mt-6 w-full">
+                        {% for article in news %}
+                            <div class="{% if news|length == 1 %}xl:col-span-2 w-full xl:w-1/2 mx-auto{% endif %}">
+                                {{ news_item(article, '--white_grey') }}
+                            </div>
+                        {% endfor %}
+                    </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
