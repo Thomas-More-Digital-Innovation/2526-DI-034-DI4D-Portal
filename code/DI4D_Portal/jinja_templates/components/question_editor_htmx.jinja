@@ -1,0 +1,85 @@
+{# Single question editor HTMX component #}
+{% if not question %}
+    <p class="text-gray-500 text-sm">Select a question from the sidebar to edit it.</p>
+{% else %}
+{% set datatype_name = question.datatype.name|lower if question.datatype else '' %}
+{% set is_choice = datatype_name in ['multiple_choice', 'singular_choice'] %}
+{% set options = question.content.split(',') if question.content else [] %}
+
+<div class="bg-[var(--white_grey)] text-black rounded-lg p-4" id="question-block-{{ question.id }}">
+    <form hx-post="{{ url('form_builder_update_question', kwargs={'form_id': form.id, 'question_id': question.id}) }}" 
+          hx-trigger="change delay:500ms"
+          hx-target="#questions-list"
+          hx-swap="innerHTML">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
+        
+        <div class="mb-4">
+            <label class="text-black text-sm font-semibold" for="question_text_{{ question.id }}">Question</label>
+            <input id="question_text_{{ question.id }}" 
+                   name="question_text" 
+                   type="text" 
+                   value="{{ question.question or '' }}" 
+                   class="w-full bg-white text-black rounded-md px-3 py-2 mt-1" 
+                   placeholder="Enter your question..."
+                   required/>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <label class="text-black text-sm font-semibold" for="datatype_id_{{ question.id }}">Answer type</label>
+                <select id="datatype_id_{{ question.id }}" 
+                        name="datatype_id" 
+                        class="w-full bg-white text-black rounded-md px-3 py-2 mt-1"
+                        hx-post="{{ url('form_builder_update_question', kwargs={'form_id': form.id, 'question_id': question.id}) }}"
+                        hx-trigger="change"
+                        hx-target="#question-editor"
+                        hx-swap="innerHTML"
+                        hx-include="closest form">
+                    {% for dtype in data_types %}
+                        <option value="{{ dtype.id }}" {% if question.datatype and dtype.id == question.datatype.id %}selected{% endif %}>{{ dtype.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="text-black text-sm font-semibold" for="is_mandatory_{{ question.id }}">Required?</label>
+                <select id="is_mandatory_{{ question.id }}" 
+                        name="is_mandatory" 
+                        class="w-full bg-white text-black rounded-md px-3 py-2 mt-1">
+                    <option value="yes" {% if question.isMandatory %}selected{% endif %}>Yes</option>
+                    <option value="no" {% if not question.isMandatory %}selected{% endif %}>No</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="text-black text-sm font-semibold" for="explanation_{{ question.id }}">Explanation (optional)</label>
+            <textarea id="explanation_{{ question.id }}" 
+                      name="explanation" 
+                      class="w-full bg-white text-black rounded-md px-3 py-2 mt-1" 
+                      rows="2"
+                      placeholder="Add helpful context for this question...">{{ question.explanation or '' }}</textarea>
+        </div>
+    </form>
+
+    {# Options section for choice types #}
+    {% if is_choice %}
+    <div class="mt-4 border-t border-gray-200 pt-4">
+        <div class="flex items-center justify-between mb-3">
+            <label class="text-black text-sm font-semibold">Answer Options</label>
+            <form hx-post="{{ url('form_builder_add_option', kwargs={'form_id': form.id, 'question_id': question.id}) }}" 
+                  hx-target="#options-list-{{ question.id }}" 
+                  hx-swap="innerHTML">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
+                <button type="submit" class="text-black hover:text-green-700 text-sm flex items-center gap-1">
+                    <i class="fa-solid fa-plus"></i> Add Option
+                </button>
+            </form>
+        </div>
+        <div id="options-list-{{ question.id }}" class="space-y-2">
+            {% include 'components/question_options_htmx.jinja' %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}

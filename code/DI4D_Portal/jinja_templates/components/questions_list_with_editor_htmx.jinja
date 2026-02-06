@@ -1,0 +1,7 @@
+{# Questions list with editor OOB swap - used when adding new questions #}
+{% include 'components/questions_list_htmx.jinja' %}
+
+{# OOB swap to show the new question in the editor #}
+<div id="question-editor" hx-swap-oob="innerHTML">
+    {% include 'components/question_editor_htmx.jinja' %}
+</div>

@@ -1,0 +1,11 @@
+{# Questions list with clear editor OOB swap - used when deleting questions #}
+{% include 'components/questions_list_htmx.jinja' %}
+
+{# OOB swap to clear the editor after delete #}
+<div id="question-editor" hx-swap-oob="innerHTML">
+    {% if questions|length > 0 %}
+        <p class="text-gray-500 text-sm">Select a question from the sidebar to edit it.</p>
+    {% else %}
+        <p class="text-gray-500 text-sm">No questions yet. Click "Add Question" in the sidebar to add one.</p>
+    {% endif %}
+</div>

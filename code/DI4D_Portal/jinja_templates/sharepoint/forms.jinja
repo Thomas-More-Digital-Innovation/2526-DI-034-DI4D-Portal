@@ -1,5 +1,5 @@
 {% extends "structure/structure_private.jinja"%}
-{% from 'structure/structure.jinja' import empty_modal, delete_confirm_modal %}
+{% from 'structure/structure.jinja' import delete_confirm_modal %}
 {% block title %}Forms - DI4D Portal{% endblock %}
 
 {% block content %}
@@ -7,32 +7,37 @@
     <div class="flex flex-col gap-4">
         <div class="flex flex-col gap-4">
             <h1 class="text-3xl lg:text-4xl font-bold text-black">Forms</h1>
-            <form class="flex flex-row max-w-2xl gap-4 flex-wrap" method="POST" hx-post="{{ url('forms') }}" hx-target="#forms-grid">
+            <form class="mt-6 flex flex-row max-w-xl gap-4" method="POST" hx-post="{{ url('forms') }}" hx-target="#forms-grid">
                 {{ csrf_input }}
-                <div class="relative flex-1 min-w-[200px]">
+                <div class="relative flex-1">
                     <input type="text" 
                             id="q" 
                             name="q"
                             placeholder="Search..." 
                             value="{{ search_query }}"
-                            class="bg-[--white_grey] rounded-md w-full px-4 py-2 pr-12"
+                            class="bg-[--white_grey] rounded-md w-full px-4 py-1 pr-12"
                             hx-trigger="keyup changed delay:300ms" hx-sync="closest form:abort">
                     <button class="absolute right-0 top-0 bottom-0 px-3 text-[var(--light_gray)]" type="submit">        
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
                 </div>
-                <select class="bg-[--white_grey] rounded-md px-4 py-2" name="filter_status" id="filter_status"
+                <select class="bg-[--white_grey] rounded-md px-4" name="filter_status" id="filter_status"
                     hx-trigger="change" hx-target="#forms-grid" hx-post="{{ url('forms') }}" x-model="filterStatus">
                     <option value="all" {% if filter_status == 'all' or not filter_status %}selected{% endif %}>Filter</option>
                     <option value="not_started" {% if filter_status == 'not_started' %}selected{% endif %}>Not Started</option>
                     <option value="in_progress" {% if filter_status == 'in_progress' %}selected{% endif %}>In Progress</option>
                     <option value="completed" {% if filter_status == 'completed' %}selected{% endif %}>Completed</option>
                 </select>
+                <a href="{{ url('form_builder_new') }}" class="px-4 bg-[--white_grey] rounded-md flex items-center justify-center">
+                    <i class="fa-solid fa-plus text-[--green]"></i>
+                </a>
             </form>
             <div class="mt-2" id="forms-grid">
                 {% include 'components/forms_htmx.jinja' %}
             </div>
         </div>
     </div>
+
+    {{ delete_confirm_modal("Delete Form", csrf_token) }}
 </div>
 {% endblock %}

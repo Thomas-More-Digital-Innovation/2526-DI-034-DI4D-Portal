@@ -5,7 +5,7 @@ from django.core.mail import send_mail
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from .models import ApplicationSetting, News, User, Question, FormAnswer, TechTalk, Form, UserType, Partner, LearningGoal, LearninggoalCourse
+from .models import ApplicationSetting, News, User, Question, FormAnswer, TechTalk, Form, UserType, Partner, LearningGoal, LearninggoalCourse, DataType
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.core.paginator import Paginator
@@ -707,8 +707,50 @@ def forms_view(request):
     if excluded_form_ids:
         all_forms = all_forms.exclude(id__in=excluded_form_ids)
     
-    # Search filter
+    # Handle CRUD actions
     if request.method == "POST":
+        delete_id = request.POST.get("delete_id")
+        action = request.POST.get("action")
+
+        if delete_id:
+            form_to_delete = Form.objects.filter(id=delete_id).first()
+            if form_to_delete:
+                # Soft-delete: mark form as inactive instead of removing from DB
+                form_to_delete.isActive = False
+                form_to_delete.save()
+            return redirect('forms')
+
+        if action == "create":
+            title = request.POST.get("title", "").strip()
+            start_date = request.POST.get("startDate")
+            end_date = request.POST.get("endDate")
+            is_active = request.POST.get("isActive") == "on"
+            if title and start_date and end_date:
+                Form.objects.create(
+                    userId=request.user,
+                    title=title,
+                    startDate=start_date,
+                    endDate=end_date,
+                    isActive=is_active
+                )
+            return redirect('forms')
+
+        if action == "edit":
+            form_id = request.POST.get("form_id")
+            title = request.POST.get("title", "").strip()
+            start_date = request.POST.get("startDate")
+            end_date = request.POST.get("endDate")
+            is_active = request.POST.get("isActive") == "on"
+            form_to_edit = Form.objects.filter(id=form_id).first()
+            if form_to_edit and title and start_date and end_date:
+                form_to_edit.title = title
+                form_to_edit.startDate = start_date
+                form_to_edit.endDate = end_date
+                form_to_edit.isActive = is_active
+                form_to_edit.save()
+            return redirect('forms')
+
+        # Search filter
         search_query = request.POST.get("q", "").strip()
         if search_query:
             all_forms = all_forms.filter(Q(title__icontains=search_query))
@@ -718,7 +760,7 @@ def forms_view(request):
     for form in all_forms:
         # Check if user has answered any questions for this form
         questions = Question.objects.filter(formId=form, isActive=True)
-        user_answers = FormAnswer.objects.filter(
+        submitted_answers = FormAnswer.objects.filter(
             questionId__in=questions,
             userId=request.user
         )
@@ -726,14 +768,14 @@ def forms_view(request):
         # Determine status
         deadline_passed = form.endDate and form.endDate < today
         total_questions = questions.count()
-        answered_questions = user_answers.values('questionId').distinct().count()
+        answered_questions = submitted_answers.values('questionId').distinct().count()
         
-        if answered_questions == 0:
-            status = 'not_started'
-        elif answered_questions >= total_questions:
+        if answered_questions >= total_questions and total_questions > 0:
             status = 'completed'
-        else:
+        elif answered_questions > 0:
             status = 'in_progress'
+        else:
+            status = 'not_started'
         
         forms_with_status.append({
             'form': form,
@@ -811,6 +853,26 @@ def form_detail_view(request, form_id):
         data['already_completed'] = True
         return render(request, 'sharepoint/form_detail.jinja', data)
     
+    # Build existing answers map for prefilling
+    existing_answers = {}
+    existing_answers_multi = {}
+    all_existing = FormAnswer.objects.filter(
+        questionId__in=questions,
+        userId=request.user
+    ).order_by('-answerDate')
+    for answer in all_existing:
+        qid = answer.questionId.id
+        datatype_name = answer.questionId.datatype.name.lower()
+        if datatype_name == 'multiple_choice':
+            try:
+                existing_answers_multi[qid] = json.loads(answer.answer)
+            except Exception:
+                existing_answers_multi[qid] = []
+        else:
+            existing_answers[qid] = answer.answer
+
+    data['existing_answers'] = existing_answers
+    data['existing_answers_multi'] = existing_answers_multi
     data['form_open'] = True
     
     # Handle form submission
@@ -844,11 +906,13 @@ def form_detail_view(request, form_id):
                 
                 # Only save if answer is provided
                 if answer_value:
-                    FormAnswer.objects.create(
-                        answer=answer_value,
+                    FormAnswer.objects.update_or_create(
                         questionId=question,
                         userId=request.user,
-                        answerDate=today
+                        defaults={
+                            'answer': answer_value,
+                            'answerDate': today
+                        }
                     )
             
             # Clear session preview files
@@ -868,3 +932,358 @@ def form_detail_view(request, form_id):
             data['error'] = f"An error occurred while submitting the form: {str(e)}"
     
     return render(request, 'sharepoint/form_detail.jinja', data)
+
+@login_required(login_url='login')
+def form_autosave(request, form_id):
+    """
+    Lightweight autosave for SharePoint forms (non-file fields).
+    Saves a single field change with minimal payload.
+    """
+    if request.method != 'POST':
+        return HttpResponse(status=405)
+
+    # Ignore file uploads for autosave
+    if request.FILES:
+        return HttpResponse(status=204)
+
+    # Determine question id
+    question_id = request.POST.get('question_id')
+    if not question_id:
+        for key in request.POST.keys():
+            if key.startswith('question_'):
+                question_id = key.replace('question_', '')
+                break
+
+    if not question_id:
+        return HttpResponse(status=400)
+
+    question = get_object_or_404(Question, id=question_id, formId_id=form_id)
+    datatype_name = question.datatype.name.lower()
+
+    if datatype_name == 'multiple_choice':
+        selected_values = request.POST.getlist(f'question_{question_id}')
+        answer_value = json.dumps(selected_values) if selected_values else ''
+    else:
+        answer_value = request.POST.get(f'question_{question_id}', '')
+
+    if not answer_value:
+        FormAnswer.objects.filter(questionId=question, userId=request.user).delete()
+        return HttpResponse(status=204)
+
+    FormAnswer.objects.update_or_create(
+        questionId=question,
+        userId=request.user,
+        defaults={
+            'answer': answer_value,
+            'answerDate': timezone.now().date()
+        }
+    )
+
+    return HttpResponse(status=204)
+
+@login_required(login_url='login')
+def form_submissions(request, form_id):
+    active_page = 'forms'
+    form = get_object_or_404(Form, id=form_id, isActive=True)
+    questions = Question.objects.filter(formId=form, isActive=True)
+
+    answers = FormAnswer.objects.filter(questionId__in=questions, userId__isnull=False)
+    user_ids = answers.values_list('userId', flat=True).distinct()
+    users = User.objects.filter(id__in=user_ids).order_by('firstname', 'lastname')
+
+    total_questions = questions.count()
+    user_rows = []
+    for user in users:
+        user_answer_count = answers.filter(userId=user).values('questionId').distinct().count()
+        if total_questions > 0 and user_answer_count >= total_questions:
+            submitted_date = answers.filter(userId=user).order_by('-answerDate').values_list('answerDate', flat=True).first()
+            user_rows.append({
+                'user': user,
+                'submitted_date': submitted_date
+            })
+
+    return render(request, 'sharepoint/form_submissions.jinja', {
+        'active_page': active_page,
+        'form': form,
+        'user_rows': user_rows
+    })
+
+@login_required(login_url='login')
+def form_submission_detail(request, form_id, username):
+    active_page = 'forms'
+    form = get_object_or_404(Form, id=form_id, isActive=True)
+    questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
+    user = get_object_or_404(User, username=username)
+
+    answers = FormAnswer.objects.filter(questionId__in=questions, userId=user)
+    answer_map = {}
+    for ans in answers:
+        datatype_name = ans.questionId.datatype.name.lower()
+        if datatype_name == 'multiple_choice':
+            try:
+                answer_map[ans.questionId.id] = json.loads(ans.answer)
+            except Exception:
+                answer_map[ans.questionId.id] = []
+        else:
+            answer_map[ans.questionId.id] = ans.answer
+
+    return render(request, 'sharepoint/form_submission_detail.jinja', {
+        'active_page': active_page,
+        'form': form,
+        'user': user,
+        'questions': questions,
+        'answer_map': answer_map
+    })
+
+@login_required(login_url='login')
+def form_builder_view(request, form_id=None):
+    """
+    Form builder page for creating/editing forms and questions.
+    """
+    active_page = 'forms'
+    data_types = DataType.objects.all()
+    
+    if form_id:
+        form = get_object_or_404(Form, id=form_id)
+        questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
+    else:
+        form = None
+        questions = []
+    
+    # Handle form settings update
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'update_settings':
+            title = request.POST.get('title', '').strip()
+            start_date = request.POST.get('startDate')
+            end_date = request.POST.get('endDate')
+            is_active = request.POST.get('isActive') == 'on'
+            
+            if title and start_date and end_date:
+                # If the form already exists, ensure there are no incomplete required questions
+                if form:
+                    # reload questions to ensure fresh data
+                    questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
+                    incomplete_questions = []
+                    for q in questions:
+                        if q.isMandatory:
+                            # missing question text
+                            if not q.question or not q.question.strip():
+                                incomplete_questions.append(q.id)
+                                continue
+                            # for choice types ensure there is at least one non-empty option
+                            dtype_name = q.datatype.name.lower() if q.datatype else ''
+                            if dtype_name in ['multiple_choice', 'singular_choice']:
+                                options = [opt.strip() for opt in (q.content or '').split(',') if opt.strip()]
+                                if len(options) == 0:
+                                    incomplete_questions.append(q.id)
+
+                    if incomplete_questions:
+                        # Don't save settings if required questions are incomplete — render error message
+                        return render(request, 'sharepoint/form_builder.jinja', {
+                            'active_page': active_page,
+                            'form': form,
+                            'questions': questions,
+                            'question': questions.first() if questions else None,
+                            'data_types': data_types,
+                            'form_error': 'Cannot save: some required questions are incomplete. Please finish them in the editor before saving.'
+                        })
+
+                    form.title = title
+                    form.startDate = start_date
+                    form.endDate = end_date
+                    form.isActive = is_active
+                    form.save()
+                else:
+                    form = Form.objects.create(
+                        userId=request.user,
+                        title=title,
+                        startDate=start_date,
+                        endDate=end_date,
+                        isActive=is_active
+                    )
+                    return redirect('form_builder', form_id=form.id)
+    
+    return render(request, 'sharepoint/form_builder.jinja', {
+        'active_page': active_page,
+        'form': form,
+        'questions': questions,
+        'question': questions.first() if questions else None,
+        'data_types': data_types
+    })
+
+@login_required(login_url='login')
+def form_builder_add_question(request, form_id):
+    """
+    Add a new question to the form (HTMX endpoint).
+    """
+    form = get_object_or_404(Form, id=form_id)
+    data_types = DataType.objects.all()
+    default_datatype = data_types.first()
+    
+    # Create new question
+    new_question = Question.objects.create(
+        formId=form,
+        datatype=default_datatype,
+        question='',
+        isActive=True,
+        isMandatory=False
+    )
+    
+    questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
+    
+    return render(request, 'components/questions_list_with_editor_htmx.jinja', {
+        'form': form,
+        'questions': questions,
+        'question': new_question,
+        'data_types': data_types,
+        'new_question_id': new_question.id
+    })
+
+@login_required(login_url='login')
+def form_builder_delete_question(request, form_id):
+    """
+    Delete a question from the form (HTMX endpoint).
+    """
+    form = get_object_or_404(Form, id=form_id)
+    question_id = request.POST.get('question_id')
+    
+    if question_id:
+        question = Question.objects.filter(id=question_id, formId=form).first()
+        if question:
+            question.isActive = False
+            question.save()
+    
+    questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
+    
+    return render(request, 'components/questions_list_with_clear_htmx.jinja', {
+        'form': form,
+        'questions': questions
+    })
+
+@login_required(login_url='login')
+def form_builder_get_question(request, form_id, question_id):
+    """
+    Get a single question for editing (HTMX endpoint).
+    """
+    form = get_object_or_404(Form, id=form_id)
+    question = get_object_or_404(Question, id=question_id, formId=form, isActive=True)
+    data_types = DataType.objects.all()
+    
+    return render(request, 'components/question_editor_htmx.jinja', {
+        'form': form,
+        'question': question,
+        'data_types': data_types
+    })
+
+@login_required(login_url='login')
+def form_builder_update_question(request, form_id, question_id):
+    """
+    Update a question's details (HTMX endpoint).
+    """
+    form = get_object_or_404(Form, id=form_id)
+    question = get_object_or_404(Question, id=question_id, formId=form)
+    data_types = DataType.objects.all()
+    
+    question_text = request.POST.get('question_text', '').strip()
+    datatype_id = request.POST.get('datatype_id')
+    is_mandatory = request.POST.get('is_mandatory') == 'yes'
+    explanation = request.POST.get('explanation', '').strip()
+    
+    if question_text:
+        question.question = question_text
+    if datatype_id:
+        question.datatype = DataType.objects.get(id=datatype_id)
+        # Clear content if changing away from choice types
+        datatype_name = question.datatype.name.lower()
+        if datatype_name not in ['multiple_choice', 'singular_choice']:
+            question.content = ''
+    question.isMandatory = is_mandatory
+    question.explanation = explanation
+    question.save()
+    
+    questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
+    
+    # If datatype changed, return the editor template with OOB list update
+    if datatype_id:
+        return render(request, 'components/question_editor_with_list_htmx.jinja', {
+            'form': form,
+            'question': question,
+            'questions': questions,
+            'data_types': data_types
+        })
+    
+    # Otherwise just return the list (updates sidebar only)
+    return render(request, 'components/questions_list_htmx.jinja', {
+        'form': form,
+        'questions': questions
+    })
+
+@login_required(login_url='login')
+def form_builder_add_option(request, form_id, question_id):
+    """
+    Add an option to a multiple/singular choice question (HTMX endpoint).
+    """
+    form = get_object_or_404(Form, id=form_id)
+    question = get_object_or_404(Question, id=question_id, formId=form)
+    
+    # Get current options
+    options = [opt.strip() for opt in question.content.split(',') if opt.strip()] if question.content else []
+    
+    # Add new option
+    options.append(f'Option {len(options) + 1}')
+    question.content = ','.join(options)
+    question.save()
+    
+    return render(request, 'components/question_options_htmx.jinja', {
+        'form': form,
+        'question': question
+    })
+
+@login_required(login_url='login')
+def form_builder_delete_option(request, form_id, question_id):
+    """
+    Delete an option from a multiple/singular choice question (HTMX endpoint).
+    """
+    form = get_object_or_404(Form, id=form_id)
+    question = get_object_or_404(Question, id=question_id, formId=form)
+    option_index = int(request.POST.get('option_index', -1))
+    
+    # Get current options
+    options = [opt.strip() for opt in question.content.split(',') if opt.strip()] if question.content else []
+    
+    # Remove option at index
+    if 0 <= option_index < len(options):
+        options.pop(option_index)
+        question.content = ','.join(options)
+        question.save()
+    
+    return render(request, 'components/question_options_htmx.jinja', {
+        'form': form,
+        'question': question
+    })
+
+@login_required(login_url='login')
+def form_builder_update_option(request, form_id, question_id):
+    """
+    Update an option value (HTMX endpoint).
+    """
+    form = get_object_or_404(Form, id=form_id)
+    question = get_object_or_404(Question, id=question_id, formId=form)
+    option_index = int(request.POST.get('option_index', -1))
+    option_value = request.POST.get('option_value', '').strip()
+    
+    # Get current options
+    options = [opt.strip() for opt in question.content.split(',') if opt.strip()] if question.content else []
+    
+    # Update option at index
+    if 0 <= option_index < len(options) and option_value:
+        options[option_index] = option_value
+        question.content = ','.join(options)
+        question.save()
+    
+    return render(request, 'components/question_options_htmx.jinja', {
+        'form': form,
+        'question': question
+    })

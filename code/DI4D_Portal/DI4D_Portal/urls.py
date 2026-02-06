@@ -43,7 +43,19 @@ urlpatterns = [
     path('news/edit/<str:mediaPath>/', views.edit_news, name='edit_news'),
     path('news/<str:mediaPath>/', views.view_news_item, name='view_news_item'),
     path('forms/', views.forms_view, name='forms'),
+    path('forms/new/', views.form_builder_view, name='form_builder_new'),
     path('forms/<int:form_id>/', views.form_detail_view, name='form_detail'),
+    path('forms/<int:form_id>/edit/', views.form_builder_view, name='form_builder'),
+    path('forms/<int:form_id>/autosave/', views.form_autosave, name='form_autosave'),
+    path('forms/<int:form_id>/submissions/', views.form_submissions, name='form_submissions'),
+    path('forms/<int:form_id>/submissions/<str:username>/', views.form_submission_detail, name='form_submission_detail'),
+    path('forms/<int:form_id>/add-question/', views.form_builder_add_question, name='form_builder_add_question'),
+    path('forms/<int:form_id>/delete-question/', views.form_builder_delete_question, name='form_builder_delete_question'),
+    path('forms/<int:form_id>/question/<int:question_id>/', views.form_builder_get_question, name='form_builder_get_question'),
+    path('forms/<int:form_id>/question/<int:question_id>/update/', views.form_builder_update_question, name='form_builder_update_question'),
+    path('forms/<int:form_id>/question/<int:question_id>/add-option/', views.form_builder_add_option, name='form_builder_add_option'),
+    path('forms/<int:form_id>/question/<int:question_id>/delete-option/', views.form_builder_delete_option, name='form_builder_delete_option'),
+    path('forms/<int:form_id>/question/<int:question_id>/update-option/', views.form_builder_update_option, name='form_builder_update_option'),
     # Docs : https://docs.djangoproject.com/en/6.0/topics/auth/default/#all-authentication-views
     path("password_reset/", auth_views.PasswordResetView.as_view(
         template_name="auth/forgot_password.jinja"

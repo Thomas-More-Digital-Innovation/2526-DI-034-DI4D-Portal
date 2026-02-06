@@ -1,0 +1,33 @@
+{# Question options HTMX component #}
+{% set options = question.content.split(',') if question.content else [] %}
+{% if options|length == 0 or (options|length == 1 and options[0] == '') %}
+    <p class="text-gray-600 text-sm">No options yet. Click "Add Option" to add one.</p>
+{% else %}
+    {% for opt in options %}
+        {% if opt.strip() %}
+        <div class="flex gap-2 items-center">
+            <form class="flex-1 flex gap-2" 
+                  hx-post="{{ url('form_builder_update_option', kwargs={'form_id': form.id, 'question_id': question.id}) }}" 
+                  hx-trigger="change delay:500ms"
+                  hx-target="#options-list-{{ question.id }}"
+                  hx-swap="innerHTML">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
+                <input type="hidden" name="option_index" value="{{ loop.index0 }}"/>
+                <input type="text" 
+                       name="option_value" 
+                       value="{{ opt.strip() }}" 
+                       class="flex-1 bg-white text-black rounded-md px-3 py-2"/>
+            </form>
+                <form hx-post="{{ url('form_builder_delete_option', kwargs={'form_id': form.id, 'question_id': question.id}) }}" 
+                      hx-target="#options-list-{{ question.id }}" 
+                      hx-swap="innerHTML">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
+                    <input type="hidden" name="option_index" value="{{ loop.index0 }}"/>
+                    <button type="submit" class="px-3 py-2 bg-[--red] text-black rounded-md hover:opacity-80">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </form>
+        </div>
+        {% endif %}
+    {% endfor %}
+{% endif %}

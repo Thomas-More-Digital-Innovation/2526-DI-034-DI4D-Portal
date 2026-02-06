@@ -1,0 +1,21 @@
+{# Questions list HTMX component #}
+{% if questions|length == 0 %}
+    <p class="text-gray-500 text-sm">No questions yet. Click the + button to add one.</p>
+{% else %}
+    {% for question in questions %}
+        {% include 'components/question_block_htmx.jinja' %}
+    {% endfor %}
+{% endif %}
+
+{# Out-of-band swap for questions overview #}
+<div id="questions-overview" hx-swap-oob="innerHTML">
+    {% if questions %}
+        {% for question in questions %}
+            <div class="bg-white rounded-md px-3 py-2 text-gray-600 truncate">
+                {{ loop.index }}. {{ question.question or 'Untitled question' }}
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-gray-500 text-sm">No questions yet.</p>
+    {% endif %}
+</div>
