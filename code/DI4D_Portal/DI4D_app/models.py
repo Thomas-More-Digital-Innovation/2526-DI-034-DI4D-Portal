@@ -119,6 +119,7 @@ class FormAnswer(models.Model):
     questionId = models.ForeignKey(Question, on_delete=models.RESTRICT)
     userId = models.ForeignKey(User, on_delete=models.RESTRICT, null=True, blank=True)
     answerDate = models.DateField()
+    submission_number = models.IntegerField(null=True, blank=True)
 
 class TechTalk(models.Model):
     title = models.CharField(max_length=150)
