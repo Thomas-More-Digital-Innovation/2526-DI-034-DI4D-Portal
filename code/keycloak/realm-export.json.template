@@ -2,17 +2,18 @@
   {
     "realm": "di4d",
     "enabled": true,
+    "sslRequired": "NONE",
     "displayName": "DI4D Realm",
     "loginTheme": "di4d",
     "resetPasswordAllowed": true,
     "smtpServer": {
       "host": "smtp.resend.com",
       "port": "465",
-      "from": "your-email@domain.com",
+      "from": "no-reply@davidmaat.be",
       "auth": "true",
       "ssl": "true",
-      "user": "your-smtp-username",
-      "password": "your-smtp-password"
+      "user": "resend",
+      "password": "re_jJeTaBhy_2GwUtGGAeNKkP2X9qzo4Jbck"
     },
     "users": [],
     "identityProviders": [
@@ -23,21 +24,20 @@
         "trustEmail": true,
         "storeToken": true,
         "addReadTokenRoleOnCreate": false,
-        "authenticateByDefault": false,
+        "authenticateByDefault": true,
         "linkOnly": false,
         "firstBrokerLoginFlowAlias": "first broker login",
         "config": {
           "clientId": "keycloak-client-id",
           "clientSecret": "keycloak-client-secret",
-          "authorizationUrl": "http://host.docker.internal:8000/openid/authorize/",
+          "authorizationUrl": "http://localhost:8000/openid/authorize/",
           "tokenUrl": "http://host.docker.internal:8000/openid/token/",
           "logoutUrl": "http://host.docker.internal:8000/openid/logout/",
           "userInfoUrl": "http://host.docker.internal:8000/openid/userinfo/",
           "jwksUrl": "http://host.docker.internal:8000/openid/jwks/",
-          "issuer": "http://host.docker.internal:8000",
+          "issuer": "http://localhost:8000",
           "defaultScope": "openid profile email"
-        },
-
+        }
       }
     ],
     "identityProviderMappers": [
@@ -76,7 +76,9 @@
         "protocol": "openid-connect",
         "redirectUris": [
           "http://127.0.0.1:8000/login/callback/",
-          "http://localhost:8000/login/callback/"
+          "http://localhost:8000/login/callback/",
+          "http://127.0.0.1:8000/",
+          "http://localhost:8000/"
         ],
         "publicClient": false,
         "secret": "django-client-secret",
@@ -84,7 +86,53 @@
           "http://127.0.0.1:8000",
           "http://localhost:8000"
         ]
+      },
+      {
+        "clientId": "web",
+        "enabled": true,
+        "protocol": "openid-connect",
+        "redirectUris": [
+          "https://cloud.opencloud.test/oidc-callback.html",
+          "https://cloud.opencloud.test/"
+        ],
+        "publicClient": true,
+        "webOrigins": [
+          "https://cloud.opencloud.test"
+        ]
       }
-    ]
+    ],
+    "authenticationFlows": [
+      {
+        "alias": "browser-django-oidc",
+        "description": "Browser flow that redirects to django-oidc by default",
+        "providerId": "basic-flow",
+        "topLevel": true,
+        "builtIn": false,
+        "authenticationExecutions": [
+          {
+            "authenticator": "auth-cookie",
+            "requirement": "ALTERNATIVE",
+            "priority": 10,
+            "authenticatorFlow": false
+          },
+          {
+            "authenticator": "identity-provider-redirector",
+            "requirement": "REQUIRED",
+            "priority": 15,
+            "authenticatorFlow": false,
+            "authenticatorConfig": "idp-redirector-default-django-oidc"
+          }
+        ]
+      }
+    ],
+    "authenticatorConfig": [
+      {
+        "alias": "idp-redirector-default-django-oidc",
+        "config": {
+          "defaultProvider": "django-oidc"
+        }
+      }
+    ],
+    "browserFlow": "browser-django-oidc"
   }
 ]

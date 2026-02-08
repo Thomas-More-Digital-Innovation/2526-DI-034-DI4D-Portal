@@ -36,10 +36,10 @@ COPY --from=builder /opt/keycloak/ /opt/keycloak/
 # ENV KC_DB_URL=<DBURL>
 # ENV KC_DB_USERNAME=<DBUSERNAME>
 # ENV KC_DB_PASSWORD=<DBPASSWORD>
-ENV KC_HOSTNAME=localhost
+# ENV KC_HOSTNAME=keycloak.opencloud.test
 
 # Custom theme is now available in /opt/keycloak/themes/di4d
-ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start-dev"]
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start"]
 
 # For production, use:
 # ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start"]
