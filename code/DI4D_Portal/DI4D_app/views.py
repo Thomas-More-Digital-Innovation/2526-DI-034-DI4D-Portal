@@ -516,6 +516,56 @@ def tech_talk_detail(request, talk_id):
         return render(request, 'sharepoint/techtalk_detail.jinja', context)
     return render(request, 'public/techtalk_detail.jinja', context)
 
+def tech_talk_detail(request, talk_id):
+
+    talk = TechTalk.objects.get(id=talk_id, isPublic=True)
+    recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
+
+    video_url = (talk.videoPath or "").strip()
+    # Normalize backslashes to forward slashes for URL
+    video_url = video_url.replace("\\", "/")
+    
+    def is_video_by_header(file_path: str) -> bool:
+        try:
+            kind = filetype.guess(file_path)
+            return kind is not None and kind.mime.startswith('video/')
+        except Exception:
+            return False
+
+    def is_video_by_url(url: str) -> bool:
+        try:
+            url_request = request.Request(url, method="HEAD")
+            with request.urlopen(url_request, timeout=5) as response:
+                content_type = response.headers.get('Content-Type', '')
+            return content_type.startswith('video/')
+        except Exception:
+            return False
+
+    is_local_video = False
+    if video_url.startswith(('http://', 'https://')):
+        is_local_video = is_video_by_url(video_url)
+    else:
+        local_path = os.path.join(settings.MEDIA_ROOT, video_url.lstrip('/'))
+        is_local_video = is_video_by_header(local_path)
+
+    # Build full media URL for local videos
+    if is_local_video and not video_url.startswith(('http://', 'https://')):
+        # Remove leading slash if present to avoid double slashes
+        video_url = video_url.lstrip('/')
+        video_url = settings.MEDIA_URL + video_url
+
+    context = {
+        "talk": talk,
+        "recent_talks": recent_talks,
+        "video_url": video_url,
+        "is_local_video": is_local_video,
+    }
+
+    if request.headers.get("HX-Request") == "true":
+        return render(request, 'components/techtalk_detail_htmx.jinja', context)
+
+    return render(request, 'public/techtalk_detail.jinja', context)
+
 @login_required(login_url='login')
 def settings_view(request):
     active_page = 'settings'
