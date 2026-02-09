@@ -22,8 +22,8 @@
 </div>
 {% endmacro %}
 {# TALK ITEM BOX #}
-{% macro talk_item(talk) %}
-<div class="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition flex flex-col h-full">
+{% macro talk_item(talk, color=None, show_actions=False) %}
+<div class="{% if color %}bg-[{{ color }}]{% else %}bg-white{% endif %} rounded-lg overflow-hidden shadow-lg flex flex-col h-full">
   <div class="w-full h-40 overflow-hidden bg-gray-100 flex items-center justify-center">
     {% if talk.thubnail %}
       <img src="{{ talk.thubnail }}" alt="{{ talk.title }}" 
@@ -50,9 +50,68 @@
         </div>
         {% endif %}
       </div>
-      <a class="btn_primary_orange px-4 py-2 text-center w-1/2" href="{{ talk.videoPath }}">Watch Talk</a>
+      {% if not show_actions %}
+        <a class="btn_primary_orange w-1/2 text-sm h-9 inline-flex items-center justify-center" href="{{ url('tech_talk_detail', kwargs={'talk_id': talk.id}) }}">View Talk</a>
+      {% endif %}
+    </div>
+    {% if show_actions %}
+      <div class="flex gap-2 mt-3">
+        <button type="button" class="btn_primary_blue flex-1 text-sm h-9 inline-flex items-center justify-center gap-2"
+                @click="currentEditId = {{ talk.id }}, title = '{{ talk.title }}', speaker = '{{ talk.speaker }}', description = '{{ talk.description }}', date = '{{ talk.date }}', thubnail = '{{ talk.thubnail }}', videoPath = '{{ talk.videoPath }}', isPublic = {{ 'true' if talk.isPublic else 'false' }}, open_edit_talk = true">
+          <i class="fa-solid fa-pen"></i>
+          <span>Edit</span>
+        </button>
+        <button type="button" class="btn flex-1 text-white bg-[--red] text-sm h-9 inline-flex items-center justify-center gap-2"
+                @click="currentDeleteId = {{ talk.id }}, currentDeleteName = '{{ talk.title }}'">
+          <i class="fa-solid fa-trash"></i>
+          <span>Delete</span>
+        </button>
+        <a class="btn_primary_orange flex-1 text-sm h-9 inline-flex items-center justify-center gap-2" href="{{ url('tech_talk_detail', kwargs={'talk_id': talk.id}) }}">
+          <span>View Talk</span>
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endmacro %}
+
+{# TECH TALK DETAIL BOX #}
+{% macro techtalk_detail(talk, recent_talks, video_url, embed_url, is_local_video, is_youtube, info_bg="--blue_di4d", text_class="text-white", heading_class="text-white", video_bg="--blue_di4d", video_height_class="h-[32rem]", video_width_class="lg:w-3/4", video_bg_class=None, info_bg_class=None) %}
+<div>
+  <div class="w-full {{ video_width_class }} mx-auto {% if video_bg_class %}{{ video_bg_class }}{% else %}bg-[var(--{{ video_bg }})]{% endif %} flex items-center justify-center {{ video_height_class }}">
+    {% if is_local_video %}
+      <video class="w-full h-full" controls controlslist="nodownload" disablepictureinpicture oncontextmenu="return false;">
+        <source src="{{ video_url }}" type="video/mp4" />
+        <source src="{{ video_url }}" type="video/webm" />
+        <source src="{{ video_url }}" type="video/ogg" />
+        Your browser does not support the video tag.
+      </video>
+    {% else %}
+      <div class="{{ text_class }} text-center">No video available.</div>
+    {% endif %}
+  </div>
+  <div class="p-6 w-full {{ video_width_class }} mx-auto {% if info_bg_class %}{{ info_bg_class }}{% else %}bg-[var(--{{ info_bg }})]{% endif %} flex-collum items-center justify-center">
+    <h2 class="text-lg font-semibold mb-2 {{ heading_class }}">Information:</h2>
+    <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+      <p class="text-sm {{ text_class }} md:flex-1">{{ talk.description }}</p>
+      <a class="btn_primary_orange shrink-0 text-sm h-9 inline-flex items-center justify-center px-4" href="{{ url('tech_talks') }}">View other tech talks</a>
     </div>
   </div>
+</div>
+
+<div class="mt-10">
+  <h2 class="text-2xl font-bold text-center mb-6 {{ heading_class }}">Most recent tech talks</h2>
+  {% if recent_talks %}
+    <div class="w-full lg:w-2/3 mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% for recent in recent_talks %}
+        {{ talk_item(recent) }}
+      {% endfor %}
+      </div>
+    </div>
+  {% else %}
+    <p class="{{ heading_class }} text-center">No other tech talks found.</p>
+  {% endif %}
 </div>
 {% endmacro %}
 
