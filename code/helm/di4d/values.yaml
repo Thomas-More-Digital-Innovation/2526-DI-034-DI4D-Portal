@@ -197,5 +197,6 @@ env:
     value: "change-me-in-production"
   - name: DJANGO_DEBUG
     value: "False"
-  - name: DJANGO_LOG_LEVEL
-    value: "INFO"
+  - name: EMAIL_BACKEND
+    value: "django.core.mail.backends.smtp.EmailBackend"
+
