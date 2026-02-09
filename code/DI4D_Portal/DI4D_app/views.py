@@ -13,6 +13,7 @@ from django.db.models import Q
 from django.utils.crypto import get_random_string
 from django.contrib.auth import update_session_auth_hash
 import os
+import filetype
 from django.core.files.storage import default_storage
 import json
 from django.forms import modelform_factory
@@ -171,6 +172,9 @@ def student_registration(request):
             # Clean the name for use in filename (replace spaces and special chars)
             user_name_clean = user_name.replace(' ', '_').replace('/', '_').replace('\\', '_')
             
+            # Get submission timestamp as integer (yyyymmddhhmmss format)
+            submission_timestamp = int(timezone.now().strftime('%Y%m%d%H%M%S'))
+            
             # Save answers for each question
             for question in questions:
                 question_id = f'question_{question.id}'
@@ -208,7 +212,8 @@ def student_registration(request):
                     FormAnswer.objects.create(
                     answer=answer_value,
                     questionId=question,
-                    answerDate=today
+                    answerDate=today,
+                    submission_number=submission_timestamp
                     )
             
             # Clear session preview files after successful submission
@@ -389,25 +394,180 @@ def users(request):
 
 def tech_talks(request):
     search_query = ""
+    active_page = 'Tech Talks'
     
-    # Get all public tech talks
-    all_techtalks = TechTalk.objects.filter(isPublic=True).order_by("-id")
+    # Get all tech talks (authenticated users) or public only
+    if request.user.is_authenticated:
+        all_techtalks = TechTalk.objects.all().order_by("-date", "-id")
+    else:
+        all_techtalks = TechTalk.objects.filter(isPublic=True).order_by("-date", "-id")
     total_techtalks = all_techtalks.count()
     
     # Check if somebody searched for something
     if request.method == "POST":
+        action = request.POST.get("action")
+        delete_id = request.POST.get("delete_id")
+        if request.user.is_authenticated and (action in ["create", "edit", "delete"] or delete_id):
+            if action == "delete" or delete_id:
+                if delete_id:
+                    TechTalk.objects.filter(id=delete_id).delete()
+                return redirect('tech_talks')
+
+            title = request.POST.get("title", "").strip()
+            speaker = request.POST.get("speaker", "").strip()
+            description = request.POST.get("description", "").strip()
+            date_value = request.POST.get("date")
+            thubnail = request.POST.get("thubnail", "").strip()
+            video_path = request.POST.get("videoPath", "").strip()
+            is_public = request.POST.get("isPublic") == "on"
+
+            if action == "create":
+                if title and speaker and description and date_value and thubnail and video_path:
+                    TechTalk.objects.create(
+                        title=title,
+                        speaker=speaker,
+                        description=description,
+                        date=date_value,
+                        thubnail=thubnail,
+                        videoPath=video_path,
+                        isPublic=is_public,
+                    )
+                return redirect('tech_talks')
+
+            if action == "edit":
+                talk_id = request.POST.get("talk_id")
+                if talk_id:
+                    talk = TechTalk.objects.filter(id=talk_id).first()
+                    if talk:
+                        talk.title = title
+                        talk.speaker = speaker
+                        talk.description = description
+                        if date_value:
+                            talk.date = date_value
+                        talk.thubnail = thubnail
+                        talk.videoPath = video_path
+                        talk.isPublic = is_public
+                        talk.save()
+                return redirect('tech_talks')
+
         search_query = request.POST.get("q", "").strip()
         # Check if search query is not empty
         if search_query:
             all_techtalks = all_techtalks.filter(Q(title__icontains=search_query) | Q(speaker__icontains=search_query) | Q(description__icontains=search_query))
         # Check if there is HTMX request
         if request.headers.get("HX-Request") == "true":
-            return render(request, 'components/techtalks_htmx.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query})
+            return render(request, 'components/techtalks_htmx.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query, "active_page": active_page})
     
-    return render(request, 'public/techtalks.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query})
+    if request.user.is_authenticated:
+        return render(request, 'sharepoint/techtalks.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query, "active_page": active_page})
+    return render(request, 'public/techtalks.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query, "active_page": active_page})
+
+def tech_talk_detail(request, talk_id):
+
+    talk = TechTalk.objects.get(id=talk_id, isPublic=True)
+    recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
+
+    video_url = (talk.videoPath or "").strip()
+    # Normalize backslashes to forward slashes for URL
+    video_url = video_url.replace("\\", "/")
+    
+    def is_video_by_header(file_path: str) -> bool:
+        try:
+            kind = filetype.guess(file_path)
+            return kind is not None and kind.mime.startswith('video/')
+        except Exception:
+            return False
+
+    def is_video_by_url(url: str) -> bool:
+        try:
+            url_request = request.Request(url, method="HEAD")
+            with request.urlopen(url_request, timeout=5) as response:
+                content_type = response.headers.get('Content-Type', '')
+            return content_type.startswith('video/')
+        except Exception:
+            return False
+
+    is_local_video = False
+    if video_url.startswith(('http://', 'https://')):
+        is_local_video = is_video_by_url(video_url)
+    else:
+        local_path = os.path.join(settings.MEDIA_ROOT, video_url.lstrip('/'))
+        is_local_video = is_video_by_header(local_path)
+
+    # Build full media URL for local videos
+    if is_local_video and not video_url.startswith(('http://', 'https://')):
+        # Remove leading slash if present to avoid double slashes
+        video_url = video_url.lstrip('/')
+        video_url = settings.MEDIA_URL + video_url
+
+    context = {
+        "talk": talk,
+        "recent_talks": recent_talks,
+        "video_url": video_url,
+        "is_local_video": is_local_video,
+    }
+
+    if request.headers.get("HX-Request") == "true":
+        if request.user.is_authenticated:
+            return render(request, 'components/techtalk_detail_private_htmx.jinja', context)
+        return render(request, 'components/techtalk_detail_htmx.jinja', context)
+
+    if request.user.is_authenticated:
+        return render(request, 'sharepoint/techtalk_detail.jinja', context)
+    return render(request, 'public/techtalk_detail.jinja', context)
+
+def tech_talk_detail(request, talk_id):
+
+    talk = TechTalk.objects.get(id=talk_id, isPublic=True)
+    recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
+
+    video_url = (talk.videoPath or "").strip()
+    # Normalize backslashes to forward slashes for URL
+    video_url = video_url.replace("\\", "/")
+    
+    def is_video_by_header(file_path: str) -> bool:
+        try:
+            kind = filetype.guess(file_path)
+            return kind is not None and kind.mime.startswith('video/')
+        except Exception:
+            return False
+
+    def is_video_by_url(url: str) -> bool:
+        try:
+            url_request = request.Request(url, method="HEAD")
+            with request.urlopen(url_request, timeout=5) as response:
+                content_type = response.headers.get('Content-Type', '')
+            return content_type.startswith('video/')
+        except Exception:
+            return False
+
+    is_local_video = False
+    if video_url.startswith(('http://', 'https://')):
+        is_local_video = is_video_by_url(video_url)
+    else:
+        local_path = os.path.join(settings.MEDIA_ROOT, video_url.lstrip('/'))
+        is_local_video = is_video_by_header(local_path)
+
+    # Build full media URL for local videos
+    if is_local_video and not video_url.startswith(('http://', 'https://')):
+        # Remove leading slash if present to avoid double slashes
+        video_url = video_url.lstrip('/')
+        video_url = settings.MEDIA_URL + video_url
+
+    context = {
+        "talk": talk,
+        "recent_talks": recent_talks,
+        "video_url": video_url,
+        "is_local_video": is_local_video,
+    }
+
+    if request.headers.get("HX-Request") == "true":
+        return render(request, 'components/techtalk_detail_htmx.jinja', context)
+
+    return render(request, 'public/techtalk_detail.jinja', context)
 
 @login_required(login_url='login')
-def settings(request):
+def settings_view(request):
     active_page = 'settings'
     
     # Chek if application settings exist, otherwise create default one
