@@ -197,3 +197,5 @@ env:
     value: "change-me-in-production"
   - name: DJANGO_DEBUG
     value: "False"
+  - name: DJANGO_LOG_LEVEL
+    value: "INFO"
