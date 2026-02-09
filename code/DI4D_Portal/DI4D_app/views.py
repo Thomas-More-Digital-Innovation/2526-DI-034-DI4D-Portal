@@ -172,6 +172,9 @@ def student_registration(request):
             # Clean the name for use in filename (replace spaces and special chars)
             user_name_clean = user_name.replace(' ', '_').replace('/', '_').replace('\\', '_')
             
+            # Get submission timestamp as integer (yyyymmddhhmmss format)
+            submission_timestamp = int(timezone.now().strftime('%Y%m%d%H%M%S'))
+            
             # Save answers for each question
             for question in questions:
                 question_id = f'question_{question.id}'
@@ -209,7 +212,8 @@ def student_registration(request):
                     FormAnswer.objects.create(
                     answer=answer_value,
                     questionId=question,
-                    answerDate=today
+                    answerDate=today,
+                    submission_number=submission_timestamp
                     )
             
             # Clear session preview files after successful submission
