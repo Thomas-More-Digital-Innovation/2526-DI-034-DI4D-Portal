@@ -5,7 +5,7 @@ from .models import (
     FormAnswer, TechTalk, UserTechTalk, Event, UserEvent, Webinar, UserWebinar,
     Company, Project, UserProject, LearningPath, LearningGoal, UserLearningGoal,
     CommunicationUserLearningGoal, UserLearningProof, Program, ProgramLearningoal, Course,
-    LearninggoalCourse)
+    LearninggoalCourse, StatusStudentRegistration)
 
 # Register your models here.
 admin.site.register(UserType)
@@ -38,3 +38,4 @@ admin.site.register(Program)
 admin.site.register(ProgramLearningoal)
 admin.site.register(Course)
 admin.site.register(LearninggoalCourse)
+admin.site.register(StatusStudentRegistration)

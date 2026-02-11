@@ -230,3 +230,7 @@ class Course(models.Model):
 class LearninggoalCourse(models.Model):
     learningGoalId = models.ForeignKey(LearningGoal, on_delete=models.RESTRICT)
     courseId = models.ForeignKey(Course, on_delete=models.RESTRICT)
+
+class StatusStudentRegistration(models.Model):
+    status = models.CharField(max_length=50, default='evaluate')
+    submission_number = models.IntegerField()
