@@ -43,8 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'DI4D_app',
-    'ckeditor',
-    'ckeditor_uploader',
+    'django_ckeditor_5',
 ]
 
 if DEBUG:
@@ -156,7 +155,17 @@ USE_TZ = True
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 # CKEditor configuration
-CKEDITOR_UPLOAD_PATH = "uploads/news"
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
+CKEDITOR_5_CONFIGS = {
+    'default': {
+        'toolbar': ['heading','bold','italic','link','bulletedList','numberedList','blockQuote','imageUpload','insertTable','undo','redo'],
+        'height': 400,
+        'contentCss': ['/static/news.css'],
+        'heading': {'options':[{'model':'paragraph','title':'Paragraph','class':'ck-heading_paragraph'}]},
+        'removePlugins': ['WordCount','CKBox','CKFinderUploadAdapter','EasyImage','CloudServices'],
+    }
+}
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

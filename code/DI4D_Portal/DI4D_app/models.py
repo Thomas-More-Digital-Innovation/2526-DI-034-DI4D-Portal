@@ -2,7 +2,6 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.models import BaseUserManager
-from ckeditor.fields import RichTextField
 
 # Create your models here.
 class UserType(models.Model):
@@ -84,7 +83,7 @@ class News(models.Model):
     author = models.ForeignKey(User, on_delete=models.RESTRICT)
     showAuthor = models.BooleanField(default=False)
     picture = models.ImageField(upload_to='news_pictures/')
-    content = RichTextField(verbose_name="content")
+    content = models.TextField(blank=True, null=True)
 
 class Form(models.Model):
     userId = models.ForeignKey(User, on_delete=models.RESTRICT)

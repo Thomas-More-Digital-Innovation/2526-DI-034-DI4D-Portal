@@ -17,8 +17,7 @@ import filetype
 from django.core.files.storage import default_storage
 import json
 from django.forms import modelform_factory
-from ckeditor.widgets import CKEditorWidget
-
+from django_ckeditor_5.widgets import CKEditor5Widget
 def page_not_found(request, exception=None):
     return render(request, 'errors/404.jinja', status=404)
 
@@ -686,7 +685,7 @@ def edit_news(request, mediaPath=None):
         return redirect('dashboard')
 
     # Create form for editing/creating news without using a predefined form class
-    NewsForm = modelform_factory(News, fields=['title', 'isPublic', 'showAuthor', 'picture', 'description', 'content'], widgets={'content': CKEditorWidget()})
+    NewsForm = modelform_factory(News, fields=['title', 'isPublic', 'showAuthor', 'picture', 'description', 'content'], widgets={'content': CKEditor5Widget()})
     # check if there is an existing news article to edit
     instance = get_object_or_404(News, mediaPath=mediaPath) if mediaPath else None
     # Create the form instance
@@ -694,22 +693,10 @@ def edit_news(request, mediaPath=None):
 
     # Check if form is submitted
     if request.method == "POST":
-        # Check if we are editing an existing news article
-        if mediaPath:
-            news_article = News.objects.get(mediaPath=mediaPath)
-        else:
-            news_article = News()
-        # Get data from form
-        news_article.title = request.POST.get("title")
-        news_article.isPublic = True if request.POST.get("isPublic") == "on" else False
-        news_article.showAuthor = True if request.POST.get("showAuthor") == "on" else False
-        news_article.description = request.POST.get("description")
-        news_article.content = request.POST.get("content")
+        #  Because we do form save it automatically handles create and edit
+        news_article = form.save(commit=False)
         news_article.lastEditDate = timezone.now()
         news_article.author = request.user
-        picture = request.FILES.get("picture")
-        if picture:
-            news_article.picture = picture         
         news_article.save()
 
         # Redirect to news page after saving with saved in session
