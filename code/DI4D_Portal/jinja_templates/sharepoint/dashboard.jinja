@@ -6,7 +6,19 @@
     <div class="">
         <h1 class="text-3xl lg:text-4xl font-bold text-black">Dashboard</h1>
         <p class="pb-4">Welcome inside our sharepoint. You can read the documentation of this application by clicking on the button below.</p>
-        <a class="btn_primary_orange text-xl" href="https://www.hier_komt_documentatie.be/" target="_blank">Documentation</a>   
+        <a class="btn_primary_orange text-xl" 
+            {% if request.user.role_is_sharepoint_user() %}
+                href="https://github.com/Thomas-More-Digital-Innovation/2526-DI-034-DI4D-Portal/wiki/Documentation#documentation-sharepoint-user"
+            {% elif request.user.role_is_student() %}
+                href="https://github.com/Thomas-More-Digital-Innovation/2526-DI-034-DI4D-Portal/wiki/Documentation#documentation-student"
+            {% elif request.user.role_is_partner() %}
+                href="https://github.com/Thomas-More-Digital-Innovation/2526-DI-034-DI4D-Portal/wiki/Documentation#documentation-partner"
+            {% elif request.user.role_is_admin() %}
+                href="https://github.com/Thomas-More-Digital-Innovation/2526-DI-034-DI4D-Portal/wiki/Documentation#documentation-admin"
+            {% else %}
+                href="https://github.com/Thomas-More-Digital-Innovation/2526-DI-034-DI4D-Portal/wiki/Documentation"
+            {% endif %}
+            target="_blank">Documentation</a>   
     </div>
     <div class="max-w-2xl w-full mx-auto flex flex-col justify-center mt-20">
         <p class="text-2xl font-bold text-black text-center mb-8">Fast actions</p>
