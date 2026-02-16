@@ -72,6 +72,23 @@ class UserSettings(models.Model):
     settingJson = models.CharField()
     userId = models.ForeignKey(User, on_delete=models.RESTRICT)
 
+class FileItem(models.Model):
+    name = models.CharField(max_length=255)
+    isDeleted = models.BooleanField(default=False)
+    s3Link = models.CharField(null=False, unique=True)
+    parentFolder = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='children',
+    )
+    owner = models.ForeignKey(User, on_delete=models.RESTRICT, related_name='owned_file_items')
+
+class FileShare(models.Model):
+    fileItemId = models.ForeignKey(FileItem, on_delete=models.CASCADE, related_name='shares')
+    userId = models.ForeignKey(User, on_delete=models.CASCADE, related_name='shared_file_items')
+
 def media_path_default():
     return uuid.uuid4().hex[:20]
 
