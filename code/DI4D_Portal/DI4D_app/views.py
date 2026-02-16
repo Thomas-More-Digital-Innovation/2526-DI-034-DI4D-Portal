@@ -294,7 +294,10 @@ def users(request):
         users = User.objects.filter(is_active=True).order_by('firstname', 'lastname')
     # Check if user is partner (then show only users of that partner)
     if request.user.role_is_partner():
-        users = User.objects.filter(partnerId=request.user.partnerId, is_active=True).order_by('firstname', 'lastname')
+        if request.user.partnerId:
+            users = User.objects.filter(partnerId=request.user.partnerId, is_active=True).order_by('firstname', 'lastname')
+        else:
+            users = User.objects.none()
 
     # Check if somebody clicked on the delete button / or create/edit user
     if request.method == "POST":

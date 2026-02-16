@@ -59,7 +59,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.userTypeId and self.userTypeId.name == "admin"
     
     def role_is_sharepoint_user(self):
-        return self.userTypeId.name == "sharepoint_user"
+        return self.userTypeId and self.userTypeId.name == "sharepoint_user"
     
     def role_is_partner(self):
         return self.userTypeId and self.userTypeId.name == "partner"
