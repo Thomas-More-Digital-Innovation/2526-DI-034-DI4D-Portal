@@ -751,8 +751,8 @@ def forms_view(request):
     if excluded_form_ids:
         all_forms = all_forms.exclude(id__in=excluded_form_ids)
     
-    # Handle CRUD actions
-    if request.method == "POST":
+    # Handle CRUD actions (admin only)
+    if request.method == "POST" and request.user.role_is_admin():
         delete_id = request.POST.get("delete_id")
         action = request.POST.get("action")
 
@@ -1026,6 +1026,10 @@ def form_autosave(request, form_id):
 
 @login_required(login_url='login')
 def form_submissions(request, form_id):
+    # Only admins can view submissions
+    if not request.user.role_is_admin():
+        return redirect('forms')
+    
     active_page = 'forms'
     form = get_object_or_404(Form, id=form_id, isActive=True)
     questions = Question.objects.filter(formId=form, isActive=True)
@@ -1053,6 +1057,9 @@ def form_submissions(request, form_id):
 
 @login_required(login_url='login')
 def form_submission_detail(request, form_id, username):
+    # Only admins can view individual submissions
+    if not request.user.role_is_admin():
+        return redirect('forms')
     active_page = 'forms'
     form = get_object_or_404(Form, id=form_id, isActive=True)
     questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
@@ -1082,7 +1089,12 @@ def form_submission_detail(request, form_id, username):
 def form_builder_view(request, form_id=None):
     """
     Form builder page for creating/editing forms and questions.
+    Admin only.
     """
+    # Only admins can access form builder
+    if not request.user.role_is_admin():
+        return redirect('forms')
+    
     active_page = 'forms'
     data_types = DataType.objects.all()
     today = timezone.now().date().strftime('%Y-%m-%d')
@@ -1159,7 +1171,11 @@ def form_builder_view(request, form_id=None):
 def form_builder_add_question(request, form_id):
     """
     Add a new question to the form (HTMX endpoint).
+    Admin only.
     """
+    if not request.user.role_is_admin():
+        return HttpResponse(status=403)
+    
     form = get_object_or_404(Form, id=form_id)
     data_types = DataType.objects.all()
     default_datatype = data_types.first()
@@ -1186,7 +1202,11 @@ def form_builder_add_question(request, form_id):
 def form_builder_delete_question(request, form_id):
     """
     Delete a question from the form (HTMX endpoint).
+    Admin only.
     """
+    if not request.user.role_is_admin():
+        return HttpResponse(status=403)
+    
     form = get_object_or_404(Form, id=form_id)
     question_id = request.POST.get('question_id')
     
@@ -1207,7 +1227,11 @@ def form_builder_delete_question(request, form_id):
 def form_builder_get_question(request, form_id, question_id):
     """
     Get a single question for editing (HTMX endpoint).
+    Admin only.
     """
+    if not request.user.role_is_admin():
+        return HttpResponse(status=403)
+    
     form = get_object_or_404(Form, id=form_id)
     question = get_object_or_404(Question, id=question_id, formId=form, isActive=True)
     data_types = DataType.objects.all()
@@ -1222,7 +1246,11 @@ def form_builder_get_question(request, form_id, question_id):
 def form_builder_update_question(request, form_id, question_id):
     """
     Update a question's details (HTMX endpoint).
+    Admin only.
     """
+    if not request.user.role_is_admin():
+        return HttpResponse(status=403)
+    
     form = get_object_or_404(Form, id=form_id)
     question = get_object_or_404(Question, id=question_id, formId=form)
     data_types = DataType.objects.all()
@@ -1273,7 +1301,11 @@ def form_builder_update_question(request, form_id, question_id):
 def form_builder_add_option(request, form_id, question_id):
     """
     Add an option to a multiple/singular choice question (HTMX endpoint).
+    Admin only.
     """
+    if not request.user.role_is_admin():
+        return HttpResponse(status=403)
+    
     form = get_object_or_404(Form, id=form_id)
     question = get_object_or_404(Question, id=question_id, formId=form)
     
@@ -1294,7 +1326,11 @@ def form_builder_add_option(request, form_id, question_id):
 def form_builder_delete_option(request, form_id, question_id):
     """
     Delete an option from a multiple/singular choice question (HTMX endpoint).
+    Admin only.
     """
+    if not request.user.role_is_admin():
+        return HttpResponse(status=403)
+    
     form = get_object_or_404(Form, id=form_id)
     question = get_object_or_404(Question, id=question_id, formId=form)
     option_index = int(request.POST.get('option_index', -1))
@@ -1317,7 +1353,11 @@ def form_builder_delete_option(request, form_id, question_id):
 def form_builder_update_option(request, form_id, question_id):
     """
     Update an option value (HTMX endpoint).
+    Admin only.
     """
+    if not request.user.role_is_admin():
+        return HttpResponse(status=403)
+    
     form = get_object_or_404(Form, id=form_id)
     question = get_object_or_404(Question, id=question_id, formId=form)
     option_index = int(request.POST.get('option_index', -1))
@@ -1342,10 +1382,14 @@ def form_builder_update_option(request, form_id, question_id):
 @login_required(login_url='login')
 def manage_questions(request, form_id):
     """
-    endpoint for managing questions (add/delete).
+    Consolidated endpoint for managing questions (add/delete).
+    Admin only.
     - POST without question_id: add new question
     - POST with question_id: delete question
     """
+    if not request.user.role_is_admin():
+        return HttpResponse(status=403)
+    
     if request.method == 'POST':
         question_id = request.POST.get('question_id')
         if question_id:
@@ -1360,9 +1404,13 @@ def manage_questions(request, form_id):
 def manage_question_detail(request, form_id, question_id):
     """
     Consolidated endpoint for individual question operations.
+    Admin only.
     - GET: retrieve question for editing
     - POST: update question
     """
+    if not request.user.role_is_admin():
+        return HttpResponse(status=403)
+    
     if request.method == 'GET':
         return form_builder_get_question(request, form_id, question_id)
     elif request.method == 'POST':
@@ -1373,10 +1421,14 @@ def manage_question_detail(request, form_id, question_id):
 def manage_question_options(request, form_id, question_id):
     """
     Consolidated endpoint for managing question options.
+    Admin only.
     - POST with action=add: add option
     - POST with action=delete: delete option
     - POST with action=update: update option
     """
+    if not request.user.role_is_admin():
+        return HttpResponse(status=403)
+    
     if request.method == 'POST':
         action = request.POST.get('action', '')
         if action == 'add':
