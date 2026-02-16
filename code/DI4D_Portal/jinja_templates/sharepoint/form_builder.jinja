@@ -2,8 +2,8 @@
 {% block title %}{% if form %}Edit Form{% else %}Add Form{% endif %} - DI4D Portal{% endblock %}
 
 {% block content %}
-<div class="bg-white min-h-screen" x-data="{ confirmDeleteQuestion: null, currentQuestionId: {{ questions[0].id if questions else 'null' }} }">
-        <div class="mb-4">
+<div class="bg-white min-h-screen" x-data="{ confirmDeleteQuestion: null, currentQuestionId: {{ questions[0].id if questions else 'null' }}, startDate: '{{ form.startDate if form else today }}' }">
+    <div class="mb-4">
         <a href="{{ url('forms') }}" class="text-[var(--blue_di4d)] hover:underline mb-2 inline-block">
             <i class="fa-solid fa-arrow-left mr-2"></i>Back to Forms
         </a>
@@ -15,46 +15,36 @@
         {% endif %}
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {# Left side - Form settings and current question #}
-        <div class="lg:col-span-2 space-y-6">
-            {# Form settings #}
-            <div class="bg-[var(--white_grey)] rounded-lg p-4">
-                <h2 class="text-black font-semibold mb-4">Form Settings</h2>
-                <form method="post" id="settings-form">
-                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
-                    <input type="hidden" name="action" value="update_settings"/>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-black font-semibold" for="title">Title</label>
-                            <input id="title" name="title" type="text" value="{{ form.title if form else '' }}" 
-                                   class="w-full bg-white rounded-md px-3 py-2 border border-gray-300" required/>
-                        </div>
-                        <div class="flex items-center gap-3 mt-6 md:mt-0">
-                            <label class="text-black font-semibold">Active</label>
-                            <input type="checkbox" name="isActive" {% if form and form.isActive %}checked{% elif not form %}checked{% endif %}/>
-                        </div>
-                        <div>
-                            <label class="text-black font-semibold" for="startDate">Start date</label>
-                            <input id="startDate" name="startDate" type="date" value="{{ form.startDate if form else '' }}" 
-                                   class="w-full bg-white rounded-md px-3 py-2 border border-gray-300" required/>
-                        </div>
-                        <div>
-                            <label class="text-black font-semibold" for="endDate">End date</label>
-                            <input id="endDate" name="endDate" type="date" value="{{ form.endDate if form else '' }}" 
-                                   class="w-full bg-white rounded-md px-3 py-2 border border-gray-300" required/>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <button type="submit" class="btn text-white bg-[--green] px-6">Save Settings</button>
-                    </div>
-                </form>
+    {# Form settings #}
+    <form method="post" id="settings-form" class="mb-6 bg-[var(--white_grey)] rounded-lg p-4">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
+        <input type="hidden" name="action" value="update_settings"/>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div class="md:col-span-2">
+                <label class="text-black font-semibold block mb-1" for="title">Title</label>
+                <input id="title" name="title" type="text" value="{{ form.title if form else '' }}" 
+                       class="w-full bg-white rounded-md px-3 py-2 border border-gray-300" required/>
             </div>
+            <div>
+                <label class="text-black font-semibold block mb-1" for="startDate">Start date</label>
+                <input id="startDate" name="startDate" type="date" value="{{ form.startDate if form else '' }}" 
+                       min="{{ today }}"
+                       x-model="startDate"
+                       class="w-full bg-white rounded-md px-3 py-2 border border-gray-300" required/>
+            </div>
+            <div>
+                <label class="text-black font-semibold block mb-1" for="endDate">End date</label>
+                <input id="endDate" name="endDate" type="date" value="{{ form.endDate if form else '' }}" 
+                       :min="startDate"
+                       class="w-full bg-white rounded-md px-3 py-2 border border-gray-300" required/>
+            </div>
+        </div>
+    </form>
 
-            {# Current question display #}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2">
             {% if form %}
             <div class="bg-[var(--white_grey)] rounded-lg p-4">
-                <h2 class="text-black font-semibold mb-4">Question Editor</h2>
                 <div id="question-editor">
                     {% if questions %}
                         {% include 'components/question_editor_htmx.jinja' %}
@@ -70,7 +60,7 @@
             {% endif %}
         </div>
 
-        {# Right side - Questions list navigation #}
+        {# Questions list navigation #}
         <div class="bg-[var(--white_grey)] rounded-lg p-4 h-fit max-h-[calc(100vh-200px)] flex flex-col">
             <h2 class="text-black font-semibold mb-4">Questions</h2>
             {% if form %}
@@ -91,7 +81,7 @@
             <div class="mt-4 pt-4 border-t border-gray-300 flex gap-2">
                 <a href="{{ url('forms') }}" class="btn text-[--button_text_modal] bg-white flex-1 text-center">Cancel</a>
                 {% if form %}
-                <a href="{{ url('forms') }}" class="btn flex-1 text-white bg-[--green] text-center">Done</a>
+                <button type="submit" form="settings-form" class="btn flex-1 text-white bg-[--green] text-center">Done</button>
                 {% endif %}
             </div>
         </div>

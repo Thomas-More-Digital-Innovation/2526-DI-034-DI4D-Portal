@@ -3,7 +3,7 @@
 {% block title %}Forms - DI4D Portal{% endblock %}
 
 {% block content %}
-<div class="bg-white min-h-screen" x-data="{ currentDeleteId: null, currentDeleteName: null, filterStatus: '{{ filter_status }}' }">
+<div class="bg-white min-h-screen" x-data="{ currentDeleteId: null, currentDeleteName: null, filterStatus: '{{ filter_status }}', showCreateModal: false }">
     <div class="flex flex-col gap-4">
         <div class="flex flex-col gap-4">
             <h1 class="text-3xl lg:text-4xl font-bold text-black">Forms</h1>
@@ -28,13 +28,53 @@
                     <option value="in_progress" {% if filter_status == 'in_progress' %}selected{% endif %}>In Progress</option>
                     <option value="completed" {% if filter_status == 'completed' %}selected{% endif %}>Completed</option>
                 </select>
-                <a href="{{ url('form_builder_new') }}" class="px-4 bg-[--white_grey] rounded-md flex items-center justify-center">
+                <button type="button" @click="showCreateModal = true" class="px-4 bg-[--white_grey] rounded-md flex items-center justify-center">
                     <i class="fa-solid fa-plus text-[--green]"></i>
-                </a>
+                </button>
             </form>
             <div class="mt-2" id="forms-grid">
                 {% include 'components/forms_htmx.jinja' %}
             </div>
+        </div>
+    </div>
+
+    {# Create Form Modal #}
+    <div x-show="showCreateModal" 
+         x-cloak
+         style="display:none" 
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+         @click="showCreateModal = false"
+         x-data="{ startDate: '{{ today }}' }">
+        <div @click.stop class="bg-[--light_grey] rounded-xl p-4 max-w-lg w-full max-h-[90vh] overflow-auto">
+            <h2 class="text-2xl font-bold text-white mb-4">Create Form</h2>
+            <form method="post">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
+                <input type="hidden" name="action" value="create"/>
+                <div class="flex flex-col gap-4">
+                    <div>
+                        <label class="text-white font-semibold block mb-1" for="create-title">Title</label>
+                        <input id="create-title" name="title" type="text" 
+                               class="w-full bg-white rounded-md px-3 py-2 border border-gray-300" required/>
+                    </div>
+                    <div>
+                        <label class="text-white font-semibold block mb-1" for="create-startDate">Start date</label>
+                        <input id="create-startDate" name="startDate" type="date" 
+                               min="{{ today }}"
+                               x-model="startDate"
+                               class="w-full bg-white rounded-md px-3 py-2 border border-gray-300" required/>
+                    </div>
+                    <div>
+                        <label class="text-white font-semibold block mb-1" for="create-endDate">End date</label>
+                        <input id="create-endDate" name="endDate" type="date" 
+                               :min="startDate"
+                               class="w-full bg-white rounded-md px-3 py-2 border border-gray-300" required/>
+                    </div>
+                </div>
+                <div class="w-full flex flex-row gap-2 mt-4">
+                    <button type="button" @click="showCreateModal = false" class="btn text-[--button_text_modal] flex-1 bg-[--white_grey]">Cancel</button>
+                    <button type="submit" class="btn flex-1 text-white bg-[--green]">Create</button>
+                </div>
+            </form>
         </div>
     </div>
 

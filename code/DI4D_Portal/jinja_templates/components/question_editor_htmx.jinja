@@ -1,6 +1,6 @@
 {# Single question editor HTMX component #}
 {% if not question %}
-    <p class="text-gray-500 text-sm">Select a question from the sidebar to edit it.</p>
+    <p class="text-gray-500 text-sm">Select or add a question from the sidebar.</p>
 {% else %}
 {% set datatype_name = question.datatype.name|lower if question.datatype else '' %}
 {% set is_choice = datatype_name in ['multiple_choice', 'singular_choice'] %}
@@ -20,13 +20,13 @@
                    type="text" 
                    value="{{ question.question or '' }}" 
                    class="w-full bg-white text-black rounded-md px-3 py-2 mt-1" 
-                   placeholder="Enter your question..."
+                   placeholder="Enter your question"
                    required/>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-                <label class="text-black text-sm font-semibold" for="datatype_id_{{ question.id }}">Answer type</label>
+                <label class="text-black text-sm font-semibold" for="datatype_id_{{ question.id }}">Question type</label>
                 <select id="datatype_id_{{ question.id }}" 
                         name="datatype_id" 
                         class="w-full bg-white text-black rounded-md px-3 py-2 mt-1"
@@ -36,7 +36,8 @@
                         hx-swap="innerHTML"
                         hx-include="closest form">
                     {% for dtype in data_types %}
-                        <option value="{{ dtype.id }}" {% if question.datatype and dtype.id == question.datatype.id %}selected{% endif %}>{{ dtype.name }}</option>
+                        {% set display_name = dtype.name.replace('_', ' ').title() if '_' in dtype.name else (dtype.name if dtype.name.lower() != 'bool' else 'Yes/No') %}
+                        <option value="{{ dtype.id }}" {% if question.datatype and dtype.id == question.datatype.id %}selected{% endif %}>{{ display_name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -81,5 +82,12 @@
         </div>
     </div>
     {% endif %}
+</div>
+{% endif %}
+
+{# OOB swap to update the questions list when datatype changes #}
+{% if update_questions_list %}
+<div id="questions-list" hx-swap-oob="innerHTML">
+    {% include 'components/questions_list_htmx.jinja' %}
 </div>
 {% endif %}

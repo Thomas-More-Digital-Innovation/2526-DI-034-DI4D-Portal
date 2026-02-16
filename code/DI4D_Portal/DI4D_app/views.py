@@ -698,10 +698,10 @@ def forms_view(request):
     items_per_page = int(request.GET.get('items_per_page', 6))
     today = timezone.now().date()
     
-    # Get all active forms, excluding the student application forms from settings
+    # Get all active forms
     all_forms = Form.objects.filter(isActive=True).order_by('-startDate', 'title')
     
-    # Exclude all forms used for student registration (from all ApplicationSettings)
+    # Exclude student registration
     application_settings = ApplicationSetting.objects.filter(studentApplicationFormId__isnull=False)
     excluded_form_ids = application_settings.values_list('studentApplicationFormId', flat=True)
     if excluded_form_ids:
@@ -724,15 +724,15 @@ def forms_view(request):
             title = request.POST.get("title", "").strip()
             start_date = request.POST.get("startDate")
             end_date = request.POST.get("endDate")
-            is_active = request.POST.get("isActive") == "on"
             if title and start_date and end_date:
-                Form.objects.create(
+                new_form = Form.objects.create(
                     userId=request.user,
                     title=title,
                     startDate=start_date,
                     endDate=end_date,
-                    isActive=is_active
+                    isActive=True
                 )
+                return redirect('form_builder', form_id=new_form.id)
             return redirect('forms')
 
         if action == "edit":
@@ -799,7 +799,8 @@ def forms_view(request):
         'search_query': search_query,
         'filter_status': filter_status,
         'items_per_page': items_per_page,
-        'active_page': active_page
+        'active_page': active_page,
+        'today': today.strftime('%Y-%m-%d')
     }
     
     # Check if HTMX request
@@ -828,8 +829,6 @@ def form_detail_view(request, form_id):
     # Get the form
     form = get_object_or_404(Form, id=form_id, isActive=True)
     data['form'] = form
-    
-    # Check if form deadline has passed
     if form.endDate and form.endDate < today:
         data['form_closed'] = True
         return render(request, 'sharepoint/form_detail.jinja', data)
@@ -1042,6 +1041,7 @@ def form_builder_view(request, form_id=None):
     """
     active_page = 'forms'
     data_types = DataType.objects.all()
+    today = timezone.now().date().strftime('%Y-%m-%d')
     
     if form_id:
         form = get_object_or_404(Form, id=form_id)
@@ -1058,21 +1058,17 @@ def form_builder_view(request, form_id=None):
             title = request.POST.get('title', '').strip()
             start_date = request.POST.get('startDate')
             end_date = request.POST.get('endDate')
-            is_active = request.POST.get('isActive') == 'on'
             
             if title and start_date and end_date:
-                # If the form already exists, ensure there are no incomplete required questions
                 if form:
-                    # reload questions to ensure fresh data
+                    # Existing form - update directly
                     questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
                     incomplete_questions = []
                     for q in questions:
                         if q.isMandatory:
-                            # missing question text
                             if not q.question or not q.question.strip():
                                 incomplete_questions.append(q.id)
                                 continue
-                            # for choice types ensure there is at least one non-empty option
                             dtype_name = q.datatype.name.lower() if q.datatype else ''
                             if dtype_name in ['multiple_choice', 'singular_choice']:
                                 options = [opt.strip() for opt in (q.content or '').split(',') if opt.strip()]
@@ -1080,37 +1076,39 @@ def form_builder_view(request, form_id=None):
                                     incomplete_questions.append(q.id)
 
                     if incomplete_questions:
-                        # Don't save settings if required questions are incomplete — render error message
                         return render(request, 'sharepoint/form_builder.jinja', {
                             'active_page': active_page,
                             'form': form,
                             'questions': questions,
                             'question': questions.first() if questions else None,
                             'data_types': data_types,
+                            'today': today,
                             'form_error': 'Cannot save: some required questions are incomplete. Please finish them in the editor before saving.'
                         })
 
                     form.title = title
                     form.startDate = start_date
                     form.endDate = end_date
-                    form.isActive = is_active
                     form.save()
+                    return redirect('forms')
                 else:
+                    # New form - create it and stay on page (don't redirect)
                     form = Form.objects.create(
                         userId=request.user,
                         title=title,
                         startDate=start_date,
                         endDate=end_date,
-                        isActive=is_active
+                        isActive=True
                     )
-                    return redirect('form_builder', form_id=form.id)
+                    questions = []
     
     return render(request, 'sharepoint/form_builder.jinja', {
         'active_page': active_page,
         'form': form,
         'questions': questions,
         'question': questions.first() if questions else None,
-        'data_types': data_types
+        'data_types': data_types,
+        'today': today
     })
 
 @login_required(login_url='login')
@@ -1191,14 +1189,21 @@ def form_builder_update_question(request, form_id, question_id):
     is_mandatory = request.POST.get('is_mandatory') == 'yes'
     explanation = request.POST.get('explanation', '').strip()
     
+    # Track if datatype actually changed
+    datatype_changed = False
+    old_datatype_id = question.datatype.id if question.datatype else None
+    
     if question_text:
         question.question = question_text
     if datatype_id:
-        question.datatype = DataType.objects.get(id=datatype_id)
-        # Clear content if changing away from choice types
-        datatype_name = question.datatype.name.lower()
-        if datatype_name not in ['multiple_choice', 'singular_choice']:
-            question.content = ''
+        new_datatype_id = int(datatype_id)
+        if old_datatype_id != new_datatype_id:
+            datatype_changed = True
+            question.datatype = DataType.objects.get(id=new_datatype_id)
+            # Clear content if changing away from choice types
+            datatype_name = question.datatype.name.lower()
+            if datatype_name not in ['multiple_choice', 'singular_choice']:
+                question.content = ''
     question.isMandatory = is_mandatory
     question.explanation = explanation
     question.save()
@@ -1206,12 +1211,13 @@ def form_builder_update_question(request, form_id, question_id):
     questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
     
     # If datatype changed, return the editor template with OOB list update
-    if datatype_id:
-        return render(request, 'components/question_editor_with_list_htmx.jinja', {
+    if datatype_changed:
+        return render(request, 'components/question_editor_htmx.jinja', {
             'form': form,
             'question': question,
             'questions': questions,
-            'data_types': data_types
+            'data_types': data_types,
+            'update_questions_list': True
         })
     
     # Otherwise just return the list (updates sidebar only)

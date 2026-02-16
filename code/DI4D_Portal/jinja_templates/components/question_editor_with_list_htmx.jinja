@@ -1,7 +1,0 @@
-{# Question editor with list OOB swap - used when datatype changes #}
-{% include 'components/question_editor_htmx.jinja' %}
-
-{# OOB swap to update the questions list #}
-<div id="questions-list" hx-swap-oob="innerHTML">
-    {% include 'components/questions_list_htmx.jinja' %}
-</div>
