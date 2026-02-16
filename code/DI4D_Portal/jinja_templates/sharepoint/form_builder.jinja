@@ -67,7 +67,7 @@
             <div id="questions-list" class="flex-1 overflow-y-auto space-y-2 mb-4 max-h-96">
                 {% include 'components/questions_list_htmx.jinja' %}
             </div>
-            <form hx-post="{{ url('form_builder_add_question', kwargs={'form_id': form.id}) }}" 
+            <form hx-post="{{ url('manage_questions', kwargs={'form_id': form.id}) }}" 
                   hx-target="#questions-list" 
                   hx-swap="innerHTML">
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
@@ -99,7 +99,7 @@
             <div class="w-full flex flex-row gap-2 mt-4">
                 <button @click="confirmDeleteQuestion = null" class="btn text-[--button_text_modal] flex-1 bg-[--white_grey]">Cancel</button>
                 <form method="post" class="flex-1 flex" 
-                      hx-post="{{ url('form_builder_delete_question', kwargs={'form_id': form.id}) if form else '#' }}" 
+                      hx-post="{{ url('manage_questions', kwargs={'form_id': form.id}) if form else '#' }}" 
                       hx-target="#questions-list" 
                       hx-swap="innerHTML"
                       @htmx:after-request="confirmDeleteQuestion = null; currentQuestionId = null">

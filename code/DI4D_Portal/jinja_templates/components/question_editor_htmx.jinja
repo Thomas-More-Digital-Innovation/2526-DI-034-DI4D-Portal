@@ -7,7 +7,7 @@
 {% set options = question.content.split(',') if question.content else [] %}
 
 <div class="bg-[var(--white_grey)] text-black rounded-lg p-4" id="question-block-{{ question.id }}">
-    <form hx-post="{{ url('form_builder_update_question', kwargs={'form_id': form.id, 'question_id': question.id}) }}" 
+    <form hx-post="{{ url('manage_question_detail', kwargs={'form_id': form.id, 'question_id': question.id}) }}" 
           hx-trigger="change delay:500ms"
           hx-target="#questions-list"
           hx-swap="innerHTML">
@@ -30,7 +30,7 @@
                 <select id="datatype_id_{{ question.id }}" 
                         name="datatype_id" 
                         class="w-full bg-white text-black rounded-md px-3 py-2 mt-1"
-                        hx-post="{{ url('form_builder_update_question', kwargs={'form_id': form.id, 'question_id': question.id}) }}"
+                        hx-post="{{ url('manage_question_detail', kwargs={'form_id': form.id, 'question_id': question.id}) }}"
                         hx-trigger="change"
                         hx-target="#question-editor"
                         hx-swap="innerHTML"
@@ -68,10 +68,11 @@
     <div class="mt-4 border-t border-gray-200 pt-4">
         <div class="flex items-center justify-between mb-3">
             <label class="text-black text-sm font-semibold">Answer Options</label>
-            <form hx-post="{{ url('form_builder_add_option', kwargs={'form_id': form.id, 'question_id': question.id}) }}" 
+            <form hx-post="{{ url('manage_question_options', kwargs={'form_id': form.id, 'question_id': question.id}) }}" 
                   hx-target="#options-list-{{ question.id }}" 
                   hx-swap="innerHTML">
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
+                <input type="hidden" name="action" value="add"/>
                 <button type="submit" class="text-black hover:text-green-700 text-sm flex items-center gap-1">
                     <i class="fa-solid fa-plus"></i> Add Option
                 </button>

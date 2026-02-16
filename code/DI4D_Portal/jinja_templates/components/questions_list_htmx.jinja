@@ -7,7 +7,7 @@
                 class="w-full text-left px-3 py-2 rounded-md transition flex items-center justify-between gap-2 group"
                 :class="currentQuestionId === {{ question.id }} ? 'bg-[var(--white_grey)] text-black' : 'bg-white text-gray-600 hover:bg-gray-100'"
                 @click="currentQuestionId = {{ question.id }}"
-                hx-get="{{ url('form_builder_get_question', kwargs={'form_id': form.id, 'question_id': question.id}) }}"
+                hx-get="{{ url('manage_question_detail', kwargs={'form_id': form.id, 'question_id': question.id}) }}"
                 hx-target="#question-editor"
                 hx-swap="innerHTML">
             <span class="truncate flex-1">{{ loop.index }}. {{ question.question or 'Untitled question' }}</span>
