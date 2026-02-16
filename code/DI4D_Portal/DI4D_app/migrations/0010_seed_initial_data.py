@@ -38,7 +38,7 @@ def seed_initial_data(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('DI4D_app', '0008_formanswer_submission_number'),
+        ('DI4D_app', '0009_news_content_alter_news_mediapath_alter_news_picture'),
     ]
 
     operations = [
