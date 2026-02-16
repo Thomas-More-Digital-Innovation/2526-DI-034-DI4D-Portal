@@ -1175,12 +1175,11 @@ def form_builder_add_question(request, form_id):
     
     questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
     
-    return render(request, 'components/questions_list_with_editor_htmx.jinja', {
+    return render(request, 'components/questions_list_htmx.jinja', {
         'form': form,
         'questions': questions,
         'question': new_question,
         'data_types': data_types,
-        'new_question_id': new_question.id
     })
 
 @login_required(login_url='login')
@@ -1199,9 +1198,9 @@ def form_builder_delete_question(request, form_id):
     
     questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
     
-    return render(request, 'components/questions_list_with_clear_htmx.jinja', {
+    return render(request, 'components/questions_list_htmx.jinja', {
         'form': form,
-        'questions': questions
+        'questions': questions,
     })
 
 @login_required(login_url='login')
