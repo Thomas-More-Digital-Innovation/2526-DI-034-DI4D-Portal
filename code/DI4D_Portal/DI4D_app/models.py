@@ -2,7 +2,6 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.models import BaseUserManager
-from ckeditor.fields import RichTextField
 
 # Create your models here.
 class UserType(models.Model):
@@ -60,7 +59,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.userTypeId and self.userTypeId.name == "admin"
     
     def role_is_sharepoint_user(self):
-        return self.userTypeId.name == "sharepoint_user"
+        return self.userTypeId and self.userTypeId.name == "sharepoint_user"
     
     def role_is_partner(self):
         return self.userTypeId and self.userTypeId.name == "partner"
@@ -84,7 +83,7 @@ class News(models.Model):
     author = models.ForeignKey(User, on_delete=models.RESTRICT)
     showAuthor = models.BooleanField(default=False)
     picture = models.ImageField(upload_to='news_pictures/')
-    content = RichTextField(verbose_name="content")
+    content = models.TextField(blank=True, null=True)
 
 class Form(models.Model):
     userId = models.ForeignKey(User, on_delete=models.RESTRICT)
@@ -119,6 +118,7 @@ class FormAnswer(models.Model):
     questionId = models.ForeignKey(Question, on_delete=models.RESTRICT)
     userId = models.ForeignKey(User, on_delete=models.RESTRICT, null=True, blank=True)
     answerDate = models.DateField()
+    submission_number = models.IntegerField(null=True, blank=True)
 
 class TechTalk(models.Model):
     title = models.CharField(max_length=150)

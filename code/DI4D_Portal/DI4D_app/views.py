@@ -17,8 +17,7 @@ import filetype
 from django.core.files.storage import default_storage
 import json
 from django.forms import modelform_factory
-from ckeditor.widgets import CKEditorWidget
-
+from django_ckeditor_5.widgets import CKEditor5Widget
 def page_not_found(request, exception=None):
     return render(request, 'errors/404.jinja', status=404)
 
@@ -172,6 +171,9 @@ def student_registration(request):
             # Clean the name for use in filename (replace spaces and special chars)
             user_name_clean = user_name.replace(' ', '_').replace('/', '_').replace('\\', '_')
             
+            # Get submission timestamp as integer (yyyymmddhhmmss format)
+            submission_timestamp = int(timezone.now().strftime('%Y%m%d%H%M%S'))
+            
             # Save answers for each question
             for question in questions:
                 question_id = f'question_{question.id}'
@@ -209,7 +211,8 @@ def student_registration(request):
                     FormAnswer.objects.create(
                     answer=answer_value,
                     questionId=question,
-                    answerDate=today
+                    answerDate=today,
+                    submission_number=submission_timestamp
                     )
             
             # Clear session preview files after successful submission
@@ -291,7 +294,10 @@ def users(request):
         users = User.objects.filter(is_active=True).order_by('firstname', 'lastname')
     # Check if user is partner (then show only users of that partner)
     if request.user.role_is_partner():
-        users = User.objects.filter(partnerId=request.user.partnerId, is_active=True).order_by('firstname', 'lastname')
+        if request.user.partnerId:
+            users = User.objects.filter(partnerId=request.user.partnerId, is_active=True).order_by('firstname', 'lastname')
+        else:
+            users = User.objects.none()
 
     # Check if somebody clicked on the delete button / or create/edit user
     if request.method == "POST":
@@ -512,6 +518,56 @@ def tech_talk_detail(request, talk_id):
         return render(request, 'sharepoint/techtalk_detail.jinja', context)
     return render(request, 'public/techtalk_detail.jinja', context)
 
+def tech_talk_detail(request, talk_id):
+
+    talk = TechTalk.objects.get(id=talk_id, isPublic=True)
+    recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
+
+    video_url = (talk.videoPath or "").strip()
+    # Normalize backslashes to forward slashes for URL
+    video_url = video_url.replace("\\", "/")
+    
+    def is_video_by_header(file_path: str) -> bool:
+        try:
+            kind = filetype.guess(file_path)
+            return kind is not None and kind.mime.startswith('video/')
+        except Exception:
+            return False
+
+    def is_video_by_url(url: str) -> bool:
+        try:
+            url_request = request.Request(url, method="HEAD")
+            with request.urlopen(url_request, timeout=5) as response:
+                content_type = response.headers.get('Content-Type', '')
+            return content_type.startswith('video/')
+        except Exception:
+            return False
+
+    is_local_video = False
+    if video_url.startswith(('http://', 'https://')):
+        is_local_video = is_video_by_url(video_url)
+    else:
+        local_path = os.path.join(settings.MEDIA_ROOT, video_url.lstrip('/'))
+        is_local_video = is_video_by_header(local_path)
+
+    # Build full media URL for local videos
+    if is_local_video and not video_url.startswith(('http://', 'https://')):
+        # Remove leading slash if present to avoid double slashes
+        video_url = video_url.lstrip('/')
+        video_url = settings.MEDIA_URL + video_url
+
+    context = {
+        "talk": talk,
+        "recent_talks": recent_talks,
+        "video_url": video_url,
+        "is_local_video": is_local_video,
+    }
+
+    if request.headers.get("HX-Request") == "true":
+        return render(request, 'components/techtalk_detail_htmx.jinja', context)
+
+    return render(request, 'public/techtalk_detail.jinja', context)
+
 @login_required(login_url='login')
 def settings_view(request):
     active_page = 'settings'
@@ -632,7 +688,7 @@ def edit_news(request, mediaPath=None):
         return redirect('dashboard')
 
     # Create form for editing/creating news without using a predefined form class
-    NewsForm = modelform_factory(News, fields=['title', 'isPublic', 'showAuthor', 'picture', 'description', 'content'], widgets={'content': CKEditorWidget()})
+    NewsForm = modelform_factory(News, fields=['title', 'isPublic', 'showAuthor', 'picture', 'description', 'content'], widgets={'content': CKEditor5Widget()})
     # check if there is an existing news article to edit
     instance = get_object_or_404(News, mediaPath=mediaPath) if mediaPath else None
     # Create the form instance
@@ -640,22 +696,10 @@ def edit_news(request, mediaPath=None):
 
     # Check if form is submitted
     if request.method == "POST":
-        # Check if we are editing an existing news article
-        if mediaPath:
-            news_article = News.objects.get(mediaPath=mediaPath)
-        else:
-            news_article = News()
-        # Get data from form
-        news_article.title = request.POST.get("title")
-        news_article.isPublic = True if request.POST.get("isPublic") == "on" else False
-        news_article.showAuthor = True if request.POST.get("showAuthor") == "on" else False
-        news_article.description = request.POST.get("description")
-        news_article.content = request.POST.get("content")
+        #  Because we do form save it automatically handles create and edit
+        news_article = form.save(commit=False)
         news_article.lastEditDate = timezone.now()
         news_article.author = request.user
-        picture = request.FILES.get("picture")
-        if picture:
-            news_article.picture = picture         
         news_article.save()
 
         # Redirect to news page after saving with saved in session

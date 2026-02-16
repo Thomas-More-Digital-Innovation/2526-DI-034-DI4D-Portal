@@ -25,7 +25,7 @@
                 <option value="oldest" {% if sort_by == 'oldest' %}selected{% endif %}>Sort by Oldest</option>
             </select>
         </form>
-        {% if request.user.role_is_admin %}
+        {% if request.user.role_is_admin() %}
             <a href="{{ url('edit_news') }}" class="py-1 bg-[--white_grey] rounded-md px-2"><i class="fa-solid fa-plus text-[--green]"></i></a>
         {% endif %}
     </div>

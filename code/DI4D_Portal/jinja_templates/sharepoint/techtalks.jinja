@@ -21,9 +21,11 @@
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
             </div>
-            <button type="button" class="px-4 bg-[--white_grey] rounded-md" @click="open_add_talk = true; title = ''; speaker = ''; description = ''; date = ''; thubnail = ''; videoPath = ''; isPublic = false">
-                <i class="fa-solid fa-plus text-[--green]"></i>
-            </button>
+            {% if request.user.role_is_admin() %}
+                <button type="button" class="px-4 bg-[--white_grey] rounded-md" @click="open_add_talk = true; title = ''; speaker = ''; description = ''; date = ''; thubnail = ''; videoPath = ''; isPublic = false">
+                    <i class="fa-solid fa-plus text-[--green]"></i>
+                </button>
+            {% endif %}
         </form>
         <div class="mt-2" id="techtalks-grid">
             {% include 'components/techtalks_htmx.jinja' %}
