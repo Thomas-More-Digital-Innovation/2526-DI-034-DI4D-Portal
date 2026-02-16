@@ -1,0 +1,36 @@
+<div class="grid grid-cols-1 md:grid-cols-[2fr_1.2fr_1.2fr_180px] gap-2 md:gap-4 py-3 items-center">
+    <div class="flex items-center gap-2 text-xl md:text-2xl text-black">
+        {% if item.type == 'folder' %}
+            <i class="fa-regular fa-folder"></i>
+        {% else %}
+            <i class="fa-regular fa-file"></i>
+        {% endif %}
+        <span class="text-base md:text-2xl">{{ item.name }}</span>
+    </div>
+    <p class="text-[var(--light_grey)] text-sm md:text-lg">{{ item.modified }}</p>
+    <p class="text-[var(--light_grey)] text-sm md:text-lg">{{ item.modified_by }}</p>
+
+    <div class="flex items-center justify-start md:justify-end gap-3 text-lg">
+        <button type="button"
+                class="text-[--green]"
+                title="Download"
+                hx-post="{{ url('files_action', kwargs={'action': 'download'}) }}"
+                hx-vals='{"item_id": "{{ item.id }}", "item_name": "{{ item.name }}", "item_type": "{{ item.type }}"}'
+                hx-target="#files-feedback"
+                hx-swap="innerHTML">
+            <i class="fa-solid fa-download"></i>
+        </button>
+        <button type="button"
+                class="text-black"
+                title="Share"
+                @click="selectedItemId = {{ item.id }}; selectedItemName = '{{ item.name|replace("'", "\\'") }}'; selectedItemType = '{{ item.type }}'; open_share_item = true">
+            <i class="fa-solid fa-share"></i>
+        </button>
+        <button type="button"
+                class="text-[--red]"
+                title="Delete"
+                @click="selectedItemId = {{ item.id }}; selectedItemName = '{{ item.name|replace("'", "\\'") }}'; selectedItemType = '{{ item.type }}'; open_delete_item = true">
+            <i class="fa-solid fa-trash"></i>
+        </button>
+    </div>
+</div>

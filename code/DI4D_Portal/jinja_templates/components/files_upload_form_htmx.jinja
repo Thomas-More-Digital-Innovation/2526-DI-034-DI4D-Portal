@@ -1,0 +1,21 @@
+<form class="flex flex-col gap-3"
+      hx-post="{{ url('files_action', kwargs={'action': 'upload'}) }}"
+      hx-target="#files-feedback"
+      hx-swap="innerHTML"
+      hx-encoding="multipart/form-data"
+      hx-on::after-request="open_upload_files = false">
+    {{ csrf_input }}
+
+    <label class="text-white text-sm" for="upload_files_input">Click here to upload files</label>
+    <input id="upload_files_input" name="files" type="file" multiple class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-2" required>
+
+    <label class="text-white text-sm" for="upload_people">Add people</label>
+    <input id="upload_people" name="people" type="text" placeholder="Type names here" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-2">
+
+    <div class="text-white text-sm">• view only &nbsp;&nbsp;• edit</div>
+
+    <div class="flex gap-2 mt-2">
+        <button type="button" class="btn text-[--button_text_modal] bg-[--white_grey] flex-1" @click="open_upload_files = false">Cancel</button>
+        <button type="submit" class="btn flex-1 text-white bg-[--green]">Add</button>
+    </div>
+</form>

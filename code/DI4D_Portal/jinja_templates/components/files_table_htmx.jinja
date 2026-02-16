@@ -1,0 +1,18 @@
+<div class="w-full border-t border-[--lightest_grey]">
+    <div class="hidden md:grid md:grid-cols-[2fr_1.2fr_1.2fr_180px] gap-4 text-black font-semibold py-2 border-b border-[--lightest_grey]">
+        <p>Name</p>
+        <p>Modified</p>
+        <p>Modified By</p>
+        <p class="text-right pr-2">Actions</p>
+    </div>
+
+    {% if file_items %}
+        <div class="divide-y divide-[--white_grey]">
+            {% for item in file_items %}
+                {% include 'components/files_row_htmx.jinja' %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-[var(--light_grey)] py-6">No files or folders found.</p>
+    {% endif %}
+</div>

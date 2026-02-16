@@ -18,6 +18,9 @@ from django.core.files.storage import default_storage
 import json
 from django.forms import modelform_factory
 from ckeditor.widgets import CKEditorWidget
+import logging
+
+logger = logging.getLogger(__name__)
 
 def page_not_found(request, exception=None):
     return render(request, 'errors/404.jinja', status=404)
@@ -280,6 +283,59 @@ def dashboard(request):
     active_page = 'dashboard'
     news = News.objects.all().order_by('-lastEditDate')[:2]
     return render(request, 'sharepoint/dashboard.jinja', {'active_page': active_page, 'news': news})
+
+@login_required(login_url='login')
+def files_view(request):
+    active_page = 'files'
+    search_query = request.POST.get('q', '').strip() if request.method == 'POST' else request.GET.get('q', '').strip()
+    file_type = request.POST.get('file_type', 'all') if request.method == 'POST' else request.GET.get('file_type', 'all')
+
+    file_items = [
+        {'id': 1, 'name': 'Techtalks', 'modified': '1 Hour ago', 'modified_by': 'Govart', 'type': 'folder'},
+        {'id': 2, 'name': 'Projects', 'modified': '1 Hour ago', 'modified_by': 'Govart', 'type': 'folder'},
+        {'id': 3, 'name': 'Welcome.txt', 'modified': '1 Hour ago', 'modified_by': 'Govart', 'type': 'txt'},
+        {'id': 4, 'name': 'DI4D.pptx', 'modified': '1 Hour ago', 'modified_by': 'Govart', 'type': 'pptx'},
+        {'id': 5, 'name': 'Food.txt', 'modified': '1 Hour ago', 'modified_by': 'Govart', 'type': 'txt'},
+    ]
+
+    if search_query:
+        file_items = [item for item in file_items if search_query.lower() in item['name'].lower()]
+
+    if file_type and file_type != 'all':
+        file_items = [item for item in file_items if item['type'] == file_type]
+
+    context = {
+        'active_page': active_page,
+        'file_items': file_items,
+        'search_query': search_query,
+        'file_type': file_type,
+    }
+
+    if request.headers.get('HX-Request') == 'true':
+        return render(request, 'components/files_table_htmx.jinja', context)
+    return render(request, 'sharepoint/files.jinja', context)
+
+@login_required(login_url='login')
+def files_action(request, action):
+    if request.method != 'POST':
+        return HttpResponse(status=405)
+
+    action = action.strip().lower()
+    payload = {
+        'action': action,
+        'user_id': request.user.id,
+        'post': {key: request.POST.getlist(key) if len(request.POST.getlist(key)) > 1 else request.POST.get(key) for key in request.POST.keys()},
+    }
+
+    uploaded_files = request.FILES.getlist('files')
+    if uploaded_files:
+        payload['uploaded_files'] = [uploaded_file.name for uploaded_file in uploaded_files]
+
+    logger.info('Files endpoint payload received: %s', payload)
+
+    return render(request, 'components/files_feedback_htmx.jinja', {
+        'message': f'Input for "{action}" received and logged.',
+    })
 
 @login_required(login_url='login')
 def users(request):
