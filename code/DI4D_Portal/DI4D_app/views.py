@@ -1337,3 +1337,53 @@ def form_builder_update_option(request, form_id, question_id):
         'form': form,
         'question': question
     })
+
+# Made to reduce URL count
+
+@login_required(login_url='login')
+def manage_questions(request, form_id):
+    """
+    endpoint for managing questions (add/delete).
+    - POST without question_id: add new question
+    - POST with question_id: delete question
+    """
+    if request.method == 'POST':
+        question_id = request.POST.get('question_id')
+        if question_id:
+            # Delete question
+            return form_builder_delete_question(request, form_id)
+        else:
+            # Add question
+            return form_builder_add_question(request, form_id)
+    return HttpResponse(status=405)
+
+@login_required(login_url='login')
+def manage_question_detail(request, form_id, question_id):
+    """
+    Consolidated endpoint for individual question operations.
+    - GET: retrieve question for editing
+    - POST: update question
+    """
+    if request.method == 'GET':
+        return form_builder_get_question(request, form_id, question_id)
+    elif request.method == 'POST':
+        return form_builder_update_question(request, form_id, question_id)
+    return HttpResponse(status=405)
+
+@login_required(login_url='login')
+def manage_question_options(request, form_id, question_id):
+    """
+    Consolidated endpoint for managing question options.
+    - POST with action=add: add option
+    - POST with action=delete: delete option
+    - POST with action=update: update option
+    """
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+        if action == 'add':
+            return form_builder_add_option(request, form_id, question_id)
+        elif action == 'delete':
+            return form_builder_delete_option(request, form_id, question_id)
+        elif action == 'update':
+            return form_builder_update_option(request, form_id, question_id)
+    return HttpResponse(status=405)
