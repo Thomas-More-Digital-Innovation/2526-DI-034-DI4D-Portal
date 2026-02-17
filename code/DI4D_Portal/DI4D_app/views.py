@@ -318,15 +318,38 @@ def files_view(request):
     parent_folder_token = None
 
     if current_folder_id:
-        current_folder = FileItem.objects.filter(id=current_folder_id, isDeleted=False).select_related('parentFolder').first()
+        current_folder = FileItem.objects.filter(id=current_folder_id, isDeleted=False, owner=request.user).select_related('parentFolder').first()
         if not current_folder:
             current_folder_token = None
+            current_folder_id = None
         else:
             if current_folder.parentFolder:
                 parent_folder_token = _encode_file_token(current_folder.parentFolder.id)
 
-    db_items = FileItem.objects.filter(isDeleted=False, parentFolder_id=current_folder_id).select_related('owner').order_by('-id')
+    breadcrumbs = [
+        {
+            'label': f'{request.user.username} (root)',
+            'token': '',
+        }
+    ]
+    if current_folder:
+        folder_chain = []
+        cursor = current_folder
+        max_depth = 50
+        while cursor and max_depth > 0:
+            folder_chain.append(cursor)
+            cursor = cursor.parentFolder
+            max_depth -= 1
+
+        for folder in reversed(folder_chain):
+            breadcrumbs.append({
+                'label': folder.name,
+                'token': _encode_file_token(folder.id),
+            })
+
+    db_items = FileItem.objects.filter(isDeleted=False, parentFolder_id=current_folder_id, owner=request.user).select_related('owner').order_by('-id')
     file_items = []
+    available_types = set()
     for item in db_items:
         is_folder = (item.s3Link or '').startswith('folders/')
         ext = os.path.splitext(item.name or '')[1].lstrip('.').lower()
@@ -335,6 +358,7 @@ def files_view(request):
             inferred_type = 'folder'
         elif ext:
             inferred_type = ext
+        available_types.add(inferred_type)
         owner_name = 'Unknown'
         if item.owner:
             first_name = (item.owner.firstname or '').strip()
@@ -353,17 +377,26 @@ def files_view(request):
     if search_query:
         file_items = [item for item in file_items if search_query.lower() in item['name'].lower()]
 
+    if file_type != 'all' and file_type not in available_types:
+        file_type = 'all'
+
     if file_type and file_type != 'all':
         file_items = [item for item in file_items if item['type'] == file_type]
+
+    available_file_types = sorted([item_type for item_type in available_types if item_type != 'folder'])
+    if 'folder' in available_types:
+        available_file_types.insert(0, 'folder')
 
     context = {
         'active_page': active_page,
         'file_items': file_items,
         'search_query': search_query,
         'file_type': file_type,
+        'available_file_types': available_file_types,
         'current_folder_token': current_folder_token,
         'current_folder_name': current_folder.name if current_folder else 'Root',
         'parent_folder_token': parent_folder_token,
+        'breadcrumbs': breadcrumbs,
     }
 
     if request.headers.get('HX-Request') == 'true':
@@ -392,7 +425,7 @@ def files_action(request, action):
                 'message': 'No item selected for deletion.',
             })
 
-        item = FileItem.objects.filter(id=item_id, isDeleted=False).first()
+        item = FileItem.objects.filter(id=item_id, isDeleted=False, owner=request.user).first()
         if not item:
             return render(request, 'components/files_feedback_htmx.jinja', {
                 'message': 'The selected item could not be found.',
@@ -427,7 +460,7 @@ def files_action(request, action):
         parent_folder_id = _decode_file_token(parent_folder_token)
         parent_folder = None
         if parent_folder_id:
-            parent_folder = FileItem.objects.filter(id=parent_folder_id, isDeleted=False).first()
+            parent_folder = FileItem.objects.filter(id=parent_folder_id, isDeleted=False, owner=request.user).first()
 
         folder_key = f"folders/user_{request.user.id}/{uuid.uuid4().hex}"
         FileItem.objects.create(
@@ -457,7 +490,7 @@ def files_action(request, action):
         parent_folder_id = _decode_file_token(parent_folder_token)
         parent_folder = None
         if parent_folder_id:
-            parent_folder = FileItem.objects.filter(id=parent_folder_id, isDeleted=False).first()
+            parent_folder = FileItem.objects.filter(id=parent_folder_id, isDeleted=False, owner=request.user).first()
 
         stored_keys = []
         for uploaded_file in uploaded_files:
@@ -510,7 +543,7 @@ def files_download(request, item_token):
     if not item_id:
         return HttpResponse(status=404)
 
-    item = FileItem.objects.filter(id=item_id, isDeleted=False).first()
+    item = FileItem.objects.filter(id=item_id, isDeleted=False, owner=request.user).first()
     if not item:
         return HttpResponse(status=404)
 

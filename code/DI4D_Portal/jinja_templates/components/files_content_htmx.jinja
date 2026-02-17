@@ -1,22 +1,26 @@
-<div class="mt-4 flex items-center gap-3 text-black">
-    {% if parent_folder_token %}
-        <a href="#"
-           class="btn_primary_blue"
-           hx-get="{{ url('files') }}"
-           hx-vals='{"folder": "{{ parent_folder_token }}"}'
-           hx-target="#files-content"
-           hx-swap="innerHTML"
-           hx-push-url="true">Up</a>
-    {% elif current_folder_token %}
-        <a href="#"
-           class="btn_primary_blue"
-           hx-get="{{ url('files') }}"
-           hx-target="#files-content"
-           hx-swap="innerHTML"
-           hx-push-url="true">Up</a>
-    {% endif %}
-    <p class="text-sm md:text-base">Current folder: {{ current_folder_name }}</p>
-</div>
+<nav class="mt-4 flex flex-wrap items-center gap-2 text-sm md:text-base text-black" aria-label="Breadcrumb">
+    {% for crumb in breadcrumbs %}
+        {% if not loop.first %}
+            <span>/</span>
+        {% endif %}
+        {% if crumb.token %}
+            <a href="#"
+               class="underline"
+               hx-get="{{ url('files') }}"
+               hx-vals='{"folder": "{{ crumb.token }}"}'
+               hx-target="#files-content"
+               hx-swap="innerHTML"
+               hx-push-url="true">{{ crumb.label }}</a>
+        {% else %}
+            <a href="#"
+               class="underline"
+               hx-get="{{ url('files') }}"
+               hx-target="#files-content"
+               hx-swap="innerHTML"
+               hx-push-url="true">{{ crumb.label }}</a>
+        {% endif %}
+    {% endfor %}
+</nav>
 
 <input type="hidden" id="current-parent-folder-token" name="parent_folder_token" value="{{ current_folder_token or '' }}">
 
@@ -33,6 +37,10 @@
            placeholder="Search..."
            value="{{ search_query }}"
            class="bg-[--white_grey] rounded-md w-full lg:max-w-md px-4 py-2"
+            hx-post="{{ url('files') }}"
+            hx-target="#files-content"
+            hx-swap="innerHTML"
+            hx-include="closest form"
            hx-trigger="keyup changed delay:300ms"
            hx-sync="closest form:abort">
 
@@ -41,11 +49,21 @@
             hx-trigger="change"
             hx-post="{{ url('files') }}"
             hx-target="#files-content"
+            hx-swap="innerHTML"
+            hx-include="closest form"
             hx-sync="closest form:abort">
         <option value="all" {% if file_type == 'all' %}selected{% endif %}>All</option>
-        <option value="pptx" {% if file_type == 'pptx' %}selected{% endif %}>PPTX</option>
-        <option value="txt" {% if file_type == 'txt' %}selected{% endif %}>TXT</option>
-        <option value="folder" {% if file_type == 'folder' %}selected{% endif %}>Folder</option>
+        {% for type_option in available_file_types %}
+            <option value="{{ type_option }}" {% if file_type == type_option %}selected{% endif %}>
+                {% if type_option == 'folder' %}
+                    Folder
+                {% elif type_option == 'file' %}
+                    File
+                {% else %}
+                    {{ type_option|upper }}
+                {% endif %}
+            </option>
+        {% endfor %}
     </select>
 </form>
 
