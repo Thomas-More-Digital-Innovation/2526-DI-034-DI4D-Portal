@@ -16,27 +16,27 @@
     </div>
 
     <div id="files-feedback" class="mt-4">
-        {% include 'components/files_feedback_htmx.jinja' %}
+        {% include 'components/files/feedback_htmx.jinja' %}
     </div>
 
     <div id="files-content" class="mt-4">
-        {% include 'components/files_content_htmx.jinja' %}
+        {% include 'components/files/content_htmx.jinja' %}
     </div>
 
     {% call empty_modal('upload_files', 'Upload files') %}
-        {% include 'components/files_upload_form_htmx.jinja' %}
+        {% include 'components/files/upload_form_htmx.jinja' %}
     {% endcall %}
 
     {% call empty_modal('create_folder', 'Create folder') %}
-        {% include 'components/files_create_folder_form_htmx.jinja' %}
+        {% include 'components/files/create_folder_form_htmx.jinja' %}
     {% endcall %}
 
     {% call empty_modal('share_item', 'Shared with') %}
-        {% include 'components/files_share_form_htmx.jinja' %}
+        {% include 'components/files/share_form_htmx.jinja' %}
     {% endcall %}
 
     {% call empty_modal('delete_item', 'Delete item') %}
-        {% include 'components/files_delete_form_htmx.jinja' %}
+        {% include 'components/files/delete_form_htmx.jinja' %}
     {% endcall %}
 </div>
 {% endblock %}
