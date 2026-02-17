@@ -5,27 +5,39 @@
         {% else %}
             <i class="fa-regular fa-file"></i>
         {% endif %}
-        <span class="text-base md:text-2xl">{{ item.name }}</span>
+        {% if item.type == 'folder' %}
+            <a class="text-base md:text-2xl underline"
+               href="#"
+               hx-get="{{ url('files') }}"
+               hx-vals='{"folder": "{{ item.token }}"}'
+               hx-target="#files-content"
+               hx-swap="innerHTML"
+               hx-push-url="true">{{ item.name }}</a>
+        {% else %}
+            <span class="text-base md:text-2xl">{{ item.name }}</span>
+        {% endif %}
     </div>
     <p class="text-[var(--light_grey)] text-sm md:text-lg">{{ item.modified }}</p>
     <p class="text-[var(--light_grey)] text-sm md:text-lg">{{ item.modified_by }}</p>
 
     <div class="flex items-center justify-start md:justify-end gap-3 text-lg">
-        <a class="text-[--green]"
-           title="Download"
-           href="{{ url('files_download', kwargs={'item_id': item.id}) }}">
-            <i class="fa-solid fa-download"></i>
-        </a>
+        {% if item.type != 'folder' %}
+            <a class="text-[--green]"
+               title="Download"
+               href="{{ url('files_download', kwargs={'item_token': item.token}) }}">
+                <i class="fa-solid fa-download"></i>
+            </a>
+        {% endif %}
         <button type="button"
                 class="text-black"
                 title="Share"
-                @click="selectedItemId = {{ item.id }}; selectedItemName = '{{ item.name|replace("'", "\\'") }}'; selectedItemType = '{{ item.type }}'; open_share_item = true">
+                @click="selectedItemToken = '{{ item.token }}'; selectedItemName = '{{ item.name|replace("'", "\\'") }}'; selectedItemType = '{{ item.type }}'; open_share_item = true">
             <i class="fa-solid fa-share"></i>
         </button>
         <button type="button"
                 class="text-[--red]"
                 title="Delete"
-                @click="selectedItemId = {{ item.id }}; selectedItemName = '{{ item.name|replace("'", "\\'") }}'; selectedItemType = '{{ item.type }}'; open_delete_item = true">
+                @click="selectedItemToken = '{{ item.token }}'; selectedItemName = '{{ item.name|replace("'", "\\'") }}'; selectedItemType = '{{ item.type }}'; open_delete_item = true">
             <i class="fa-solid fa-trash"></i>
         </button>
     </div>

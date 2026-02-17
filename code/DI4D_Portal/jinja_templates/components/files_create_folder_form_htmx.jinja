@@ -2,6 +2,7 @@
       hx-post="{{ url('files_action', kwargs={'action': 'create-folder'}) }}"
       hx-target="#files-feedback"
       hx-swap="innerHTML"
+    hx-include="#current-parent-folder-token"
       hx-on::after-request="open_create_folder = false">
     {{ csrf_input }}
 

@@ -5,7 +5,7 @@
       hx-on::after-request="open_share_item = false">
     {{ csrf_input }}
 
-    <input type="hidden" name="item_id" x-bind:value="selectedItemId">
+    <input type="hidden" name="item_token" x-bind:value="selectedItemToken">
     <input type="hidden" name="item_name" x-bind:value="selectedItemName">
     <input type="hidden" name="item_type" x-bind:value="selectedItemType">
 

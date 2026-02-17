@@ -3,7 +3,7 @@
 {% block title %}Files - DI4D Portal{% endblock %}
 
 {% block content %}
-<div class="bg-white min-h-screen" x-data="{ open_upload_files: false, open_create_folder: false, open_share_item: false, open_delete_item: false, selectedItemId: null, selectedItemName: '', selectedItemType: '' }">
+<div class="bg-white min-h-screen" x-data="{ open_upload_files: false, open_create_folder: false, open_share_item: false, open_delete_item: false, selectedItemToken: '', selectedItemName: '', selectedItemType: '' }">
     <h1 class="text-3xl lg:text-4xl font-bold text-black">Files</h1>
 
     <div class="mt-4 flex flex-row gap-2">
@@ -19,32 +19,8 @@
         {% include 'components/files_feedback_htmx.jinja' %}
     </div>
 
-    <form class="mt-4 flex flex-col gap-2 lg:flex-row lg:items-center" method="POST" hx-post="{{ url('files') }}" hx-target="#files-table" hx-swap="innerHTML">
-        {{ csrf_input }}
-        <input type="text"
-               id="q"
-               name="q"
-               placeholder="Search..."
-               value="{{ search_query }}"
-               class="bg-[--white_grey] rounded-md w-full lg:max-w-md px-4 py-2"
-               hx-trigger="keyup changed delay:300ms"
-               hx-sync="closest form:abort">
-
-        <select name="file_type"
-                class="bg-[--white_grey] rounded-md px-4 py-2 lg:w-40"
-                hx-trigger="change"
-                hx-post="{{ url('files') }}"
-                hx-target="#files-table"
-                hx-sync="closest form:abort">
-            <option value="all" {% if file_type == 'all' %}selected{% endif %}>All</option>
-            <option value="pptx" {% if file_type == 'pptx' %}selected{% endif %}>PPTX</option>
-            <option value="txt" {% if file_type == 'txt' %}selected{% endif %}>TXT</option>
-            <option value="folder" {% if file_type == 'folder' %}selected{% endif %}>Folder</option>
-        </select>
-    </form>
-
-    <div id="files-table" class="mt-4">
-        {% include 'components/files_table_htmx.jinja' %}
+    <div id="files-content" class="mt-4">
+        {% include 'components/files_content_htmx.jinja' %}
     </div>
 
     {% call empty_modal('upload_files', 'Upload files') %}

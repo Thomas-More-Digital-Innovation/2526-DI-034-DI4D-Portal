@@ -12,6 +12,9 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils.crypto import get_random_string
 from django.contrib.auth import update_session_auth_hash
+from django.urls import reverse
+from django.core import signing
+from django.core.signing import BadSignature
 import os
 import mimetypes
 import uuid
@@ -23,6 +26,24 @@ from ckeditor.widgets import CKEditorWidget
 import logging
 
 logger = logging.getLogger(__name__)
+FILES_TOKEN_SALT = 'di4d-files-token'
+
+
+def _encode_file_token(item_id):
+    return signing.dumps({'id': int(item_id)}, salt=FILES_TOKEN_SALT)
+
+
+def _decode_file_token(token):
+    if not token:
+        return None
+    try:
+        payload = signing.loads(token, salt=FILES_TOKEN_SALT)
+        item_id = payload.get('id')
+        if not item_id:
+            return None
+        return int(item_id)
+    except (BadSignature, ValueError, TypeError):
+        return None
 
 def page_not_found(request, exception=None):
     return render(request, 'errors/404.jinja', status=404)
@@ -291,12 +312,29 @@ def files_view(request):
     active_page = 'files'
     search_query = request.POST.get('q', '').strip() if request.method == 'POST' else request.GET.get('q', '').strip()
     file_type = request.POST.get('file_type', 'all') if request.method == 'POST' else request.GET.get('file_type', 'all')
+    current_folder_token = request.POST.get('folder') if request.method == 'POST' else request.GET.get('folder')
+    current_folder_id = _decode_file_token(current_folder_token)
+    current_folder = None
+    parent_folder_token = None
 
-    db_items = FileItem.objects.filter(isDeleted=False, parentFolder__isnull=True).select_related('owner').order_by('-id')
+    if current_folder_id:
+        current_folder = FileItem.objects.filter(id=current_folder_id, isDeleted=False).select_related('parentFolder').first()
+        if not current_folder:
+            current_folder_token = None
+        else:
+            if current_folder.parentFolder:
+                parent_folder_token = _encode_file_token(current_folder.parentFolder.id)
+
+    db_items = FileItem.objects.filter(isDeleted=False, parentFolder_id=current_folder_id).select_related('owner').order_by('-id')
     file_items = []
     for item in db_items:
+        is_folder = (item.s3Link or '').startswith('folders/')
         ext = os.path.splitext(item.name or '')[1].lstrip('.').lower()
-        inferred_type = ext if ext else 'folder'
+        inferred_type = 'file'
+        if is_folder:
+            inferred_type = 'folder'
+        elif ext:
+            inferred_type = ext
         owner_name = 'Unknown'
         if item.owner:
             first_name = (item.owner.firstname or '').strip()
@@ -309,6 +347,7 @@ def files_view(request):
             'modified': '—',
             'modified_by': owner_name,
             'type': inferred_type,
+            'token': _encode_file_token(item.id),
         })
 
     if search_query:
@@ -322,10 +361,13 @@ def files_view(request):
         'file_items': file_items,
         'search_query': search_query,
         'file_type': file_type,
+        'current_folder_token': current_folder_token,
+        'current_folder_name': current_folder.name if current_folder else 'Root',
+        'parent_folder_token': parent_folder_token,
     }
 
     if request.headers.get('HX-Request') == 'true':
-        return render(request, 'components/files_table_htmx.jinja', context)
+        return render(request, 'components/files_content_htmx.jinja', context)
     return render(request, 'sharepoint/files.jinja', context)
 
 @login_required(login_url='login')
@@ -341,7 +383,10 @@ def files_action(request, action):
     }
 
     if action == 'delete':
-        item_id = request.POST.get('item_id')
+        item_token = request.POST.get('item_token')
+        current_folder_token = request.POST.get('current_folder_token')
+        item_id = _decode_file_token(item_token)
+        current_folder_id = _decode_file_token(current_folder_token)
         if not item_id:
             return render(request, 'components/files_feedback_htmx.jinja', {
                 'message': 'No item selected for deletion.',
@@ -356,20 +401,60 @@ def files_action(request, action):
         if item.s3Link and default_storage.exists(item.s3Link):
             default_storage.delete(item.s3Link)
 
+        redirect_url = reverse('files')
+        effective_folder_id = current_folder_id if current_folder_id else (item.parentFolder.id if item.parentFolder else None)
+        if effective_folder_id:
+            redirect_url = f'{redirect_url}?folder={_encode_file_token(effective_folder_id)}'
+
         item.isDeleted = True
         item.save(update_fields=['isDeleted'])
 
         if request.headers.get('HX-Request') == 'true':
             response = HttpResponse()
-            response['HX-Redirect'] = '/files/'
+            response['HX-Redirect'] = redirect_url
             return response
 
-        return redirect('files')
+        return redirect(redirect_url)
 
+    if action == 'create-folder':
+        folder_name = (request.POST.get('folder_name') or '').strip()
+        if not folder_name:
+            return render(request, 'components/files_feedback_htmx.jinja', {
+                'message': 'Folder name is required.',
+            })
+
+        parent_folder_token = request.POST.get('parent_folder_token')
+        parent_folder_id = _decode_file_token(parent_folder_token)
+        parent_folder = None
+        if parent_folder_id:
+            parent_folder = FileItem.objects.filter(id=parent_folder_id, isDeleted=False).first()
+
+        folder_key = f"folders/user_{request.user.id}/{uuid.uuid4().hex}"
+        FileItem.objects.create(
+            name=folder_name,
+            s3Link=folder_key,
+            owner=request.user,
+            parentFolder=parent_folder,
+            isDeleted=False,
+        )
+
+        redirect_url = reverse('files')
+        if parent_folder_id:
+            redirect_url = f'{redirect_url}?folder={_encode_file_token(parent_folder_id)}'
+
+        if request.headers.get('HX-Request') == 'true':
+            response = HttpResponse()
+            response['HX-Redirect'] = redirect_url
+            return response
+
+        return redirect(redirect_url)
+
+    parent_folder_id = None
     uploaded_files = request.FILES.getlist('files')
     if uploaded_files:
         payload['uploaded_files'] = [uploaded_file.name for uploaded_file in uploaded_files]
-        parent_folder_id = request.POST.get('parent_folder_id')
+        parent_folder_token = request.POST.get('parent_folder_token')
+        parent_folder_id = _decode_file_token(parent_folder_token)
         parent_folder = None
         if parent_folder_id:
             parent_folder = FileItem.objects.filter(id=parent_folder_id, isDeleted=False).first()
@@ -398,6 +483,15 @@ def files_action(request, action):
     logger.info('Files endpoint payload received: %s', payload)
 
     if uploaded_files:
+        redirect_url = reverse('files')
+        if parent_folder_id:
+            redirect_url = f'{redirect_url}?folder={_encode_file_token(parent_folder_id)}'
+
+        if request.headers.get('HX-Request') == 'true':
+            response = HttpResponse()
+            response['HX-Redirect'] = redirect_url
+            return response
+
         message = f'Uploaded {len(uploaded_files)} file(s) and indexed them successfully.'
     else:
         message = f'Input for "{action}" received and logged.'
@@ -408,9 +502,13 @@ def files_action(request, action):
 
 
 @login_required(login_url='login')
-def files_download(request, item_id):
+def files_download(request, item_token):
     if request.method != 'GET':
         return HttpResponse(status=405)
+
+    item_id = _decode_file_token(item_token)
+    if not item_id:
+        return HttpResponse(status=404)
 
     item = FileItem.objects.filter(id=item_id, isDeleted=False).first()
     if not item:

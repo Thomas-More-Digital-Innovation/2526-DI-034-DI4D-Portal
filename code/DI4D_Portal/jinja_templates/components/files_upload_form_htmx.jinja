@@ -3,6 +3,7 @@
       hx-target="#files-feedback"
       hx-swap="innerHTML"
       hx-encoding="multipart/form-data"
+    hx-include="#current-parent-folder-token"
       hx-on::after-request="open_upload_files = false">
     {{ csrf_input }}
 
