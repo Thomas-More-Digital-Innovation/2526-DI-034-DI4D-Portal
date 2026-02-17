@@ -36,7 +36,7 @@
                 hx-post="{{ url('files') }}"
                 hx-target="#files-table"
                 hx-sync="closest form:abort">
-            <option value="all" {% if file_type == 'all' %}selected{% endif %}>Name</option>
+            <option value="all" {% if file_type == 'all' %}selected{% endif %}>All</option>
             <option value="pptx" {% if file_type == 'pptx' %}selected{% endif %}>PPTX</option>
             <option value="txt" {% if file_type == 'txt' %}selected{% endif %}>TXT</option>
             <option value="folder" {% if file_type == 'folder' %}selected{% endif %}>Folder</option>

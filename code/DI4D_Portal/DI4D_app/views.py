@@ -1,11 +1,11 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from urllib import request
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from .models import ApplicationSetting, News, User, Question, FormAnswer, TechTalk, Form, UserType, Partner, LearningGoal, LearninggoalCourse
+from .models import ApplicationSetting, News, User, Question, FormAnswer, TechTalk, Form, UserType, Partner, LearningGoal, LearninggoalCourse, FileItem
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.core.paginator import Paginator
@@ -13,6 +13,8 @@ from django.db.models import Q
 from django.utils.crypto import get_random_string
 from django.contrib.auth import update_session_auth_hash
 import os
+import mimetypes
+import uuid
 import filetype
 from django.core.files.storage import default_storage
 import json
@@ -290,13 +292,24 @@ def files_view(request):
     search_query = request.POST.get('q', '').strip() if request.method == 'POST' else request.GET.get('q', '').strip()
     file_type = request.POST.get('file_type', 'all') if request.method == 'POST' else request.GET.get('file_type', 'all')
 
-    file_items = [
-        {'id': 1, 'name': 'Techtalks', 'modified': '1 Hour ago', 'modified_by': 'Govart', 'type': 'folder'},
-        {'id': 2, 'name': 'Projects', 'modified': '1 Hour ago', 'modified_by': 'Govart', 'type': 'folder'},
-        {'id': 3, 'name': 'Welcome.txt', 'modified': '1 Hour ago', 'modified_by': 'Govart', 'type': 'txt'},
-        {'id': 4, 'name': 'DI4D.pptx', 'modified': '1 Hour ago', 'modified_by': 'Govart', 'type': 'pptx'},
-        {'id': 5, 'name': 'Food.txt', 'modified': '1 Hour ago', 'modified_by': 'Govart', 'type': 'txt'},
-    ]
+    db_items = FileItem.objects.filter(isDeleted=False, parentFolder__isnull=True).select_related('owner').order_by('-id')
+    file_items = []
+    for item in db_items:
+        ext = os.path.splitext(item.name or '')[1].lstrip('.').lower()
+        inferred_type = ext if ext else 'folder'
+        owner_name = 'Unknown'
+        if item.owner:
+            first_name = (item.owner.firstname or '').strip()
+            last_name = (item.owner.lastname or '').strip()
+            owner_name = f'{first_name} {last_name}'.strip() or item.owner.username
+
+        file_items.append({
+            'id': item.id,
+            'name': item.name,
+            'modified': '—',
+            'modified_by': owner_name,
+            'type': inferred_type,
+        })
 
     if search_query:
         file_items = [item for item in file_items if search_query.lower() in item['name'].lower()]
@@ -327,15 +340,88 @@ def files_action(request, action):
         'post': {key: request.POST.getlist(key) if len(request.POST.getlist(key)) > 1 else request.POST.get(key) for key in request.POST.keys()},
     }
 
+    if action == 'delete':
+        item_id = request.POST.get('item_id')
+        if not item_id:
+            return render(request, 'components/files_feedback_htmx.jinja', {
+                'message': 'No item selected for deletion.',
+            })
+
+        item = FileItem.objects.filter(id=item_id, isDeleted=False).first()
+        if not item:
+            return render(request, 'components/files_feedback_htmx.jinja', {
+                'message': 'The selected item could not be found.',
+            })
+
+        if item.s3Link and default_storage.exists(item.s3Link):
+            default_storage.delete(item.s3Link)
+
+        item.isDeleted = True
+        item.save(update_fields=['isDeleted'])
+
+        if request.headers.get('HX-Request') == 'true':
+            response = HttpResponse()
+            response['HX-Redirect'] = '/files/'
+            return response
+
+        return redirect('files')
+
     uploaded_files = request.FILES.getlist('files')
     if uploaded_files:
         payload['uploaded_files'] = [uploaded_file.name for uploaded_file in uploaded_files]
+        parent_folder_id = request.POST.get('parent_folder_id')
+        parent_folder = None
+        if parent_folder_id:
+            parent_folder = FileItem.objects.filter(id=parent_folder_id, isDeleted=False).first()
+
+        stored_keys = []
+        for uploaded_file in uploaded_files:
+            clean_name = os.path.basename((uploaded_file.name or '').strip())
+            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S_%f')
+            unique_suffix = uuid.uuid4().hex[:8]
+            key = f"files/user_{request.user.id}/{timestamp}_{unique_suffix}_{clean_name}"
+            saved_key = default_storage.save(key, uploaded_file)
+            stored_keys.append(saved_key)
+
+            FileItem.objects.update_or_create(
+                s3Link=saved_key,
+                defaults={
+                    'name': clean_name,
+                    'owner': request.user,
+                    'parentFolder': parent_folder,
+                    'isDeleted': False,
+                },
+            )
+
+        payload['stored_keys'] = stored_keys
 
     logger.info('Files endpoint payload received: %s', payload)
 
+    if uploaded_files:
+        message = f'Uploaded {len(uploaded_files)} file(s) and indexed them successfully.'
+    else:
+        message = f'Input for "{action}" received and logged.'
+
     return render(request, 'components/files_feedback_htmx.jinja', {
-        'message': f'Input for "{action}" received and logged.',
+        'message': message,
     })
+
+
+@login_required(login_url='login')
+def files_download(request, item_id):
+    if request.method != 'GET':
+        return HttpResponse(status=405)
+
+    item = FileItem.objects.filter(id=item_id, isDeleted=False).first()
+    if not item:
+        return HttpResponse(status=404)
+
+    if not item.s3Link or not default_storage.exists(item.s3Link):
+        return HttpResponse(status=404)
+
+    content_type = mimetypes.guess_type(item.name or '')[0] or 'application/octet-stream'
+    file_handle = default_storage.open(item.s3Link, 'rb')
+    return FileResponse(file_handle, as_attachment=True, filename=item.name, content_type=content_type)
 
 @login_required(login_url='login')
 def users(request):

@@ -11,15 +11,11 @@
     <p class="text-[var(--light_grey)] text-sm md:text-lg">{{ item.modified_by }}</p>
 
     <div class="flex items-center justify-start md:justify-end gap-3 text-lg">
-        <button type="button"
-                class="text-[--green]"
-                title="Download"
-                hx-post="{{ url('files_action', kwargs={'action': 'download'}) }}"
-                hx-vals='{"item_id": "{{ item.id }}", "item_name": "{{ item.name }}", "item_type": "{{ item.type }}"}'
-                hx-target="#files-feedback"
-                hx-swap="innerHTML">
+        <a class="text-[--green]"
+           title="Download"
+           href="{{ url('files_download', kwargs={'item_id': item.id}) }}">
             <i class="fa-solid fa-download"></i>
-        </button>
+        </a>
         <button type="button"
                 class="text-black"
                 title="Share"
