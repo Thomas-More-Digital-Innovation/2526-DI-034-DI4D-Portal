@@ -3,9 +3,7 @@
     {% if not loop.first %}
     <span>/</span>
     {% endif %}
-    {% if view_mode == 'shared' %}
-    <span>{{ crumb.label }}</span>
-    {% elif crumb.token %}
+    {% if crumb.token %}
     <a href="#" class="underline" hx-get="{{ url('files') }}"
         hx-vals='{"folder": "{{ crumb.token }}", "view_mode": "{{ view_mode }}", "file_type": "{{ file_type }}", "sort_by": "{{ sort_by }}", "sort_dir": "{{ sort_dir }}"}'
         hx-target="#files-content" hx-swap="innerHTML" hx-push-url="true">{{ crumb.label }}</a>

@@ -94,25 +94,28 @@ def _get_file_access_for_user(file_item, user):
             'can_edit': True,
         }
 
-    user_shares = FileShare.objects.filter(fileItemId=file_item, userId=user)
-    has_user_share = user_shares.exists()
-    can_edit_from_user_share = user_shares.filter(canEdit=True).exists()
+    can_access = False
+    can_edit = False
+    cursor = file_item
+    max_depth = 50
+    while cursor and max_depth > 0:
+        share_filter = Q(fileItemId=cursor, userId=user)
+        if user.userTypeId_id:
+            share_filter |= Q(fileItemId=cursor, userTypeId=user.userTypeId, userId__isnull=True)
 
-    has_usertype_share = False
-    can_edit_from_usertype_share = False
-    if user.userTypeId_id:
-        usertype_shares = FileShare.objects.filter(
-            fileItemId=file_item,
-            userTypeId=user.userTypeId,
-            userId__isnull=True,
-        )
-        has_usertype_share = usertype_shares.exists()
-        can_edit_from_usertype_share = usertype_shares.filter(canEdit=True).exists()
+        shares = FileShare.objects.filter(share_filter)
+        if shares.exists():
+            can_access = True
+            if shares.filter(canEdit=True).exists():
+                can_edit = True
 
-    if has_user_share or has_usertype_share:
+        cursor = cursor.parentFolder
+        max_depth -= 1
+
+    if can_access:
         return {
             'can_access': True,
-            'can_edit': can_edit_from_user_share or can_edit_from_usertype_share,
+            'can_edit': can_edit,
         }
 
     return {
@@ -382,10 +385,6 @@ def files_view(request):
     current_folder = None
     parent_folder_token = None
 
-    if view_mode == 'shared':
-        current_folder_token = None
-        current_folder_id = None
-
     if current_folder_id and view_mode == 'mine':
         current_folder = FileItem.objects.filter(id=current_folder_id, isDeleted=False, owner=request.user).select_related('parentFolder').first()
         if not current_folder:
@@ -394,6 +393,15 @@ def files_view(request):
         else:
             if current_folder.parentFolder:
                 parent_folder_token = _encode_file_token(current_folder.parentFolder.id)
+
+    if current_folder_id and view_mode == 'shared':
+        current_folder = FileItem.objects.filter(id=current_folder_id, isDeleted=False).select_related('parentFolder').first()
+        if not current_folder or not _get_file_access_for_user(current_folder, request.user)['can_access']:
+            current_folder_token = None
+            current_folder_id = None
+            current_folder = None
+        elif current_folder.parentFolder:
+            parent_folder_token = _encode_file_token(current_folder.parentFolder.id)
 
     if view_mode == 'shared':
         breadcrumbs = [{'label': 'Shared with you', 'token': ''}]
@@ -420,22 +428,48 @@ def files_view(request):
                 'token': _encode_file_token(folder.id),
             })
 
-    if view_mode == 'shared':
-        shared_filter = Q(shares__userId=request.user)
-        if request.user.userTypeId_id:
-            shared_filter |= Q(shares__userTypeId_id=request.user.userTypeId_id)
+    if current_folder and view_mode == 'shared':
+        folder_chain = []
+        cursor = current_folder
+        max_depth = 50
+        while cursor and max_depth > 0:
+            if not _get_file_access_for_user(cursor, request.user)['can_access']:
+                break
+            folder_chain.append(cursor)
+            cursor = cursor.parentFolder
+            max_depth -= 1
 
-        db_items = FileItem.objects.filter(
-            isDeleted=False,
-        ).filter(
-            shared_filter,
-        ).exclude(owner=request.user).select_related('owner').distinct().order_by('-id')
+        for folder in reversed(folder_chain):
+            breadcrumbs.append({
+                'label': folder.name,
+                'token': _encode_file_token(folder.id),
+            })
+
+    if view_mode == 'shared':
+        if current_folder:
+            db_items = FileItem.objects.filter(
+                isDeleted=False,
+                parentFolder=current_folder,
+            ).exclude(owner=request.user).select_related('owner').order_by('-id')
+        else:
+            shared_filter = Q(shares__userId=request.user)
+            if request.user.userTypeId_id:
+                shared_filter |= Q(shares__userTypeId_id=request.user.userTypeId_id)
+
+            db_items = FileItem.objects.filter(
+                isDeleted=False,
+            ).filter(
+                shared_filter,
+            ).exclude(owner=request.user).select_related('owner').distinct().order_by('-id')
     else:
         db_items = FileItem.objects.filter(isDeleted=False, parentFolder_id=current_folder_id, owner=request.user).select_related('owner').order_by('-id')
 
     file_items = []
     available_types = set()
     for item in db_items:
+        if view_mode == 'shared' and not _get_file_access_for_user(item, request.user)['can_access']:
+            continue
+
         is_folder = (item.s3Link or '').startswith('folders/')
         ext = os.path.splitext(item.name or '')[1].lstrip('.').lower()
         inferred_type = 'file'
@@ -812,11 +846,8 @@ def files_download(request, item_token):
     if not item:
         return HttpResponse(status=404)
 
-    can_access = item.owner == request.user or FileShare.objects.filter(
-        Q(fileItemId=item, userId=request.user)
-        | Q(fileItemId=item, userTypeId=request.user.userTypeId, userId__isnull=True)
-    ).exists()
-    if not can_access:
+    access = _get_file_access_for_user(item, request.user)
+    if not access['can_access']:
         return HttpResponse(status=403)
 
     if not item.s3Link or not default_storage.exists(item.s3Link):
