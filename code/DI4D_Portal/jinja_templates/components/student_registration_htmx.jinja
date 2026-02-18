@@ -1,0 +1,72 @@
+{# This is a component for return of HTMX #}
+<div>
+    <ul>
+        {% for submission in submissions %}
+            <li class="flex items-center gap-2 mt-2">
+                {% if submission.2 == 'evaluate' %}
+                    <div class="w-4 h-4 rounded-full bg-gray-500 flex-shrink-0 border border-black"></div>
+                    <span>Registration {{ submission.0 }} - {{ submission.1 }}</span>
+                    <a class="px-4 bg-[--blue_di4d] text-center text-white mx-2 py-1 rounded-xl w-28" href="{{ url('student_registration_detail', kwargs={'submission_number': submission.0}) }}">
+                        Evaluate
+                    </a>
+                {% elif submission.2 == 'approved' %}
+                    <div class="w-4 h-4 rounded-full bg-green-800 flex-shrink-0 border border-black"></div>
+                    <span>Registration {{ submission.0 }} - {{ submission.1 }}</span>
+                    <a class="px-4 bg-[--orange_di4d] text-center text-white mx-2 py-1 rounded-xl w-28" href="{{ url('student_registration_detail', kwargs={'submission_number': submission.0}) }}">
+                        Approved
+                    </a>
+                {% elif submission.2 == 'denied' %}
+                    <div class="w-4 h-4 rounded-full bg-red-800 flex-shrink-0 border border-black"></div>
+                    <span>Registration {{ submission.0 }} - {{ submission.1 }}</span>
+                    <a class="px-4 bg-[--orange_di4d] text-center text-white mx-2 py-1 rounded-xl w-28" href="{{ url('student_registration_detail', kwargs={'submission_number': submission.0}) }}">
+                        Denied
+                    </a>
+                {% endif %}
+            </li>
+        {% else %}
+            <div class="mt-16 flex flex-col items-center">
+                <p class="text-center">No registrations found</p>     
+                <a class="btn_primary_orange mt-6" href="{{ url('student_registrations') }}">Go back to all student registrations</a>       
+            </div>
+        {% endfor %}
+    </ul>
+    
+    {# Pagination controls #}
+    <div class="flex gap-4 items-center mt-6 justify-end">
+        {% if submissions.has_previous() %}
+        <a hx-get="?page={{ submissions.previous_page_number() }}&q={{ search_query }}&year={{ filtered_year }}&status={{ filtered_status }}&items_per_page={{ items_per_page }}" 
+                hx-target="#student_registration_grid"
+                class="btn bg-[--input_bg_color]">
+            <i class="fa-solid fa-angle-left"></i>
+        </a>
+        {% else %}
+        <a class="btn bg-[--input_bg_color] opacity-50 cursor-not-allowed">
+            <i class="fa-solid fa-angle-left"></i>        
+        </a>
+        {% endif %}
+        {{ submissions.number }}
+        {% if submissions.has_next() %}
+            <a hx-get="?page={{ submissions.next_page_number() }}&q={{ search_query }}&year={{ filtered_year }}&status={{ filtered_status }}&items_per_page={{ items_per_page }}" 
+                    hx-target="#student_registration_grid"
+                    class="btn bg-[--input_bg_color]">
+                <i class="fa-solid fa-angle-right"></i>
+            </a>
+        {% else %}
+            <a class="btn bg-[--input_bg_color] opacity-50 cursor-not-allowed">
+                <i class="fa-solid fa-angle-right"></i>        
+            </a>
+        {% endif %}
+        <select id="items-per-page" 
+            name="items_per_page"
+            hx-get="?page=1&q={{ search_query }}&year={{ filtered_year }}&status={{ filtered_status }}&items_per_page={{ items_per_page }}"
+            hx-target="#student_registration_grid"
+            hx-include="[name='items_per_page']"
+            class="bg-[--input_bg_color] rounded-md px-3 py-2">
+            <option value="1" {% if items_per_page == 1 %}selected{% endif %}>1</option>
+            <option value="5" {% if items_per_page == 5 %}selected{% endif %}>5</option>
+            <option value="10" {% if items_per_page == 10 %}selected{% endif %}>10</option>
+            <option value="25" {% if items_per_page == 25 %}selected{% endif %}>25</option>
+            <option value="50" {% if items_per_page == 50 %}selected{% endif %}>50</option>    
+        </select>
+    </div>
+</div>
