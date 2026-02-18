@@ -748,8 +748,9 @@ def forms_view(request):
     # Exclude student registration
     application_settings = ApplicationSetting.objects.filter(studentApplicationFormId__isnull=False)
     excluded_form_ids = application_settings.values_list('studentApplicationFormId', flat=True)
-    if excluded_form_ids:
-        all_forms = all_forms.exclude(id__in=excluded_form_ids)
+    if not request.user.role_is_admin():
+        if excluded_form_ids:
+            all_forms = all_forms.exclude(id__in=excluded_form_ids)
     
     # Handle CRUD actions (admin only)
     if request.method == "POST" and request.user.role_is_admin():
@@ -767,15 +768,17 @@ def forms_view(request):
         if action == "create":
             title = request.POST.get("title", "").strip()
             start_date = request.POST.get("startDate")
-            end_date = request.POST.get("endDate")
-            if title and start_date and end_date:
+            end_date = request.POST.get("endDate", "NoEndDate")
+            if title and start_date:
                 new_form = Form.objects.create(
                     userId=request.user,
                     title=title,
                     startDate=start_date,
-                    endDate=end_date,
                     isActive=True
                 )
+                if end_date and end_date != "NoEndDate":
+                    new_form.endDate = end_date
+                    new_form.save()
                 return redirect('form_builder', form_id=new_form.id)
             return redirect('forms')
 
@@ -783,13 +786,13 @@ def forms_view(request):
             form_id = request.POST.get("form_id")
             title = request.POST.get("title", "").strip()
             start_date = request.POST.get("startDate")
-            end_date = request.POST.get("endDate")
+            end_date = request.POST.get("endDate", "NoEndDate")
             is_active = request.POST.get("isActive") == "on"
             form_to_edit = Form.objects.filter(id=form_id).first()
             if form_to_edit and title and start_date and end_date:
                 form_to_edit.title = title
                 form_to_edit.startDate = start_date
-                form_to_edit.endDate = end_date
+                form_to_edit.endDate = end_date if end_date != "NoEndDate" else None
                 form_to_edit.isActive = is_active
                 form_to_edit.save()
             return redirect('forms')
@@ -1113,9 +1116,9 @@ def form_builder_view(request, form_id=None):
         if action == 'update_settings':
             title = request.POST.get('title', '').strip()
             start_date = request.POST.get('startDate')
-            end_date = request.POST.get('endDate')
+            end_date = request.POST.get('endDate', 'NoEndDate')
             
-            if title and start_date and end_date:
+            if title and start_date:
                 if form:
                     # Existing form - update directly
                     questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
@@ -1144,7 +1147,8 @@ def form_builder_view(request, form_id=None):
 
                     form.title = title
                     form.startDate = start_date
-                    form.endDate = end_date
+                    if end_date != "NoEndDate" and end_date:
+                        form.endDate = end_date
                     form.save()
                     return redirect('forms')
                 else:
@@ -1153,19 +1157,14 @@ def form_builder_view(request, form_id=None):
                         userId=request.user,
                         title=title,
                         startDate=start_date,
-                        endDate=end_date,
                         isActive=True
                     )
+                    if end_date != "NoEndDate":
+                        form.endDate = end_date
+                        form.save()
                     questions = []
     
-    return render(request, 'sharepoint/form_builder.jinja', {
-        'active_page': active_page,
-        'form': form,
-        'questions': questions,
-        'question': questions.first() if questions else None,
-        'data_types': data_types,
-        'today': today
-    })
+    return render(request, 'sharepoint/form_builder.jinja', {'active_page': active_page, 'form': form, 'questions': questions, 'question': questions.first() if questions else None, 'data_types': data_types, 'today': today})
 
 @login_required(login_url='login')
 def form_builder_add_question(request, form_id):
@@ -1191,12 +1190,7 @@ def form_builder_add_question(request, form_id):
     
     questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
     
-    return render(request, 'components/questions_list_htmx.jinja', {
-        'form': form,
-        'questions': questions,
-        'question': new_question,
-        'data_types': data_types,
-    })
+    return render(request, 'components/questions_list_htmx.jinja', {'form': form, 'questions': questions, 'question': new_question,'data_types': data_types,})
 
 @login_required(login_url='login')
 def form_builder_delete_question(request, form_id):
@@ -1218,10 +1212,7 @@ def form_builder_delete_question(request, form_id):
     
     questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
     
-    return render(request, 'components/questions_list_htmx.jinja', {
-        'form': form,
-        'questions': questions,
-    })
+    return render(request, 'components/questions_list_htmx.jinja', {'form': form,'questions': questions,})
 
 @login_required(login_url='login')
 def form_builder_get_question(request, form_id, question_id):
@@ -1236,11 +1227,7 @@ def form_builder_get_question(request, form_id, question_id):
     question = get_object_or_404(Question, id=question_id, formId=form, isActive=True)
     data_types = DataType.objects.all()
     
-    return render(request, 'components/question_editor_htmx.jinja', {
-        'form': form,
-        'question': question,
-        'data_types': data_types
-    })
+    return render(request, 'components/question_editor_htmx.jinja', {'form': form, 'question': question, 'data_types': data_types})
 
 @login_required(login_url='login')
 def form_builder_update_question(request, form_id, question_id):

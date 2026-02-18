@@ -62,7 +62,6 @@
                     <div>
                         <label class="text-white font-semibold block mb-1" for="create-startDate">Start date</label>
                         <input id="create-startDate" name="startDate" type="date" 
-                               min="{{ today }}"
                                x-model="startDate"
                                class="w-full bg-white rounded-md px-3 py-2 border border-gray-300" required/>
                     </div>
@@ -70,7 +69,7 @@
                         <label class="text-white font-semibold block mb-1" for="create-endDate">End date</label>
                         <input id="create-endDate" name="endDate" type="date" 
                                :min="startDate"
-                               class="w-full bg-white rounded-md px-3 py-2 border border-gray-300\" required/>
+                               class="w-full bg-white rounded-md px-3 py-2 border border-gray-300\"/>
                     </div>
                 </div>
                 <div class="w-full flex flex-row gap-2 mt-4">

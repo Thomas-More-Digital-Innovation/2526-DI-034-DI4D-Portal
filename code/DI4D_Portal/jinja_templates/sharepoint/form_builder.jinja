@@ -28,7 +28,6 @@
             <div>
                 <label class="text-black font-semibold block mb-1" for="startDate">Start date</label>
                 <input id="startDate" name="startDate" type="date" value="{{ form.startDate if form else '' }}" 
-                       min="{{ today }}"
                        x-model="startDate"
                        class="w-full bg-white rounded-md px-3 py-2 border border-gray-300" required/>
             </div>
@@ -36,7 +35,7 @@
                 <label class="text-black font-semibold block mb-1" for="endDate">End date</label>
                 <input id="endDate" name="endDate" type="date" value="{{ form.endDate if form else '' }}" 
                        :min="startDate"
-                       class="w-full bg-white rounded-md px-3 py-2 border border-gray-300" required/>
+                       class="w-full bg-white rounded-md px-3 py-2 border border-gray-300"/>
             </div>
         </div>
     </form>
