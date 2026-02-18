@@ -754,11 +754,17 @@ def forms_view(request):
     all_forms = Form.objects.filter(isActive=True).order_by('-startDate', 'title')
     
     # Exclude student registration
-    application_settings = ApplicationSetting.objects.filter(studentApplicationFormId__isnull=False)
-    excluded_form_ids = application_settings.values_list('studentApplicationFormId', flat=True)
-    if not request.user.role_is_admin():
-        if excluded_form_ids:
+    history_application_form = HistoryStudentApplicationForm.objects.all()
+    excluded_form_ids = history_application_form.values_list('formId', flat=True)
+    if excluded_form_ids:
+        if not request.user.role_is_admin():
             all_forms = all_forms.exclude(id__in=excluded_form_ids)
+        else:
+            for excluded_id in excluded_form_ids:
+                # For admins, make a mark that this form is the student registration form
+                for form in all_forms:
+                    if form.id == excluded_id:
+                        form.is_student_registration = True
     
     # Handle CRUD actions (admin only)
     if request.method == "POST" and request.user.role_is_admin():

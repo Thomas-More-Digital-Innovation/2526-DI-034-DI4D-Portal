@@ -57,10 +57,17 @@
                         @click="currentDeleteId = {{ form.id }}; currentDeleteName = '{{ form.title|replace("'", "\\'") }}'">
                         <i class="fa-solid fa-trash"></i> Delete
                     </button>
-                    <a href="{{ url('form_submissions', kwargs={'form_id': form.id}) }}"
-                       class="w-full h-9 inline-flex items-center justify-center px-3 py-1.5 bg-[--orange_di4d] text-white rounded-md text-sm text-center whitespace-nowrap">
-                        <i class="fa-solid fa-eye"></i> View submissions
-                    </a>
+                    {% if form.is_student_registration %}
+                        <a href="{{ url('student_registrations')}}"
+                        class="w-full h-9 inline-flex items-center justify-center px-3 py-1.5 bg-[--orange_di4d] text-white rounded-md text-sm text-center whitespace-nowrap">
+                            <i class="fa-solid fa-eye"></i> Student registration
+                        </a>
+                    {% else %}
+                        <a href="{{ url('form_submissions', kwargs={'form_id': form.id}) }}"
+                        class="w-full h-9 inline-flex items-center justify-center px-3 py-1.5 bg-[--orange_di4d] text-white rounded-md text-sm text-center whitespace-nowrap">
+                            <i class="fa-solid fa-eye"></i> View submissions
+                        </a>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
