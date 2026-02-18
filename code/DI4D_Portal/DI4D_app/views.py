@@ -781,24 +781,23 @@ def student_registrations(request):
     # Check if it is a htmx request
     if request.headers.get("HX-Request") == "true":
         # Check if somebody searched for something or filtered something
-            if request.method == "POST":
-                search_query = request.POST.get("q").strip()
-                year_filter = request.POST.get("year")
-                status_filter = request.POST.get("status")
-                if search_query:
-                    # Filter submissions by search query (on submission number or date)
-                    submissions = [s for s in submissions if search_query.lower() in str(s[0]).lower() or search_query.lower() in str(s[1]).lower()]
-                if year_filter != "nofilter":
-                    submissions = [s for s in submissions if s[3] == int(year_filter)]
-                    filtered_year = year_filter
-                if status_filter != "nofilter":
-                    submissions = [s for s in submissions if s[2] == status_filter]
-                    filtered_status = status_filter
-                # Pagination
-                paginator = Paginator(submissions, items_per_page)
-                page_number = request.GET.get('page', 1)
-                submissions = paginator.get_page(page_number)
-            return render(request, 'components/student_registration_htmx.jinja', {'active_page': active_page, 'search_query': search_query, 'submissions': submissions, 'years': years, 'filtered_year': filtered_year, 'filtered_status': filtered_status, 'items_per_page': items_per_page})
+        search_query = request.POST.get("q", "").strip()
+        year_filter = request.POST.get("year", "nofilter")
+        status_filter = request.POST.get("status", "nofilter")
+        if search_query:
+            # Filter submissions by search query (on submission number or date)
+            submissions = [s for s in submissions if search_query.lower() in str(s[0]).lower() or search_query.lower() in str(s[1]).lower()]
+        if year_filter != "nofilter":
+            submissions = [s for s in submissions if s[3] == int(year_filter)]
+            filtered_year = year_filter
+        if status_filter != "nofilter":
+            submissions = [s for s in submissions if s[2] == status_filter]
+            filtered_status = status_filter
+        # Pagination
+        paginator = Paginator(submissions, items_per_page)
+        page_number = request.GET.get('page', 1)
+        submissions = paginator.get_page(page_number)
+        return render(request, 'components/student_registration_htmx.jinja', {'active_page': active_page, 'search_query': search_query, 'submissions': submissions, 'years': years, 'filtered_year': filtered_year, 'filtered_status': filtered_status, 'items_per_page': items_per_page})
 
     return render(request, 'admin/student_registrations.jinja', {'active_page': active_page, 'search_query': search_query, 'submissions': submissions, 'years': years, 'filtered_year': filtered_year, 'filtered_status': filtered_status, 'items_per_page': items_per_page})
 
