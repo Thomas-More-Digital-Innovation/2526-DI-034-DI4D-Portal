@@ -1,0 +1,24 @@
+{# Questions list navigation HTMX component with optional OOB editor updates #}
+{% if questions|length == 0 %}
+    <p class="text-gray-500 text-sm">No questions yet.</p>
+{% else %}
+    {% for question in questions %}
+        <button type="button"
+                class="w-full text-left px-3 py-2 rounded-md transition flex items-center justify-between gap-2 group"
+                :class="currentQuestionId === {{ question.id }} ? 'bg-[var(--white_grey)] text-black' : 'bg-white text-gray-600 hover:bg-gray-100'"
+                @click="currentQuestionId = {{ question.id }}"
+                hx-get="{{ url('manage_question_detail', kwargs={'form_id': form.id, 'question_id': question.id}) }}"
+                hx-target="#question-editor"
+                hx-swap="innerHTML">
+            <span class="truncate flex-1">{{ loop.index }}. {{ question.question or 'Untitled question' }}</span>
+            <span class="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                  @click.stop="confirmDeleteQuestion = {{ question.id }}">
+                <i class="fa-solid fa-trash text-sm"></i>
+            </span>
+        </button>
+    {% endfor %}
+{% endif %}
+
+
+
+

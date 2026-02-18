@@ -1,0 +1,65 @@
+{% extends "structure/structure_private.jinja"%}
+{% block title %}Submission - DI4D Portal{% endblock %}
+
+{% block content %}
+<div class="bg-white min-h-screen">
+    <div class="flex flex-col gap-4">
+        <div class="mb-2">
+            <a href="{{ url('form_submissions', kwargs={'form_id': form.id}) }}" class="text-[var(--blue_di4d)] hover:underline mb-2 inline-block">
+                <i class="fa-solid fa-arrow-left mr-2"></i>Back to Submissions
+            </a>
+            <h1 class="text-3xl lg:text-4xl font-bold text-black">Submission</h1>
+            <p class="text-gray-600 mt-1">{{ form.title }}</p>
+            <p class="text-gray-600">{{ user.firstname }} {{ user.lastname }} ({{ user.email }})</p>
+        </div>
+
+        <div>
+            <table class="w-full">
+                <thead>
+                    <tr class="grid grid-cols-2 gap-0">
+                        <th class="px-4 py-2 text-left bg-[--blue_di4d] text-white border border-black">Question</th>
+                        <th class="px-4 py-2 text-left bg-[--blue_di4d] text-white border border-black">Answer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for question in questions %}
+                        {% set datatype_name = question.datatype.name|lower %}
+                        {% set answer = answer_map.get(question.id) %}
+                        <tr class="grid grid-cols-2 gap-0">
+                            <td class="px-4 py-2 text-left bg-white text-black border border-black">
+                                <span class="font-medium">{{ question.question }}</span>
+                                {% if question.explanation %}
+                                    <span class="text-gray-500 text-sm block">{{ question.explanation }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-2 text-left bg-white text-black border border-black">
+                                {% if datatype_name == 'multiple_choice' %}
+                                    {% if answer %}
+                                        <ul class="list-disc ml-4">
+                                            {% for item in answer %}
+                                                <li>{{ item }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <span class="text-gray-500">No answer</span>
+                                    {% endif %}
+                                {% elif datatype_name == 'file' %}
+                                    <div class="flex items-center">
+                                        <a class="btn_primary_orange" href="{{ MEDIA_URL }}{{ answer }}">Download file</a>
+                                    </div>
+                                {% else %}
+                                    {% if answer %}
+                                        <span>{{ answer }}</span>
+                                    {% else %}
+                                        <span class="text-gray-500">No answer</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

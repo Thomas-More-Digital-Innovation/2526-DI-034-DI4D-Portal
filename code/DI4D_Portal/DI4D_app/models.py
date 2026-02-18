@@ -90,7 +90,7 @@ class Form(models.Model):
     title = models.CharField(max_length=200)
     isActive = models.BooleanField(default=True)
     startDate = models.DateField()
-    endDate = models.DateField()
+    endDate = models.DateField(null=True, blank=True)
 
 class HistoryStudentApplicationForm(models.Model):
     formId = models.ForeignKey(Form, on_delete=models.RESTRICT)

@@ -11,11 +11,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='news',
-            name='content',
-            field=models.TextField(blank=True, null=True),
-        ),
         migrations.AlterField(
             model_name='news',
             name='mediaPath',
