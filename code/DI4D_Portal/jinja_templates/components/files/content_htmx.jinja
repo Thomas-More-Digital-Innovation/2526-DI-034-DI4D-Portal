@@ -1,77 +1,66 @@
 <nav class="mt-4 flex flex-wrap items-center gap-2 text-sm md:text-base text-black" aria-label="Breadcrumb">
     {% for crumb in breadcrumbs %}
-        {% if not loop.first %}
-            <span>/</span>
-        {% endif %}
-        {% if view_mode == 'shared' %}
-            <span>{{ crumb.label }}</span>
-        {% elif crumb.token %}
-            <a href="#"
-               class="underline"
-               hx-get="{{ url('files') }}"
-               hx-vals='{"folder": "{{ crumb.token }}", "view_mode": "{{ view_mode }}", "file_type": "{{ file_type }}", "sort_by": "{{ sort_by }}", "sort_dir": "{{ sort_dir }}"}'
-               hx-target="#files-content"
-               hx-swap="innerHTML"
-               hx-push-url="true">{{ crumb.label }}</a>
-        {% else %}
-            <a href="#"
-               class="underline"
-               hx-get="{{ url('files') }}"
-               hx-vals='{"view_mode": "{{ view_mode }}", "file_type": "{{ file_type }}", "sort_by": "{{ sort_by }}", "sort_dir": "{{ sort_dir }}"}'
-               hx-target="#files-content"
-               hx-swap="innerHTML"
-               hx-push-url="true">{{ crumb.label }}</a>
-        {% endif %}
+    {% if not loop.first %}
+    <span>/</span>
+    {% endif %}
+    {% if view_mode == 'shared' %}
+    <span>{{ crumb.label }}</span>
+    {% elif crumb.token %}
+    <a href="#" class="underline" hx-get="{{ url('files') }}"
+        hx-vals='{"folder": "{{ crumb.token }}", "view_mode": "{{ view_mode }}", "file_type": "{{ file_type }}", "sort_by": "{{ sort_by }}", "sort_dir": "{{ sort_dir }}"}'
+        hx-target="#files-content" hx-swap="innerHTML" hx-push-url="true">{{ crumb.label }}</a>
+    {% else %}
+    <a href="#" class="underline" hx-get="{{ url('files') }}"
+        hx-vals='{"view_mode": "{{ view_mode }}", "file_type": "{{ file_type }}", "sort_by": "{{ sort_by }}", "sort_dir": "{{ sort_dir }}"}'
+        hx-target="#files-content" hx-swap="innerHTML" hx-push-url="true">{{ crumb.label }}</a>
+    {% endif %}
     {% endfor %}
 </nav>
 
-<input type="hidden" id="current-parent-folder-token" name="parent_folder_token" value="{{ current_folder_token or '' }}">
+<input type="hidden" id="current-parent-folder-token" name="parent_folder_token"
+    value="{{ current_folder_token or '' }}">
 
-<form id="files-filters-form"
-            class="mt-4 flex flex-col gap-2 lg:flex-row lg:items-center"
-      method="POST"
-      hx-post="{{ url('files') }}"
-      hx-target="#files-content"
-      hx-swap="innerHTML">
+<form id="files-filters-form" class="mt-4 flex justify-between items-center" method="POST"
+    hx-post="{{ url('files') }}" hx-target="#files-content" hx-swap="innerHTML">
     {{ csrf_input }}
-    <input type="hidden" name="view_mode" value="{{ view_mode }}">
-    <input type="hidden" name="folder" value="{{ current_folder_token or '' }}">
+    <div class=" flex flex-col gap-2 lg:flex-row lg:items-center">
+        <input type="hidden" name="view_mode" value="{{ view_mode }}">
+        <input type="hidden" name="folder" value="{{ current_folder_token or '' }}">
         <input type="hidden" name="sort_by" value="{{ sort_by }}">
         <input type="hidden" name="sort_dir" value="{{ sort_dir }}">
-    <input type="text"
-           id="q"
-           name="q"
-           placeholder="Search..."
-           value="{{ search_query }}"
-           class="bg-[--white_grey] rounded-md w-full lg:max-w-md px-4 py-2"
-            hx-post="{{ url('files') }}"
-            hx-target="#files-content"
-            hx-swap="innerHTML"
-            hx-include="closest form"
-           hx-trigger="keyup changed delay:300ms"
-           hx-sync="closest form:abort">
+        <input type="text" id="q" name="q" placeholder="Search..." value="{{ search_query }}"
+            class="bg-[--white_grey] rounded-md w-full lg:max-w-md px-4 py-2" hx-post="{{ url('files') }}"
+            hx-target="#files-content" hx-swap="innerHTML" hx-include="closest form"
+            hx-trigger="keyup changed delay:300ms" hx-sync="closest form:abort">
 
-    <select name="file_type"
-            class="bg-[--white_grey] rounded-md px-4 py-2 lg:w-40"
-            hx-trigger="change"
-            hx-post="{{ url('files') }}"
-            hx-target="#files-content"
-            hx-swap="innerHTML"
-            hx-include="closest form"
+        <select name="file_type" class="bg-[--white_grey] rounded-md px-4 py-2 lg:w-40" hx-trigger="change"
+            hx-post="{{ url('files') }}" hx-target="#files-content" hx-swap="innerHTML" hx-include="closest form"
             hx-sync="closest form:abort">
-        <option value="all" {% if file_type == 'all' %}selected{% endif %}>All</option>
-        {% for type_option in available_file_types %}
-            <option value="{{ type_option }}" {% if file_type == type_option %}selected{% endif %}>
+            <option value="all" {% if file_type=='all' %}selected{% endif %}>All</option>
+            {% for type_option in available_file_types %}
+            <option value="{{ type_option }}" {% if file_type==type_option %}selected{% endif %}>
                 {% if type_option == 'folder' %}
-                    Folder
+                Folder
                 {% elif type_option == 'file' %}
-                    File
+                File
                 {% else %}
-                    {{ type_option|upper }}
+                {{ type_option|upper }}
                 {% endif %}
             </option>
-        {% endfor %}
-    </select>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="flex items-center justify-between gap-2">
+        <a class="btn_primary_blue 
+                {% if view_mode == 'mine' %}
+                    bg-gray-300 hover:bg-gray-400
+                {% endif %}" {% if view_mode=='shared' %} href="{{ url('files') }}?view_mode=mine" {%else%} href="#"
+            {%endif%}>My files</a>
+        <a class="btn_primary_blue {% if view_mode == 'shared' %}bg-gray-300 hover:bg-gray-400{% endif %}" {% if
+            view_mode=='mine' %}href="{{ url('files') }}?view_mode=shared" {%else%}href="#" {%endif%}>Shared with
+            me</a>
+    </div>
 </form>
 
 <div id="files-table" class="mt-4">

@@ -91,6 +91,16 @@ class FileShare(models.Model):
     userTypeId = models.ForeignKey(UserType, on_delete=models.CASCADE, related_name='shared_file_items_by_type', null=True, blank=True)
     canEdit = models.BooleanField(default=False)
 
+
+class WopiAccessToken(models.Model):
+    fileItemId = models.ForeignKey(FileItem, on_delete=models.CASCADE, related_name='wopi_tokens')
+    userId = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wopi_tokens')
+    tokenHash = models.CharField(max_length=64, unique=True)
+    canEdit = models.BooleanField(default=False)
+    expiresAt = models.DateTimeField()
+    isRevoked = models.BooleanField(default=False)
+    createdAt = models.DateTimeField(auto_now_add=True)
+
 def media_path_default():
     return uuid.uuid4().hex[:20]
 

@@ -15,6 +15,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.urls import reverse
 from django.core import signing
 from django.core.signing import BadSignature
+from django.views.decorators.csrf import csrf_exempt
 import os
 import mimetypes
 import uuid
@@ -302,6 +303,36 @@ def files_action(request, action):
 @login_required(login_url='login')
 def files_download(request, item_token):
     return files_feature_views.files_download(request, item_token)
+
+
+@login_required(login_url='login')
+def files_wopi_open(request, item_token):
+    return files_feature_views.files_wopi_open(request, item_token)
+
+
+@csrf_exempt
+def wopi_check_file_info(request, file_id):
+    return files_feature_views.wopi_check_file_info(request, file_id)
+
+
+@csrf_exempt
+def wopi_get_file(request, file_id):
+    return files_feature_views.wopi_get_file(request, file_id)
+
+
+@csrf_exempt
+def wopi_contents(request, file_id):
+    return files_feature_views.wopi_contents(request, file_id)
+
+
+@csrf_exempt
+def wopi_put_file(request, file_id):
+    return files_feature_views.wopi_put_file(request, file_id)
+
+
+@csrf_exempt
+def wopi_lock(request, file_id):
+    return files_feature_views.wopi_lock(request, file_id)
 
 @login_required(login_url='login')
 def users(request):

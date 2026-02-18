@@ -1,4 +1,4 @@
-from django.http import HttpResponse, FileResponse
+from django.http import HttpResponse, FileResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.urls import reverse
@@ -8,19 +8,188 @@ from django.contrib.auth.decorators import login_required
 from django.core.files.storage import default_storage
 from django.core.cache import cache
 from django.db.models import Q
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 
-from ...models import FileItem, FileShare, User, UserType
+from ...models import FileItem, FileShare, User, UserType, WopiAccessToken
 
 import os
 import mimetypes
 import uuid
 import logging
+import hashlib
+import secrets
+import datetime
+from urllib.parse import quote
+from urllib.parse import urlsplit, urlunsplit
+from urllib.request import urlopen
+import xml.etree.ElementTree as ET
+import ssl
 
 logger = logging.getLogger(__name__)
 FILES_TOKEN_SALT = 'di4d-files-token'
 FILES_USER_TOKEN_SALT = 'di4d-files-user-token'
 FILES_SHARE_TARGET_TOKEN_SALT = 'di4d-files-share-target-token'
 FILES_MODIFIED_CACHE_TTL_SECONDS = 300
+WOPI_LOCK_CACHE_PREFIX = 'wopi-lock:'
+
+
+def _get_collabora_base_url():
+    return getattr(settings, 'COLLABORA_CODE_URL', 'http://localhost:9980').rstrip('/')
+
+
+def _get_wopi_base_url(request):
+    configured_base_url = getattr(settings, 'WOPI_BASE_URL', '').strip()
+    if configured_base_url:
+        return configured_base_url.rstrip('/')
+
+    request_base = request.build_absolute_uri('/').rstrip('/')
+    parts = urlsplit(request_base)
+    host = parts.hostname or ''
+    server_port = (request.META.get('SERVER_PORT') or '').strip()
+
+    effective_netloc = parts.netloc
+    if host in ['localhost', '127.0.0.1'] and (parts.port is None or parts.port == 80):
+        if server_port and server_port not in ['80', '443']:
+            effective_netloc = f'{host}:{server_port}'
+
+    if host in ['localhost', '127.0.0.1']:
+        netloc = effective_netloc.replace(host, 'host.docker.internal')
+        return urlunsplit((parts.scheme, netloc, '', '', '')).rstrip('/')
+
+    if effective_netloc != parts.netloc:
+        return urlunsplit((parts.scheme, effective_netloc, '', '', '')).rstrip('/')
+
+    return request_base
+
+
+def _get_wopi_token_ttl_seconds():
+    try:
+        ttl = int(getattr(settings, 'WOPI_TOKEN_TTL_SECONDS', 900))
+        return ttl if ttl > 0 else 900
+    except (TypeError, ValueError):
+        return 900
+
+
+def _create_wopi_access_token(file_item, user, can_edit):
+    raw_token = secrets.token_urlsafe(48)
+    token_hash = hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
+    expires_at = timezone.now() + datetime.timedelta(seconds=_get_wopi_token_ttl_seconds())
+    WopiAccessToken.objects.create(
+        fileItemId=file_item,
+        userId=user,
+        tokenHash=token_hash,
+        canEdit=can_edit,
+        expiresAt=expires_at,
+        isRevoked=False,
+    )
+    return raw_token, expires_at
+
+
+def _get_file_access_for_user(file_item, user):
+    if file_item.owner_id == user.id:
+        return {
+            'can_access': True,
+            'can_edit': True,
+        }
+
+    user_shares = FileShare.objects.filter(fileItemId=file_item, userId=user)
+    has_user_share = user_shares.exists()
+    can_edit_from_user_share = user_shares.filter(canEdit=True).exists()
+
+    has_usertype_share = False
+    can_edit_from_usertype_share = False
+    if user.userTypeId_id:
+        usertype_shares = FileShare.objects.filter(
+            fileItemId=file_item,
+            userTypeId=user.userTypeId,
+            userId__isnull=True,
+        )
+        has_usertype_share = usertype_shares.exists()
+        can_edit_from_usertype_share = usertype_shares.filter(canEdit=True).exists()
+
+    if has_user_share or has_usertype_share:
+        return {
+            'can_access': True,
+            'can_edit': can_edit_from_user_share or can_edit_from_usertype_share,
+        }
+
+    return {
+        'can_access': False,
+        'can_edit': False,
+    }
+
+
+def _resolve_wopi_token(request, file_id):
+    access_token = request.GET.get('access_token') or request.POST.get('access_token')
+    if not access_token:
+        return None
+
+    token_hash = hashlib.sha256(access_token.encode('utf-8')).hexdigest()
+    return WopiAccessToken.objects.filter(
+        tokenHash=token_hash,
+        fileItemId_id=file_id,
+        isRevoked=False,
+        expiresAt__gt=timezone.now(),
+    ).select_related('fileItemId', 'userId').first()
+
+
+def _wopi_lock_cache_key(file_id):
+    return f'{WOPI_LOCK_CACHE_PREFIX}{file_id}'
+
+
+def _get_discovery_actions():
+    cache_key = 'wopi-discovery-actions'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    base_url = _get_collabora_base_url()
+    discovery_urls = [f'{base_url}/hosting/discovery']
+    if base_url.startswith('http://localhost') or base_url.startswith('http://127.0.0.1'):
+        discovery_urls.append(f"{base_url.replace('http://', 'https://', 1)}/hosting/discovery")
+
+    insecure = bool(getattr(settings, 'COLLABORA_INSECURE_SKIP_VERIFY', False))
+    ssl_context = ssl._create_unverified_context() if insecure else None
+    xml_bytes = None
+    last_error = None
+    for discovery_url in discovery_urls:
+        try:
+            with urlopen(discovery_url, timeout=5, context=ssl_context) as response:
+                xml_bytes = response.read()
+            break
+        except Exception as exc:
+            last_error = exc
+
+    if xml_bytes is None:
+        if last_error:
+            raise last_error
+        raise RuntimeError('Unable to load Collabora discovery document.')
+
+    root = ET.fromstring(xml_bytes)
+    actions = {}
+    for action in root.findall('.//action'):
+        ext = (action.attrib.get('ext') or '').lower()
+        name = (action.attrib.get('name') or '').lower()
+        urlsrc = action.attrib.get('urlsrc') or ''
+        if ext and name and urlsrc:
+            actions.setdefault(ext, {})[name] = urlsrc
+
+    cache.set(cache_key, actions, 3600)
+    return actions
+
+
+def _build_collabora_editor_url(file_name, wopi_src, can_edit):
+    ext = os.path.splitext(file_name or '')[1].lstrip('.').lower()
+    actions = _get_discovery_actions()
+    action_name = 'edit' if can_edit else 'view'
+    urlsrc = actions.get(ext, {}).get(action_name) or actions.get(ext, {}).get('view')
+    if not urlsrc:
+        return None
+
+    separator = '&' if '?' in urlsrc else '?'
+    return f'{urlsrc}{separator}WOPISrc={quote(wopi_src, safe="")}'
 
 
 def _get_share_allowed_user_types():
@@ -656,3 +825,166 @@ def files_download(request, item_token):
     content_type = mimetypes.guess_type(item.name or '')[0] or 'application/octet-stream'
     file_handle = default_storage.open(item.s3Link, 'rb')
     return FileResponse(file_handle, as_attachment=True, filename=item.name, content_type=content_type)
+
+
+@login_required(login_url='login')
+def files_wopi_open(request, item_token):
+    item_id = _decode_file_token(item_token)
+    if not item_id:
+        return HttpResponse(status=404)
+
+    item = FileItem.objects.filter(id=item_id, isDeleted=False).select_related('owner').first()
+    if not item:
+        return HttpResponse(status=404)
+
+    access = _get_file_access_for_user(item, request.user)
+    if not access['can_access']:
+        return HttpResponse(status=403)
+
+    if not item.s3Link or (item.s3Link or '').startswith('folders/'):
+        return HttpResponse(status=400)
+
+    wopi_src = f"{_get_wopi_base_url(request)}{reverse('wopi_check_file_info', kwargs={'file_id': item.id})}"
+    editor_url = _build_collabora_editor_url(item.name, wopi_src, access['can_edit'])
+    if not editor_url:
+        return HttpResponse('No Collabora action found for this file type.', status=400)
+
+    raw_token, expires_at = _create_wopi_access_token(item, request.user, access['can_edit'])
+    token_ttl_ms = int(expires_at.timestamp() * 1000)
+
+    return render(request, 'sharepoint/wopi_editor.jinja', {
+        'editor_url': editor_url,
+        'access_token': raw_token,
+        'access_token_ttl': token_ttl_ms,
+        'item_name': item.name,
+    })
+
+
+@csrf_exempt
+@require_http_methods(['GET', 'POST'])
+def wopi_check_file_info(request, file_id):
+    if request.method == 'POST':
+        return wopi_lock(request, file_id)
+
+    token_record = _resolve_wopi_token(request, file_id)
+    if not token_record:
+        return HttpResponse(status=401)
+
+    file_item = token_record.fileItemId
+    user = token_record.userId
+    file_size = 0
+    if file_item.s3Link and default_storage.exists(file_item.s3Link):
+        try:
+            file_size = default_storage.size(file_item.s3Link)
+        except Exception:
+            file_size = 0
+
+    response = {
+        'BaseFileName': file_item.name,
+        'OwnerId': str(file_item.owner_id),
+        'Size': file_size,
+        'UserId': str(user.id),
+        'UserFriendlyName': f"{(user.firstname or '').strip()} {(user.lastname or '').strip()}".strip() or user.username,
+        'UserCanWrite': bool(token_record.canEdit),
+        'Version': str(file_item.id),
+        'SupportsLocks': True,
+        'SupportsUpdate': True,
+    }
+    return JsonResponse(response)
+
+
+@csrf_exempt
+@require_http_methods(['GET', 'POST'])
+def wopi_get_file(request, file_id):
+    if request.method == 'POST':
+        return wopi_put_file(request, file_id)
+
+    token_record = _resolve_wopi_token(request, file_id)
+    if not token_record:
+        return HttpResponse(status=401)
+
+    file_item = token_record.fileItemId
+    if not file_item.s3Link or not default_storage.exists(file_item.s3Link):
+        return HttpResponse(status=404)
+
+    content_type = mimetypes.guess_type(file_item.name or '')[0] or 'application/octet-stream'
+    file_handle = default_storage.open(file_item.s3Link, 'rb')
+    return FileResponse(file_handle, as_attachment=False, filename=file_item.name, content_type=content_type)
+
+
+@csrf_exempt
+@require_http_methods(['GET', 'POST'])
+def wopi_contents(request, file_id):
+    if request.method == 'GET':
+        return wopi_get_file(request, file_id)
+    return wopi_put_file(request, file_id)
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def wopi_put_file(request, file_id):
+    token_record = _resolve_wopi_token(request, file_id)
+    if not token_record:
+        return HttpResponse(status=401)
+    if not token_record.canEdit:
+        return HttpResponse(status=403)
+
+    file_item = token_record.fileItemId
+    if not file_item.s3Link:
+        return HttpResponse(status=404)
+
+    with default_storage.open(file_item.s3Link, 'wb') as target_file:
+        while True:
+            chunk = request.read(1024 * 1024)
+            if not chunk:
+                break
+            target_file.write(chunk)
+
+    response = HttpResponse(status=200)
+    response['X-WOPI-ItemVersion'] = str(file_item.id)
+    return response
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def wopi_lock(request, file_id):
+    token_record = _resolve_wopi_token(request, file_id)
+    if not token_record:
+        return HttpResponse(status=401)
+
+    override = (request.headers.get('X-WOPI-Override') or '').upper()
+    requested_lock = request.headers.get('X-WOPI-Lock') or ''
+    cache_key = _wopi_lock_cache_key(file_id)
+    current_lock = cache.get(cache_key)
+
+    if override == 'LOCK':
+        if current_lock and current_lock != requested_lock:
+            response = HttpResponse(status=409)
+            response['X-WOPI-Lock'] = current_lock
+            return response
+        cache.set(cache_key, requested_lock, 1800)
+        return HttpResponse(status=200)
+
+    if override == 'REFRESH_LOCK':
+        if not current_lock or current_lock != requested_lock:
+            response = HttpResponse(status=409)
+            if current_lock:
+                response['X-WOPI-Lock'] = current_lock
+            return response
+        cache.set(cache_key, requested_lock, 1800)
+        return HttpResponse(status=200)
+
+    if override == 'UNLOCK':
+        if current_lock and current_lock != requested_lock:
+            response = HttpResponse(status=409)
+            response['X-WOPI-Lock'] = current_lock
+            return response
+        cache.delete(cache_key)
+        return HttpResponse(status=200)
+
+    if override == 'GET_LOCK':
+        response = HttpResponse(status=200)
+        response['X-WOPI-Lock'] = current_lock or ''
+        return response
+
+    return HttpResponse(status=400)

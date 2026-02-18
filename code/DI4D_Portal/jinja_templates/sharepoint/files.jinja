@@ -4,14 +4,9 @@
 
 {% block content %}
 <div class="bg-white min-h-screen" x-data="{ open_upload_files: false, open_create_folder: false, open_share_item: false, open_delete_item: false, selectedItemToken: '', selectedItemName: '', selectedItemType: '' }">
-    <div class="flex items-center justify-between gap-3">
+
         <h1 class="text-3xl lg:text-4xl font-bold text-black">Files</h1>
-        {% if view_mode == 'shared' %}
-            <a class="btn_primary_blue" href="{{ url('files') }}?view_mode=mine">My files</a>
-        {% else %}
-            <a class="btn_primary_blue" href="{{ url('files') }}?view_mode=shared">Shared with me</a>
-        {% endif %}
-    </div>
+
 
     {% if view_mode != 'shared' %}
         <div class="mt-4 flex flex-row gap-2">

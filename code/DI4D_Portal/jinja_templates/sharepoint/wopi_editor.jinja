@@ -1,0 +1,27 @@
+{% extends "structure/structure_private.jinja" %}
+{% block title %}Editing {{ item_name }} - DI4D Portal{% endblock %}
+
+{% block content %}
+<div class="bg-white min-h-screen">
+    <div class="flex items-center justify-between mb-3">
+        <h1 class="text-xl md:text-2xl font-bold text-black">Editing {{ item_name }}</h1>
+        <a class="btn_primary_blue" href="{{ url('files') }}">Back to files</a>
+    </div>
+
+    <p class="text-black mb-3">Opening editor…</p>
+
+    <form id="wopi-editor-form" method="post" action="{{ editor_url }}">
+        <input type="hidden" name="access_token" value="{{ access_token }}">
+        <input type="hidden" name="access_token_ttl" value="{{ access_token_ttl }}">
+    </form>
+</div>
+
+<script>
+    (function () {
+        var form = document.getElementById('wopi-editor-form');
+        if (form) {
+            form.submit();
+        }
+    })();
+</script>
+{% endblock %}

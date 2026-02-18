@@ -25,7 +25,7 @@
                 hx-swap="innerHTML"
                 hx-include="#files-filters-form"
                 hx-vals='{"sort_by": "created_by", "sort_dir": "{{ created_by_next_dir }}"}'>
-            Created By{% if sort_by == 'created_by' %} {% if sort_dir == 'asc' %}↑{% else %}↓{% endif %}{% endif %}
+            Owner{% if sort_by == 'created_by' %} {% if sort_dir == 'asc' %}↑{% else %}↓{% endif %}{% endif %}
         </button>
         <p class="text-right pr-2">Actions</p>
     </div>

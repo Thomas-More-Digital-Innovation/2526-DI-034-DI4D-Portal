@@ -279,3 +279,8 @@ LOGGING = {
         },
     },
 }
+
+COLLABORA_CODE_URL = os.getenv('COLLABORA_CODE_URL', 'https://localhost:9980').strip()
+COLLABORA_INSECURE_SKIP_VERIFY = os.getenv('COLLABORA_INSECURE_SKIP_VERIFY', 'True').strip().lower() in {'1', 'true', 'yes', 'on'}
+WOPI_TOKEN_TTL_SECONDS = int(os.getenv('WOPI_TOKEN_TTL_SECONDS', '900'))
+WOPI_BASE_URL = os.getenv('WOPI_BASE_URL', '').strip()
