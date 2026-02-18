@@ -7,7 +7,9 @@
                     data-label="{{ suggestion.label }}"
                     onclick="var peopleInput=document.getElementById('share_people'); var tokenInput=document.getElementById('add_user_token'); var suggestionsBox=document.getElementById('files-share-suggestions'); if(peopleInput){peopleInput.value=this.dataset.label;} if(tokenInput){tokenInput.value=this.dataset.token;} if(suggestionsBox){suggestionsBox.innerHTML='';}">
                 <span class="text-sm">{{ suggestion.label }}</span>
-                <span class="text-xs opacity-75">({{ suggestion.username }})</span>
+                {% if suggestion.meta %}
+                    <span class="text-xs opacity-75">({{ suggestion.meta }})</span>
+                {% endif %}
             </button>
         {% endfor %}
     </div>

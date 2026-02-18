@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.files.storage import default_storage
 from django.db.models import Q
 
-from ...models import FileItem, FileShare, User
+from ...models import FileItem, FileShare, User, UserType
 
 import os
 import mimetypes
@@ -18,7 +18,11 @@ import logging
 logger = logging.getLogger(__name__)
 FILES_TOKEN_SALT = 'di4d-files-token'
 FILES_USER_TOKEN_SALT = 'di4d-files-user-token'
-SHARE_ALLOWED_USER_TYPES = ['sharepoint', 'sharepoint_user']
+FILES_SHARE_TARGET_TOKEN_SALT = 'di4d-files-share-target-token'
+
+
+def _get_share_allowed_user_types():
+    return list(UserType.objects.values('id', 'name'))
 
 
 def _encode_file_token(item_id):
@@ -55,18 +59,87 @@ def _decode_user_token(token):
         return None
 
 
+def _encode_share_target_token(target_type, value):
+    return signing.dumps({'type': target_type, 'value': value}, salt=FILES_SHARE_TARGET_TOKEN_SALT)
+
+
+def _decode_share_target_token(token):
+    if not token:
+        return None
+    try:
+        payload = signing.loads(token, salt=FILES_SHARE_TARGET_TOKEN_SALT)
+        target_type = payload.get('type')
+        value = payload.get('value')
+        if target_type in ['user', 'usertype']:
+            return {
+                'type': target_type,
+                'value': int(value),
+            }
+        return None
+    except (BadSignature, ValueError, TypeError):
+        return None
+
+
+def _get_static_usertype_suggestions(query='', allowed_user_types=None):
+    clean_query = (query or '').strip().lower()
+    if allowed_user_types is None:
+        allowed_user_types = _get_share_allowed_user_types()
+    suggestions = []
+    for user_type in allowed_user_types:
+        readable_type = user_type['name'].replace('_', ' ')
+        label = f"All {readable_type} users"
+        if clean_query and clean_query not in readable_type and clean_query not in label.lower():
+            continue
+        suggestions.append({
+            'label': label,
+            'meta': f"User type: {readable_type}",
+            'token': _encode_share_target_token('usertype', user_type['id']),
+        })
+    return suggestions
+
+
+def _resolve_usertype_from_people_input(people_value, allowed_user_types=None):
+    clean_people_value = (people_value or '').strip().lower()
+    if not clean_people_value:
+        return None
+
+    if allowed_user_types is None:
+        allowed_user_types = _get_share_allowed_user_types()
+
+    for user_type in allowed_user_types:
+        readable_type = user_type['name'].replace('_', ' ')
+        supported_labels = {
+            user_type['name'],
+            readable_type,
+            f"all {readable_type}",
+            f"all {readable_type} users",
+        }
+        if clean_people_value in supported_labels:
+            return user_type['id']
+    return None
+
+
 def _get_share_rows_context(file_item):
-    shares = FileShare.objects.filter(fileItemId=file_item).select_related('userId').order_by('userId__firstname', 'userId__lastname', 'userId__username')
+    shares = FileShare.objects.filter(fileItemId=file_item).select_related('userId', 'userTypeId').order_by('userId__firstname', 'userId__lastname', 'userId__username', 'userTypeId__name')
     share_rows = []
     for share in shares:
-        shared_user = share.userId
-        display_name = f"{(shared_user.firstname or '').strip()} {(shared_user.lastname or '').strip()}".strip() or shared_user.username
-        share_rows.append({
-            'user_display_name': display_name,
-            'username': shared_user.username,
-            'user_token': _encode_user_token(shared_user.id),
-            'can_edit': share.canEdit,
-        })
+        if share.userId:
+            shared_user = share.userId
+            display_name = f"{(shared_user.firstname or '').strip()} {(shared_user.lastname or '').strip()}".strip() or shared_user.username
+            share_rows.append({
+                'display_name': display_name,
+                'meta': f"username: {shared_user.username}",
+                'target_token': _encode_share_target_token('user', shared_user.id),
+                'can_edit': share.canEdit,
+            })
+        elif share.userTypeId:
+            readable_type = (share.userTypeId.name or '').replace('_', ' ')
+            share_rows.append({
+                'display_name': f"All {readable_type} users",
+                'meta': f"User type: {readable_type}",
+                'target_token': _encode_share_target_token('usertype', share.userTypeId.id),
+                'can_edit': share.canEdit,
+            })
     return {
         'share_rows': share_rows,
     }
@@ -125,9 +198,14 @@ def files_view(request):
             })
 
     if view_mode == 'shared':
+        shared_filter = Q(shares__userId=request.user)
+        if request.user.userTypeId_id:
+            shared_filter |= Q(shares__userTypeId_id=request.user.userTypeId_id)
+
         db_items = FileItem.objects.filter(
             isDeleted=False,
-            shares__userId=request.user,
+        ).filter(
+            shared_filter,
         ).exclude(owner=request.user).select_related('owner').distinct().order_by('-id')
     else:
         db_items = FileItem.objects.filter(isDeleted=False, parentFolder_id=current_folder_id, owner=request.user).select_related('owner').order_by('-id')
@@ -294,10 +372,12 @@ def files_action(request, action):
         if not item:
             return render(request, 'components/files/share_suggestions_htmx.jinja', {'suggestions': []})
 
-        suggestions = []
+        allowed_user_types = _get_share_allowed_user_types()
+        suggestions = _get_static_usertype_suggestions(query, allowed_user_types=allowed_user_types)
         if query:
+            allowed_user_type_names = [user_type['name'] for user_type in allowed_user_types]
             users = User.objects.filter(
-                userTypeId__name__in=SHARE_ALLOWED_USER_TYPES,
+                userTypeId__name__in=allowed_user_type_names,
                 is_active=True,
             ).filter(
                 Q(username__icontains=query)
@@ -310,8 +390,8 @@ def files_action(request, action):
                 display_name = f"{(user.firstname or '').strip()} {(user.lastname or '').strip()}".strip() or user.username
                 suggestions.append({
                     'label': display_name,
-                    'username': user.username,
-                    'token': _encode_user_token(user.id),
+                    'meta': f"username: {user.username}",
+                    'token': _encode_share_target_token('user', user.id),
                 })
 
         return render(request, 'components/files/share_suggestions_htmx.jinja', {'suggestions': suggestions})
@@ -329,36 +409,88 @@ def files_action(request, action):
         share_mode = (request.POST.get('share_mode') or 'add').strip().lower()
 
         if share_mode == 'add':
+            allowed_user_types = _get_share_allowed_user_types()
+            allowed_user_type_ids = [user_type['id'] for user_type in allowed_user_types]
+            allowed_user_type_names = [user_type['name'] for user_type in allowed_user_types]
             add_user_token = request.POST.get('add_user_token')
-            add_user_id = _decode_user_token(add_user_token)
+            share_target = _decode_share_target_token(add_user_token)
+            if not share_target:
+                add_user_id = _decode_user_token(add_user_token)
+                if add_user_id:
+                    share_target = {
+                        'type': 'user',
+                        'value': add_user_id,
+                    }
+            if not share_target:
+                user_type_from_input = _resolve_usertype_from_people_input(
+                    request.POST.get('people'),
+                    allowed_user_types=allowed_user_types,
+                )
+                if user_type_from_input:
+                    share_target = {
+                        'type': 'usertype',
+                        'value': user_type_from_input,
+                    }
             rights = (request.POST.get('rights') or 'view_only').strip().lower()
-            if add_user_id:
+            if share_target and share_target['type'] == 'user':
                 user_to_share = User.objects.filter(
-                    id=add_user_id,
-                    userTypeId__name__in=SHARE_ALLOWED_USER_TYPES,
+                    id=share_target['value'],
+                    userTypeId__name__in=allowed_user_type_names,
                     is_active=True,
                 ).first()
                 if user_to_share:
                     FileShare.objects.update_or_create(
                         fileItemId=item,
                         userId=user_to_share,
+                        userTypeId=None,
                         defaults={
                             'canEdit': rights == 'edit',
                         },
                     )
+            elif share_target and share_target['type'] == 'usertype':
+                user_type_id = share_target['value']
+                if user_type_id in allowed_user_type_ids:
+                    user_type = UserType.objects.filter(id=user_type_id).first()
+                    if user_type:
+                        FileShare.objects.update_or_create(
+                            fileItemId=item,
+                            userId=None,
+                            userTypeId=user_type,
+                            defaults={
+                                'canEdit': rights == 'edit',
+                            },
+                        )
 
         elif share_mode == 'update':
             share_user_token = request.POST.get('share_user_token')
-            share_user_id = _decode_user_token(share_user_token)
+            share_target = _decode_share_target_token(share_user_token)
+            if not share_target:
+                share_user_id = _decode_user_token(share_user_token)
+                if share_user_id:
+                    share_target = {
+                        'type': 'user',
+                        'value': share_user_id,
+                    }
             share_rights = (request.POST.get('share_rights') or 'view_only').strip().lower()
-            if share_user_id:
-                FileShare.objects.filter(fileItemId=item, userId_id=share_user_id).update(canEdit=share_rights == 'edit')
+            if share_target and share_target['type'] == 'user':
+                FileShare.objects.filter(fileItemId=item, userId_id=share_target['value']).update(canEdit=share_rights == 'edit')
+            elif share_target and share_target['type'] == 'usertype':
+                FileShare.objects.filter(fileItemId=item, userTypeId_id=share_target['value'], userId__isnull=True).update(canEdit=share_rights == 'edit')
 
         elif share_mode == 'remove':
             share_user_token = request.POST.get('share_user_token')
-            share_user_id = _decode_user_token(share_user_token)
-            if share_user_id:
-                FileShare.objects.filter(fileItemId=item, userId_id=share_user_id).delete()
+            share_target = _decode_share_target_token(share_user_token)
+            if not share_target:
+                share_user_id = _decode_user_token(share_user_token)
+                if share_user_id:
+                    share_target = {
+                        'type': 'user',
+                        'value': share_user_id,
+                    }
+            if share_target and share_target['type'] == 'user':
+                FileShare.objects.filter(fileItemId=item, userId_id=share_target['value']).delete()
+            elif share_target and share_target['type'] == 'usertype':
+                FileShare.objects.filter(fileItemId=item, userTypeId_id=share_target['value'], userId__isnull=True).delete()
 
         context = _get_share_rows_context(item)
         return render(request, 'components/files/share_rows_htmx.jinja', context)
@@ -428,7 +560,10 @@ def files_download(request, item_token):
     if not item:
         return HttpResponse(status=404)
 
-    can_access = item.owner == request.user or FileShare.objects.filter(fileItemId=item, userId=request.user).exists()
+    can_access = item.owner == request.user or FileShare.objects.filter(
+        Q(fileItemId=item, userId=request.user)
+        | Q(fileItemId=item, userTypeId=request.user.userTypeId, userId__isnull=True)
+    ).exists()
     if not can_access:
         return HttpResponse(status=403)
 
