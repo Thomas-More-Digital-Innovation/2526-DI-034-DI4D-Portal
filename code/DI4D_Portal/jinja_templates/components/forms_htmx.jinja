@@ -57,10 +57,17 @@
                         @click="currentDeleteId = {{ form.id }}; currentDeleteName = '{{ form.title|replace("'", "\\'") }}'">
                         <i class="fa-solid fa-trash"></i> Delete
                     </button>
-                    <a href="{{ url('form_submissions', kwargs={'form_id': form.id}) }}"
-                       class="w-full h-9 inline-flex items-center justify-center px-3 py-1.5 bg-[--orange_di4d] text-white rounded-md text-sm text-center whitespace-nowrap">
-                        <i class="fa-solid fa-eye"></i> View submissions
-                    </a>
+                    {% if form.is_student_registration %}
+                        <a href="{{ url('student_registrations')}}"
+                        class="w-full h-9 inline-flex items-center justify-center px-3 py-1.5 bg-[--orange_di4d] text-white rounded-md text-sm text-center whitespace-nowrap">
+                            <i class="fa-solid fa-eye"></i> Student registration
+                        </a>
+                    {% else %}
+                        <a href="{{ url('form_submissions', kwargs={'form_id': form.id}) }}"
+                        class="w-full h-9 inline-flex items-center justify-center px-3 py-1.5 bg-[--orange_di4d] text-white rounded-md text-sm text-center whitespace-nowrap">
+                            <i class="fa-solid fa-eye"></i> View submissions
+                        </a>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
@@ -72,7 +79,7 @@
     <div class="flex items-center justify-center gap-4 mt-6">
         <div class="flex items-center gap-2">
             {% if all_forms.has_previous and all_forms.number -1 > 0 %}
-                <a href="?page={{ all_forms.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if filter_status %}&filter_status={{ filter_status }}{% endif %}" 
+                <a href="?page={{ all_forms.number -1 }}{% if search_query %}&q={{ search_query }}{% endif %}{% if filter_status %}&filter_status={{ filter_status }}{% endif %}" 
                    class="px-3 py-1 bg-[var(--white_grey)] rounded-md hover:bg-gray-200 transition">
                     <i class="fa-solid fa-chevron-left"></i>
                 </a>
@@ -85,7 +92,7 @@
             <span class="text-gray-600 text-sm">{{ all_forms.number }}</span>
             
             {% if all_forms.has_next and all_forms.number + 1 <= all_forms.paginator.num_pages %}
-                <a href="?page={{ all_forms.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if filter_status %}&filter_status={{ filter_status }}{% endif %}" 
+                <a href="?page={{ all_forms.number + 1 }}{% if search_query %}&q={{ search_query }}{% endif %}{% if filter_status %}&filter_status={{ filter_status }}{% endif %}" 
                    class="px-3 py-1 bg-[var(--white_grey)] rounded-md hover:bg-gray-200 transition">
                     <i class="fa-solid fa-chevron-right"></i>
                 </a>
