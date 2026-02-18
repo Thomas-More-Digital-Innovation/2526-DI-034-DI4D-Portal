@@ -7,7 +7,7 @@
 - HTMX [HTMX Docs](https://htmx.org/docs/)
 - Google Fonts [Google Fonts](https://fonts.google.com/)
 - Font Awesome [Font Awesome Icons](https://fontawesome.com/icons)
-- CKEDITOR [CKEDITOR Docs](https://django-ckeditor.readthedocs.io/en/latest/#installation)
+- CKEDITOR 5 [CKEDITOR 5 Docs](https://ckeditor.com/docs/ckeditor5/latest/index.html)
 
 ## Structure of the Django DI4D Portal
 - DI4D_Portal : This is the name/folder of our hole project.

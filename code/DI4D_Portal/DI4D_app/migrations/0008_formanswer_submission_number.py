@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('DI4D_app', '0007_news_content_alter_news_mediapath_alter_news_picture'),
+        ('DI4D_app', '0006_question_content_alter_formanswer_userid'),
     ]
 
     operations = [

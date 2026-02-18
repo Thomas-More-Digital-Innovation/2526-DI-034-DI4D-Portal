@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from DI4D_app import views
 from django.contrib.auth import views as auth_views
 from django.conf import settings
@@ -44,6 +44,7 @@ urlpatterns = [
     path('news/<str:mediaPath>/', views.view_news_item, name='view_news_item'),
     path('student_registrations/', views.student_registrations, name='student_registrations'),
     path('student_registrations/<int:submission_number>/', views.student_registration_detail, name='student_registration_detail'),
+    path('ckeditor5/', include('django_ckeditor_5.urls')),
     # Docs : https://docs.djangoproject.com/en/6.0/topics/auth/default/#all-authentication-views
     path("password_reset/", auth_views.PasswordResetView.as_view(
         template_name="auth/forgot_password.jinja"

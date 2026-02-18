@@ -31,6 +31,13 @@ DEBUG = os.getenv("DJANGO_DEBUG", "True").strip().lower() in {"1", "true", "yes"
 _allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts.split(",") if h.strip()]
 
+_csrf_trusted_origins = os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "")
+CSRF_TRUSTED_ORIGINS = [
+    o.strip()
+    for o in _csrf_trusted_origins.split(",")
+    if o.strip()
+]
+
 
 # Application definition
 
@@ -43,8 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'DI4D_app',
-    'ckeditor',
-    'ckeditor_uploader',
+    'django_ckeditor_5',
 ]
 
 if DEBUG:
@@ -156,7 +162,17 @@ USE_TZ = True
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 # CKEditor configuration
-CKEDITOR_UPLOAD_PATH = "uploads/news"
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
+CKEDITOR_5_CONFIGS = {
+    'default': {
+        'toolbar': ['heading','bold','italic','link','bulletedList','numberedList','blockQuote','imageUpload','insertTable','undo','redo'],
+        'height': 400,
+        'contentCss': ['/static/news.css'],
+        'heading': {'options':[{'model':'paragraph','title':'Paragraph','class':'ck-heading_paragraph'}]},
+        'removePlugins': ['WordCount','CKBox','CKFinderUploadAdapter','EasyImage','CloudServices'],
+    }
+}
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -190,3 +206,38 @@ EMAIL_PORT   = os.getenv("SMTP_PORT")
 EMAIL_HOST_PASSWORD  = os.getenv("SMTP_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 EMAIL_USE_TLS = True
+
+_log_level = os.getenv("DJANGO_LOG_LEVEL", "INFO").upper()
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {name} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": _log_level,
+    },
+    "loggers": {
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "django.security.csrf": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+    },
+}
