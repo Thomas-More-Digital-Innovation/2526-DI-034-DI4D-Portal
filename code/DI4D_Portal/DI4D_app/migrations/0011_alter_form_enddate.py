@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('DI4D_app', '0010_seed_initial_data'),
+        ('DI4D_app', '0008_formanswer_submission_number'),
     ]
 
     operations = [
