@@ -88,6 +88,7 @@ class FileItem(models.Model):
 class FileShare(models.Model):
     fileItemId = models.ForeignKey(FileItem, on_delete=models.CASCADE, related_name='shares')
     userId = models.ForeignKey(User, on_delete=models.CASCADE, related_name='shared_file_items')
+    canEdit = models.BooleanField(default=False)
 
 def media_path_default():
     return uuid.uuid4().hex[:20]

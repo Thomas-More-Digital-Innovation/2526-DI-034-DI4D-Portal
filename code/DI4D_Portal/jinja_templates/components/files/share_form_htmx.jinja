@@ -1,4 +1,5 @@
 <form class="flex flex-col gap-3"
+    id="files-share-form"
       hx-post="{{ url('files_action', kwargs={'action': 'share'}) }}"
       hx-target="#files-feedback"
       hx-swap="innerHTML"
@@ -8,23 +9,50 @@
     <input type="hidden" name="item_token" x-bind:value="selectedItemToken">
     <input type="hidden" name="item_name" x-bind:value="selectedItemName">
     <input type="hidden" name="item_type" x-bind:value="selectedItemType">
+    <input type="hidden" id="add_user_token" name="add_user_token">
 
     <p class="text-white text-sm">Item: <span x-text="selectedItemName"></span></p>
 
-    <div class="bg-[var(--input_bg_color)] text-[var(--input_text)] rounded-lg px-4 py-2">
-        <p>John Doe <span class="ml-2">Rights: edit</span></p>
+    <div id="files-share-table">
+        <div class="bg-[var(--input_bg_color)] text-[var(--input_text)] rounded-lg px-3 py-2">
+            <p class="text-sm opacity-80">Open a file to load shared users.</p>
+        </div>
     </div>
 
     <label class="text-white text-sm" for="share_people">Add new people</label>
-    <input id="share_people" name="people" type="text" placeholder="Type names here" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-2">
+    <input id="share_people"
+           name="people"
+           type="text"
+           placeholder="Type names here"
+           class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-2"
+            autocomplete="off"
+            oninput="var tokenInput=document.getElementById('add_user_token'); if(tokenInput){tokenInput.value='';}"
+           hx-post="{{ url('files_action', kwargs={'action': 'share-suggest'}) }}"
+           hx-target="#files-share-suggestions"
+           hx-swap="innerHTML"
+           hx-include="#files-share-form"
+            hx-trigger="input changed delay:200ms">
 
-    <select name="rights" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-2">
-        <option value="view_only">view only</option>
-        <option value="edit">edit</option>
-    </select>
+        <div id="files-share-suggestions"></div>
+
+    <div class="grid grid-cols-[1fr_auto] gap-2 items-center">
+        <select name="rights" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-2">
+            <option value="view_only">view only</option>
+            <option value="edit">edit</option>
+        </select>
+        <button type="button"
+                class="btn text-white bg-[--green] px-2"
+                hx-post="{{ url('files_action', kwargs={'action': 'share'}) }}"
+                hx-target="#files-share-table"
+                hx-swap="innerHTML"
+                hx-include="#files-share-form"
+                hx-vals='{"share_mode": "add"}'>
+            Add
+        </button>
+    </div>
 
     <div class="flex gap-2 mt-2">
         <button type="button" class="btn text-[--button_text_modal] bg-[--white_grey] flex-1" @click="open_share_item = false">Cancel</button>
-        <button type="submit" class="btn flex-1 text-white bg-[--green]">Add</button>
+        <button type="button" class="btn flex-1 text-white bg-[--green]" @click="open_share_item = false">Done</button>
     </div>
 </form>

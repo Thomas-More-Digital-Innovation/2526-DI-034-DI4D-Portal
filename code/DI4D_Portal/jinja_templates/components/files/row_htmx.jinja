@@ -9,7 +9,7 @@
             <a class="text-base md:text-2xl underline"
                href="#"
                hx-get="{{ url('files') }}"
-               hx-vals='{"folder": "{{ item.token }}"}'
+               hx-vals='{"folder": "{{ item.token }}", "view_mode": "{{ view_mode }}"}'
                hx-target="#files-content"
                hx-swap="innerHTML"
                hx-push-url="true">{{ item.name }}</a>
@@ -28,17 +28,23 @@
                 <i class="fa-solid fa-download"></i>
             </a>
         {% endif %}
-        <button type="button"
-                class="text-black"
-                title="Share"
-                @click="selectedItemToken = '{{ item.token }}'; selectedItemName = '{{ item.name|replace("'", "\\'") }}'; selectedItemType = '{{ item.type }}'; open_share_item = true">
-            <i class="fa-solid fa-share"></i>
-        </button>
-        <button type="button"
-                class="text-[--red]"
-                title="Delete"
-                @click="selectedItemToken = '{{ item.token }}'; selectedItemName = '{{ item.name|replace("'", "\\'") }}'; selectedItemType = '{{ item.type }}'; open_delete_item = true">
-            <i class="fa-solid fa-trash"></i>
-        </button>
+        {% if item.can_manage %}
+            <button type="button"
+                    class="text-black"
+                    title="Share"
+                    @click="selectedItemToken = '{{ item.token }}'; selectedItemName = '{{ item.name|replace("'", "\\'") }}'; selectedItemType = '{{ item.type }}'; open_share_item = true"
+                    hx-get="{{ url('files_action', kwargs={'action': 'share-list'}) }}"
+                    hx-target="#files-share-table"
+                    hx-swap="innerHTML"
+                    hx-vals='{"item_token": "{{ item.token }}"}'>
+                <i class="fa-solid fa-share"></i>
+            </button>
+            <button type="button"
+                    class="text-[--red]"
+                    title="Delete"
+                    @click="selectedItemToken = '{{ item.token }}'; selectedItemName = '{{ item.name|replace("'", "\\'") }}'; selectedItemType = '{{ item.type }}'; open_delete_item = true">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        {% endif %}
     </div>
 </div>

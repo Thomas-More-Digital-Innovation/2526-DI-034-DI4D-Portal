@@ -3,11 +3,13 @@
         {% if not loop.first %}
             <span>/</span>
         {% endif %}
-        {% if crumb.token %}
+        {% if view_mode == 'shared' %}
+            <span>{{ crumb.label }}</span>
+        {% elif crumb.token %}
             <a href="#"
                class="underline"
                hx-get="{{ url('files') }}"
-               hx-vals='{"folder": "{{ crumb.token }}"}'
+               hx-vals='{"folder": "{{ crumb.token }}", "view_mode": "{{ view_mode }}"}'
                hx-target="#files-content"
                hx-swap="innerHTML"
                hx-push-url="true">{{ crumb.label }}</a>
@@ -15,6 +17,7 @@
             <a href="#"
                class="underline"
                hx-get="{{ url('files') }}"
+               hx-vals='{"view_mode": "{{ view_mode }}"}'
                hx-target="#files-content"
                hx-swap="innerHTML"
                hx-push-url="true">{{ crumb.label }}</a>
@@ -30,6 +33,7 @@
       hx-target="#files-content"
       hx-swap="innerHTML">
     {{ csrf_input }}
+    <input type="hidden" name="view_mode" value="{{ view_mode }}">
     <input type="hidden" name="folder" value="{{ current_folder_token or '' }}">
     <input type="text"
            id="q"

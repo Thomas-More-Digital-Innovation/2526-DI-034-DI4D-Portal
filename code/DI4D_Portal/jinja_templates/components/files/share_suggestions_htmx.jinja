@@ -1,0 +1,18 @@
+{% if suggestions %}
+    <div class="mt-1 max-h-40 overflow-auto bg-[var(--input_bg_color)] text-[var(--input_text)] rounded-lg border border-[--lightest_grey]">
+        {% for suggestion in suggestions %}
+            <button type="button"
+                    class="w-full text-left px-3 py-2 hover:bg-[--white_grey]"
+                    data-token="{{ suggestion.token }}"
+                    data-label="{{ suggestion.label }}"
+                    onclick="var peopleInput=document.getElementById('share_people'); var tokenInput=document.getElementById('add_user_token'); var suggestionsBox=document.getElementById('files-share-suggestions'); if(peopleInput){peopleInput.value=this.dataset.label;} if(tokenInput){tokenInput.value=this.dataset.token;} if(suggestionsBox){suggestionsBox.innerHTML='';}">
+                <span class="text-sm">{{ suggestion.label }}</span>
+                <span class="text-xs opacity-75">({{ suggestion.username }})</span>
+            </button>
+        {% endfor %}
+    </div>
+{% elif suggestions is defined %}
+    <div class="mt-1 bg-[var(--input_bg_color)] text-[var(--input_text)] rounded-lg border border-[--lightest_grey] px-3 py-2">
+        <p class="text-sm opacity-80">No users found.</p>
+    </div>
+{% endif %}
