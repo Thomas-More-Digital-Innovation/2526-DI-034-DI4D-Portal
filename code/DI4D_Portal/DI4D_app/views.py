@@ -815,6 +815,7 @@ def forms_view(request):
     for form in all_forms:
         # Check if user has answered any questions for this form
         questions = Question.objects.filter(formId=form, isActive=True)
+        mandatory_questions = questions.filter(isMandatory=True)
         submitted_answers = FormAnswer.objects.filter(
             questionId__in=questions,
             userId=request.user
@@ -823,9 +824,18 @@ def forms_view(request):
         # Determine status
         deadline_passed = form.endDate and form.endDate < today
         total_questions = questions.count()
+        total_mandatory_questions = mandatory_questions.count()
         answered_questions = submitted_answers.values('questionId').distinct().count()
+        answered_mandatory_questions = submitted_answers.filter(
+            questionId__isMandatory=True
+        ).values('questionId').distinct().count()
+
+        if total_mandatory_questions > 0:
+            is_completed = answered_mandatory_questions >= total_mandatory_questions
+        else:
+            is_completed = answered_questions >= total_questions and total_questions > 0
         
-        if answered_questions >= total_questions and total_questions > 0:
+        if is_completed:
             status = 'completed'
         elif answered_questions > 0:
             status = 'in_progress'
@@ -903,7 +913,20 @@ def form_detail_view(request, form_id):
         questionId__in=questions,
         userId=request.user
     )
-    if user_answers.values('questionId').distinct().count() >= questions.count() and questions.count() > 0:
+    mandatory_questions = questions.filter(isMandatory=True)
+    total_questions = questions.count()
+    total_mandatory_questions = mandatory_questions.count()
+    answered_questions = user_answers.values('questionId').distinct().count()
+    answered_mandatory_questions = user_answers.filter(
+        questionId__isMandatory=True
+    ).values('questionId').distinct().count()
+
+    if total_mandatory_questions > 0:
+        already_completed = answered_mandatory_questions >= total_mandatory_questions
+    else:
+        already_completed = answered_questions >= total_questions and total_questions > 0
+
+    if already_completed:
         data['already_completed'] = True
         return render(request, 'sharepoint/form_detail.jinja', data)
     
@@ -923,7 +946,7 @@ def form_detail_view(request, form_id):
             except Exception:
                 existing_answers_multi[qid] = []
         else:
-            existing_answers[qid] = answer.answer
+            existing_answers[qid] = answer.answer or ''
 
     data['existing_answers'] = existing_answers
     data['existing_answers_multi'] = existing_answers_multi
@@ -1050,10 +1073,21 @@ def form_submissions(request, form_id):
     users = User.objects.filter(id__in=user_ids).order_by('firstname', 'lastname')
 
     total_questions = questions.count()
+    total_mandatory_questions = questions.filter(isMandatory=True).count()
     user_rows = []
     for user in users:
         user_answer_count = answers.filter(userId=user).values('questionId').distinct().count()
-        if total_questions > 0 and user_answer_count >= total_questions:
+        user_mandatory_answer_count = answers.filter(
+            userId=user,
+            questionId__isMandatory=True
+        ).values('questionId').distinct().count()
+
+        if total_mandatory_questions > 0:
+            is_submitted = user_mandatory_answer_count >= total_mandatory_questions
+        else:
+            is_submitted = total_questions > 0 and user_answer_count >= total_questions
+
+        if is_submitted:
             submitted_date = answers.filter(userId=user).order_by('-answerDate').values_list('answerDate', flat=True).first()
             user_rows.append({
                 'user': user,

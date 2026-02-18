@@ -25,7 +25,7 @@
 
         <!-- Form Input Based on DataType -->
         {% set datatype_name = question.datatype.name|lower %}
-        {% set existing_value = existing_answers.get(question.id) if existing_answers else '' %}
+        {% set existing_value = existing_answers.get(question.id, '') if existing_answers else '' %}
         {% set existing_multi = existing_answers_multi.get(question.id, []) if existing_answers_multi else [] %}
         
         {% if datatype_name == 'file' %}
