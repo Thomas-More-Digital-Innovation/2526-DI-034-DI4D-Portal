@@ -52,6 +52,8 @@ urlpatterns = [
     path('forms/<int:form_id>/questions/', views.manage_questions, name='manage_questions'),
     path('forms/<int:form_id>/questions/<int:question_id>/', views.manage_question_detail, name='manage_question_detail'),
     path('forms/<int:form_id>/questions/<int:question_id>/options/', views.manage_question_options, name='manage_question_options'),
+    path('student_registrations/', views.student_registrations, name='student_registrations'),
+    path('student_registrations/<int:submission_number>/', views.student_registration_detail, name='student_registration_detail'),
     path('ckeditor5/', include('django_ckeditor_5.urls')),
     # Docs : https://docs.djangoproject.com/en/6.0/topics/auth/default/#all-authentication-views
     path("password_reset/", auth_views.PasswordResetView.as_view(

@@ -1,5 +1,19 @@
 {% extends "structure/structure.jinja" %}
 {# COMPONENTS PRIVATE PART #}
+{# Info modal #}
+{% macro info_modal_redirect(id, title, message, redirect_url) %}
+<div x-show="open_{{ id }}" 
+     x-cloak
+     style="display:none" 
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+     @click="open_{{ id }} = false">
+    <div @click.stop class="bg-[--light_grey] rounded-xl p-4 max-w-lg w-full max-h-[90vh] overflow-auto">
+        <h2 class="text-2xl font-bold text-white mb-4">{{ title }}</h2>
+        <p class="text-white">{{ message }}</p>
+        <a href="{{ url(redirect_url) }}" class="btn w-full text-[--button_text_modal] mt-4 bg-[--white_grey]">Continue</a>
+      </div>
+</div>
+{% endmacro %}
 
 {% block content_structure %}
 {# Docs : https://flyonui.com/docs/navigations/sidebar/ #}
@@ -49,6 +63,14 @@
           <a href="{{ url('export_data') }}" class="text-white text-md">
             <i class="fa-solid fa-file-export text-xl"></i>
             Exports
+          </a>
+        </li>
+        {% endif %}
+        {% if request.user.role_is_admin() %}
+        <li class="{% if active_page == 'student_registrations' %}border-2 border-white bg-[--orange_di4d]{% endif %} rounded-lg mb-2">
+          <a href="{{ url('student_registrations') }}" class="text-white text-md">
+            <i class="fa-regular fa-address-card"></i>
+            Student Registrations
           </a>
         </li>
         {% endif %}
