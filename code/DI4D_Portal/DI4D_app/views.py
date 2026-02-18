@@ -1429,7 +1429,7 @@ def manage_question_options(request, form_id, question_id):
             return form_builder_update_option(request, form_id, question_id)
     return HttpResponse(status=405)
 
-  def student_registrations(request):
+def student_registrations(request):
     # Check if user is admin
     if not request.user.role_is_admin():
         return redirect('dashboard')
