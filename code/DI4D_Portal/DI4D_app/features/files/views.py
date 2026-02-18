@@ -6,6 +6,7 @@ from django.core import signing
 from django.core.signing import BadSignature
 from django.contrib.auth.decorators import login_required
 from django.core.files.storage import default_storage
+from django.core.cache import cache
 from django.db.models import Q
 
 from ...models import FileItem, FileShare, User, UserType
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 FILES_TOKEN_SALT = 'di4d-files-token'
 FILES_USER_TOKEN_SALT = 'di4d-files-user-token'
 FILES_SHARE_TARGET_TOKEN_SALT = 'di4d-files-share-target-token'
+FILES_MODIFIED_CACHE_TTL_SECONDS = 300
 
 
 def _get_share_allowed_user_types():
@@ -145,12 +147,64 @@ def _get_share_rows_context(file_item):
     }
 
 
+def _get_item_modified_display(item):
+    if not item.s3Link:
+        return '—'
+    try:
+        modified_at = default_storage.get_modified_time(item.s3Link)
+        if modified_at is None:
+            return '—'
+        if timezone.is_naive(modified_at):
+            modified_at = timezone.make_aware(modified_at, timezone.get_current_timezone())
+        else:
+            modified_at = timezone.localtime(modified_at)
+        return modified_at.strftime('%d-%m-%Y %H:%M')
+    except Exception:
+        return '—'
+
+
+def _get_item_modified_values(item):
+    if not item.s3Link or (item.s3Link or '').startswith('folders/'):
+        return '—', None
+
+    cache_key = f"files-modified:{item.s3Link}"
+    cached_value = cache.get(cache_key)
+    if cached_value is not None:
+        return cached_value
+
+    try:
+        modified_at = default_storage.get_modified_time(item.s3Link)
+        if modified_at is None:
+            result = ('—', None)
+            cache.set(cache_key, result, FILES_MODIFIED_CACHE_TTL_SECONDS)
+            return result
+        if timezone.is_naive(modified_at):
+            modified_at = timezone.make_aware(modified_at, timezone.get_current_timezone())
+        else:
+            modified_at = timezone.localtime(modified_at)
+        result = (modified_at.strftime('%d-%m-%Y %H:%M'), modified_at.timestamp())
+        cache.set(cache_key, result, FILES_MODIFIED_CACHE_TTL_SECONDS)
+        return result
+    except Exception:
+        result = ('—', None)
+        cache.set(cache_key, result, FILES_MODIFIED_CACHE_TTL_SECONDS)
+        return result
+
+
 @login_required(login_url='login')
 def files_view(request):
     active_page = 'files'
     view_mode = request.POST.get('view_mode', 'mine').strip().lower() if request.method == 'POST' else request.GET.get('view_mode', 'mine').strip().lower()
     if view_mode not in ['mine', 'shared']:
         view_mode = 'mine'
+
+    sort_by = request.POST.get('sort_by', 'modified').strip().lower() if request.method == 'POST' else request.GET.get('sort_by', 'modified').strip().lower()
+    if sort_by not in ['name', 'modified', 'created_by']:
+        sort_by = 'modified'
+
+    sort_dir = request.POST.get('sort_dir', 'desc').strip().lower() if request.method == 'POST' else request.GET.get('sort_dir', 'desc').strip().lower()
+    if sort_dir not in ['asc', 'desc']:
+        sort_dir = 'desc'
 
     search_query = request.POST.get('q', '').strip() if request.method == 'POST' else request.GET.get('q', '').strip()
     file_type = request.POST.get('file_type', 'all') if request.method == 'POST' else request.GET.get('file_type', 'all')
@@ -227,14 +281,19 @@ def files_view(request):
             last_name = (item.owner.lastname or '').strip()
             owner_name = f'{first_name} {last_name}'.strip() or item.owner.username
 
+        modified_display, modified_sort_value = _get_item_modified_values(item)
+
         file_items.append({
             'id': item.id,
             'name': item.name,
-            'modified': '—',
+            'modified': modified_display,
             'modified_by': owner_name,
             'type': inferred_type,
             'token': _encode_file_token(item.id),
             'can_manage': item.owner == request.user,
+            '_modified_sort': modified_sort_value,
+            '_name_sort': (item.name or '').lower(),
+            '_created_by_sort': owner_name.lower(),
         })
 
     if search_query:
@@ -245,6 +304,25 @@ def files_view(request):
 
     if file_type and file_type != 'all':
         file_items = [item for item in file_items if item['type'] == file_type]
+
+    if sort_by == 'modified':
+        if sort_dir == 'asc':
+            file_items.sort(key=lambda file_item: (file_item['_modified_sort'] is None, file_item['_modified_sort'] or 0))
+        else:
+            file_items.sort(key=lambda file_item: (file_item['_modified_sort'] is None, -(file_item['_modified_sort'] or 0)))
+    elif sort_by == 'name':
+        file_items.sort(key=lambda file_item: file_item['_name_sort'], reverse=sort_dir == 'desc')
+    elif sort_by == 'created_by':
+        file_items.sort(key=lambda file_item: file_item['_created_by_sort'], reverse=sort_dir == 'desc')
+
+    for file_item in file_items:
+        file_item.pop('_modified_sort', None)
+        file_item.pop('_name_sort', None)
+        file_item.pop('_created_by_sort', None)
+
+    name_next_dir = 'desc' if sort_by == 'name' and sort_dir == 'asc' else 'asc'
+    modified_next_dir = 'desc' if sort_by == 'modified' and sort_dir == 'asc' else 'asc'
+    created_by_next_dir = 'desc' if sort_by == 'created_by' and sort_dir == 'asc' else 'asc'
 
     available_file_types = sorted([item_type for item_type in available_types if item_type != 'folder'])
     if 'folder' in available_types:
@@ -257,6 +335,11 @@ def files_view(request):
         'file_type': file_type,
         'available_file_types': available_file_types,
         'view_mode': view_mode,
+        'sort_by': sort_by,
+        'sort_dir': sort_dir,
+        'name_next_dir': name_next_dir,
+        'modified_next_dir': modified_next_dir,
+        'created_by_next_dir': created_by_next_dir,
         'current_folder_token': current_folder_token,
         'current_folder_name': current_folder.name if current_folder else 'Root',
         'parent_folder_token': parent_folder_token,

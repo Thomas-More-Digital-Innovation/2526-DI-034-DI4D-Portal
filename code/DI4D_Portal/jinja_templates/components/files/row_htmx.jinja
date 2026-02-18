@@ -9,7 +9,7 @@
             <a class="text-base md:text-2xl underline"
                href="#"
                hx-get="{{ url('files') }}"
-               hx-vals='{"folder": "{{ item.token }}", "view_mode": "{{ view_mode }}"}'
+             hx-vals='{"folder": "{{ item.token }}", "view_mode": "{{ view_mode }}", "file_type": "{{ file_type }}", "sort_by": "{{ sort_by }}", "sort_dir": "{{ sort_dir }}"}'
                hx-target="#files-content"
                hx-swap="innerHTML"
                hx-push-url="true">{{ item.name }}</a>

@@ -9,7 +9,7 @@
             <a href="#"
                class="underline"
                hx-get="{{ url('files') }}"
-               hx-vals='{"folder": "{{ crumb.token }}", "view_mode": "{{ view_mode }}"}'
+               hx-vals='{"folder": "{{ crumb.token }}", "view_mode": "{{ view_mode }}", "file_type": "{{ file_type }}", "sort_by": "{{ sort_by }}", "sort_dir": "{{ sort_dir }}"}'
                hx-target="#files-content"
                hx-swap="innerHTML"
                hx-push-url="true">{{ crumb.label }}</a>
@@ -17,7 +17,7 @@
             <a href="#"
                class="underline"
                hx-get="{{ url('files') }}"
-               hx-vals='{"view_mode": "{{ view_mode }}"}'
+               hx-vals='{"view_mode": "{{ view_mode }}", "file_type": "{{ file_type }}", "sort_by": "{{ sort_by }}", "sort_dir": "{{ sort_dir }}"}'
                hx-target="#files-content"
                hx-swap="innerHTML"
                hx-push-url="true">{{ crumb.label }}</a>
@@ -27,7 +27,8 @@
 
 <input type="hidden" id="current-parent-folder-token" name="parent_folder_token" value="{{ current_folder_token or '' }}">
 
-<form class="mt-4 flex flex-col gap-2 lg:flex-row lg:items-center"
+<form id="files-filters-form"
+            class="mt-4 flex flex-col gap-2 lg:flex-row lg:items-center"
       method="POST"
       hx-post="{{ url('files') }}"
       hx-target="#files-content"
@@ -35,6 +36,8 @@
     {{ csrf_input }}
     <input type="hidden" name="view_mode" value="{{ view_mode }}">
     <input type="hidden" name="folder" value="{{ current_folder_token or '' }}">
+        <input type="hidden" name="sort_by" value="{{ sort_by }}">
+        <input type="hidden" name="sort_dir" value="{{ sort_dir }}">
     <input type="text"
            id="q"
            name="q"
