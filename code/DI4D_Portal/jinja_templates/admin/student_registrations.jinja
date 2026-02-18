@@ -1,0 +1,40 @@
+{% extends "structure/structure_private.jinja"%}
+{% block title %}Student Registrations - DI4D Portal{% endblock %}
+
+{% block content %}
+<div class="bg-white w-full max-w-full lg:max-w-4xl">
+    <h1 class="text-3xl lg:text-4xl font-bold text-black">Student Registrations</h1>
+    <form class="mt-6 flex flex-row max-w-xl gap-4" method="POST" hx-post="{{ url('student_registrations') }}" hx-target="#student_registration_grid">
+        {{ csrf_input }}
+        <div class="relative flex-1">
+            <input type="text" 
+                    id="q" 
+                    name="q"
+                    placeholder="Search" 
+                    value="{{ search_query }}"
+                    class="bg-[--white_grey] rounded-md w-full px-4 py-1 pr-12"
+                    hx-trigger="keyup changed delay:300ms" hx-sync="closest form:abort">
+            <button class="absolute right-0 top-0 bottom-0 px-3 text-[var(--light_gray)]" type="submit">        
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+        </div>
+        <select class="bg-[--white_grey] rounded-md px-4 max-w-[80px] sm:max-w-full" name="year" id="year"
+             hx-trigger="change" hx-target="#student_registration_grid" hx-post="{{ url('student_registrations') }}">
+                <option value="nofilter"  {% if filteryear == "nofilter" %}selected{% endif %}>No Year Filter</option>
+            {% for year in years %}
+                <option value="{{ year }}" {% if filteryear == year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+        </select>
+        <select class="bg-[--white_grey] rounded-md px-4 max-w-[80px] sm:max-w-full" name="status" id="status"
+             hx-trigger="change" hx-target="#student_registration_grid" hx-post="{{ url('student_registrations') }}">
+                <option value="nofilter"  {% if filterstatus == "nofilter" %}selected{% endif %}>No Status Filter</option>
+                <option value="evaluate" {% if filterstatus == "evaluate" %}selected{% endif %}>Evaluate</option>
+                <option value="approved" {% if filterstatus == "approved" %}selected{% endif %}>Approved</option>
+                <option value="denied" {% if filterstatus == "denied" %}selected{% endif %}>Denied</option>
+        </select>
+    </form>
+    <div id="student_registration_grid" class="mt-6">
+        {% include "components/student_registration_htmx.jinja" %}
+    </div>
+</div>
+{% endblock %}

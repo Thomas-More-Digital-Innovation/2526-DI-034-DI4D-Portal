@@ -5,7 +5,7 @@ from django.core.mail import send_mail
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from .models import ApplicationSetting, News, User, Question, FormAnswer, TechTalk, Form, UserType, Partner, LearningGoal, LearninggoalCourse, FileItem
+from .models import ApplicationSetting, News, User, Question, FormAnswer, TechTalk, Form, UserType, Partner, LearningGoal, LearninggoalCourse, FileItem, HistoryStudentApplicationForm, StatusStudentRegistration
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.core.paginator import Paginator
@@ -23,6 +23,7 @@ import filetype
 from django.core.files.storage import default_storage
 import json
 from django.forms import modelform_factory
+import magic
 from django_ckeditor_5.widgets import CKEditor5Widget
 
 import logging
@@ -681,6 +682,11 @@ def settings_view(request):
             applicationsetting.endDate = None if request.POST.get("enddatestudentregistrationform") == "" else request.POST.get("enddatestudentregistrationform")
             applicationsetting.studentApplicationFormId = None if request.POST.get("studentregistrationform") == "noform" else Form.objects.get(id=request.POST.get("studentregistrationform"))
             applicationsetting.save()
+
+            # Check if student application form is currently in our history
+            if applicationsetting.studentApplicationFormId and applicationsetting.startDate:
+                history_form = HistoryStudentApplicationForm.objects.get_or_create(formId=applicationsetting.studentApplicationFormId, year=applicationsetting.startDate[:4])
+
             # Change current application setting
             current_application_setting = {
                 "startDate": applicationsetting.startDate,
@@ -784,3 +790,97 @@ def view_news_item(request, mediaPath):
         # Take 2 other random news articles for suggestion at the bottom
         news = News.objects.filter(isPublic=True).exclude(id=news_article.id).order_by('?')[:2]
         return render(request, 'public/news_item.jinja', {'news_article': news_article, 'news': news})
+
+@login_required(login_url='login')
+def student_registrations(request):
+    # Check if user is admin
+    if not request.user.role_is_admin():
+        return redirect('dashboard')
+    active_page = 'student_registrations'
+    search_query = ""
+    items_per_page = int(request.GET.get('items_per_page', 10))
+    filtered_year = "nofilter"
+    filtered_status = "nofilter"
+
+    # Get all student registration submitions
+    all_registration_forms = HistoryStudentApplicationForm.objects.all()
+    form_ids = all_registration_forms.values_list('formId', flat=True)
+    years = all_registration_forms.values_list('year', flat=True)
+    student_registrations = FormAnswer.objects.filter(questionId__formId__in=form_ids)
+    submission_numbers = student_registrations.values_list('submission_number', 'answerDate').exclude(submission_number__isnull=True).distinct()
+
+    # Format submission date
+    submission_numbers = [(num, date.strftime('%d/%m/%Y'), date.year) for num, date in submission_numbers]
+
+    # Get or Create status for each submission a status
+    submissions = []
+    for submission in submission_numbers:
+        status, created = StatusStudentRegistration.objects.get_or_create(submission_number=int(submission[0]))
+        submissions.append((submission[0], submission[1], status.status, submission[2]))
+    
+    # Pagination
+    paginator = Paginator(submissions, items_per_page)
+    page_number = request.GET.get('page', 1)
+    submissions = paginator.get_page(page_number)
+
+    # Check if it is a htmx request
+    if request.headers.get("HX-Request") == "true":
+        # Check if somebody searched for something or filtered something
+        search_query = request.POST.get("q", "").strip()
+        year_filter = request.POST.get("year", "nofilter")
+        status_filter = request.POST.get("status", "nofilter")
+        if search_query:
+            # Filter submissions by search query (on submission number or date)
+            submissions = [s for s in submissions if search_query.lower() in str(s[0]).lower() or search_query.lower() in str(s[1]).lower()]
+        if year_filter != "nofilter":
+            submissions = [s for s in submissions if s[3] == int(year_filter)]
+            filtered_year = year_filter
+        if status_filter != "nofilter":
+            submissions = [s for s in submissions if s[2] == status_filter]
+            filtered_status = status_filter
+        # Pagination
+        paginator = Paginator(submissions, items_per_page)
+        page_number = request.GET.get('page', 1)
+        submissions = paginator.get_page(page_number)
+        return render(request, 'components/student_registration_htmx.jinja', {'active_page': active_page, 'search_query': search_query, 'submissions': submissions, 'years': years, 'filtered_year': filtered_year, 'filtered_status': filtered_status, 'items_per_page': items_per_page})
+
+    return render(request, 'admin/student_registrations.jinja', {'active_page': active_page, 'search_query': search_query, 'submissions': submissions, 'years': years, 'filtered_year': filtered_year, 'filtered_status': filtered_status, 'items_per_page': items_per_page})
+
+@login_required(login_url='login')
+def student_registration_detail(request, submission_number):
+    # Check if user is admin
+    if not request.user.role_is_admin():
+        return redirect('dashboard')
+    active_page = 'student_registrations'
+    status = ""
+    x_data =  '{"open_info": false}'
+    MEDIA_URL = settings.MEDIA_URL
+
+    # Get Status or 404 if not exist
+    item = get_object_or_404(StatusStudentRegistration, submission_number=submission_number)
+
+    # Get all answers of the submission
+    answers = FormAnswer.objects.filter(submission_number=submission_number)
+    for answer in answers:
+            # Parse answer
+            if answer.questionId.datatype.name == "Multiple_Choice":
+                answer.parsed_answer = json.loads(answer.answer) if answer.answer else []
+            elif answer.questionId.datatype.name == "File":
+                # Get type of file
+                full_path = os.path.join(settings.MEDIA_ROOT, str(answer.answer))
+                mime = magic.Magic(mime=True)
+                mime_type = mime.from_file(full_path)
+                answer.file_type = mime_type.split('/')[0] if mime_type else 'unknown'
+    
+    # Check if form is submitted to approve or deny the registration
+    if request.method == "POST":
+        submit_value = request.POST.get("submit")
+        if submit_value == "approve":
+            item.status = "approved"
+            status = "approved"
+        elif submit_value == "deny":
+            item.status = "denied"
+            status = "denied"
+        x_data = '{"open_info": true}'
+        item.save()
+    return render(request, 'admin/registration_detail.jinja', {'active_page': active_page, 'item': item, 'answers': answers, 'MEDIA_URL': MEDIA_URL, 'status': status, 'x_data': x_data})

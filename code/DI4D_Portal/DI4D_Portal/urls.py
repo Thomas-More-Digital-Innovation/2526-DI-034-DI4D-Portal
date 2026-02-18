@@ -48,6 +48,8 @@ urlpatterns = [
     path('news/edit/', views.edit_news, name='edit_news'),
     path('news/edit/<str:mediaPath>/', views.edit_news, name='edit_news'),
     path('news/<str:mediaPath>/', views.view_news_item, name='view_news_item'),
+    path('student_registrations/', views.student_registrations, name='student_registrations'),
+    path('student_registrations/<int:submission_number>/', views.student_registration_detail, name='student_registration_detail'),
     path('ckeditor5/', include('django_ckeditor_5.urls')),
     # Docs : https://docs.djangoproject.com/en/6.0/topics/auth/default/#all-authentication-views
     path("password_reset/", auth_views.PasswordResetView.as_view(
