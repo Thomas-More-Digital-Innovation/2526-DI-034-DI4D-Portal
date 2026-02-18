@@ -1,0 +1,19 @@
+{{- if .Values.collabora.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "di4d.fullname" . }}-collabora
+  labels:
+    {{- include "di4d.labels" . | nindent 4 }}
+    app.kubernetes.io/component: collabora
+spec:
+  type: {{ .Values.collabora.service.type }}
+  ports:
+    - name: https
+      port: {{ .Values.collabora.service.port }}
+      targetPort: https
+      protocol: TCP
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: collabora
+{{- end }}

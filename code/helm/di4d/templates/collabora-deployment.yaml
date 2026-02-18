@@ -1,0 +1,40 @@
+{{- if .Values.collabora.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "di4d.fullname" . }}-collabora
+  labels:
+    {{- include "di4d.labels" . | nindent 4 }}
+    app.kubernetes.io/component: collabora
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: collabora
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: collabora
+    spec:
+      containers:
+        - name: collabora
+          image: "{{ .Values.collabora.image.repository }}:{{ .Values.collabora.image.tag }}"
+          imagePullPolicy: {{ .Values.collabora.image.pullPolicy }}
+          ports:
+            - name: https
+              containerPort: {{ .Values.collabora.service.port }}
+              protocol: TCP
+          env:
+            - name: username
+              value: {{ .Values.collabora.auth.username | quote }}
+            - name: password
+              value: {{ .Values.collabora.auth.password | quote }}
+            - name: aliasgroup1
+              value: {{ .Values.collabora.aliasgroup1 | quote }}
+          {{- with .Values.collabora.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

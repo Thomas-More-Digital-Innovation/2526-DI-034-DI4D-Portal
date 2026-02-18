@@ -1,0 +1,13 @@
+services:
+  collabora:
+    image: collabora/code:25.04.9.1.1
+    container_name: collabora-code-dev
+    restart: unless-stopped
+    ports:
+      - "9980:9980"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      username: admin
+      password: admin
+      aliasgroup1: http://host.docker.internal:8000
