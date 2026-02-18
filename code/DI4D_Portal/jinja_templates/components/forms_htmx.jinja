@@ -71,20 +71,28 @@
     {% if all_forms.has_other_pages %}
     <div class="flex items-center justify-center gap-4 mt-6">
         <div class="flex items-center gap-2">
-            {% if all_forms.has_previous %}
+            {% if all_forms.has_previous and all_forms.number -1 > 0 %}
                 <a href="?page={{ all_forms.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if filter_status %}&filter_status={{ filter_status }}{% endif %}" 
                    class="px-3 py-1 bg-[var(--white_grey)] rounded-md hover:bg-gray-200 transition">
                     <i class="fa-solid fa-chevron-left"></i>
                 </a>
+            {% else %}
+                <span class="px-3 py-1 bg-[var(--white_grey)] rounded-md text-gray-400">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </span>
             {% endif %}
             
             <span class="text-gray-600 text-sm">{{ all_forms.number }}</span>
             
-            {% if all_forms.has_next %}
+            {% if all_forms.has_next and all_forms.number + 1 <= all_forms.paginator.num_pages %}
                 <a href="?page={{ all_forms.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if filter_status %}&filter_status={{ filter_status }}{% endif %}" 
                    class="px-3 py-1 bg-[var(--white_grey)] rounded-md hover:bg-gray-200 transition">
                     <i class="fa-solid fa-chevron-right"></i>
                 </a>
+            {% else %}
+                <span class="px-3 py-1 bg-[var(--white_grey)] rounded-md text-gray-400">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </span>
             {% endif %}
         </div>
         
