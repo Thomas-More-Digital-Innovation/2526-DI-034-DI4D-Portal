@@ -1,0 +1,42 @@
+<div class="w-full border-t border-[--lightest_grey]">
+    <div class="hidden md:grid md:grid-cols-[2fr_1.2fr_1.2fr_180px] gap-4 text-black font-semibold py-2 border-b border-[--lightest_grey]">
+        <button type="button"
+                class="text-left"
+                hx-post="{{ url('files') }}"
+                hx-target="#files-content"
+                hx-swap="innerHTML"
+                hx-include="#files-filters-form"
+                hx-vals='{"sort_by": "name", "sort_dir": "{{ name_next_dir }}"}'>
+            Name{% if sort_by == 'name' %} {% if sort_dir == 'asc' %}↑{% else %}↓{% endif %}{% endif %}
+        </button>
+        <button type="button"
+                class="text-left"
+                hx-post="{{ url('files') }}"
+                hx-target="#files-content"
+                hx-swap="innerHTML"
+                hx-include="#files-filters-form"
+                hx-vals='{"sort_by": "modified", "sort_dir": "{{ modified_next_dir }}"}'>
+            Modified{% if sort_by == 'modified' %} {% if sort_dir == 'asc' %}↑{% else %}↓{% endif %}{% endif %}
+        </button>
+        <button type="button"
+                class="text-left"
+                hx-post="{{ url('files') }}"
+                hx-target="#files-content"
+                hx-swap="innerHTML"
+                hx-include="#files-filters-form"
+                hx-vals='{"sort_by": "created_by", "sort_dir": "{{ created_by_next_dir }}"}'>
+            Owner{% if sort_by == 'created_by' %} {% if sort_dir == 'asc' %}↑{% else %}↓{% endif %}{% endif %}
+        </button>
+        <p class="text-right pr-2">Actions</p>
+    </div>
+
+    {% if file_items %}
+        <div class="divide-y divide-[--white_grey]">
+            {% for item in file_items %}
+                {% include 'components/files/row_htmx.jinja' %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-[var(--light_grey)] py-6">No files or folders found.</p>
+    {% endif %}
+</div>

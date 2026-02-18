@@ -1,0 +1,57 @@
+<div class="grid grid-cols-1 md:grid-cols-[2fr_1.2fr_1.2fr_180px] gap-2 md:gap-4 py-3 items-center">
+    <div class="flex items-center gap-2 text-xl md:text-2xl text-black">
+        {% if item.type == 'folder' %}
+            <i class="fa-regular fa-folder fa-sm"></i>
+        {% else %}
+            <i class="fa-regular fa-file fa-sm"></i>
+        {% endif %}
+        {% if item.type == 'folder' %}
+            <a class="text-base md:text-lg underline"
+               href="#"
+               hx-get="{{ url('files') }}"
+             hx-vals='{"folder": "{{ item.token }}", "view_mode": "{{ view_mode }}", "file_type": "{{ file_type }}", "sort_by": "{{ sort_by }}", "sort_dir": "{{ sort_dir }}"}'
+               hx-target="#files-content"
+               hx-swap="innerHTML"
+               hx-push-url="true">{{ item.name }}</a>
+        {% else %}
+            <span class="text-base md:text-lg">{{ item.name }}</span>
+        {% endif %}
+    </div>
+    <p class="text-[var(--light_grey)] text-sm md:text-lg">{{ item.modified }}</p>
+    <p class="text-[var(--light_grey)] text-sm md:text-lg">{{ item.modified_by }}</p>
+
+    <div class="flex items-center justify-start md:justify-end gap-3 text-lg">
+        {% if item.type != 'folder' %}
+            <a class="text-[--green]"
+               title="Open in editor"
+               href="{{ url('files_wopi_open', kwargs={'item_token': item.token}) }}"
+               target="_blank"
+               rel="noopener noreferrer">
+                <i class="fa-solid fa-pen-to-square"></i>
+            </a>
+            <a class="text-[--green]"
+               title="Download"
+               href="{{ url('files_download', kwargs={'item_token': item.token}) }}">
+                <i class="fa-solid fa-download"></i>
+            </a>
+        {% endif %}
+        {% if item.can_manage %}
+            <button type="button"
+                    class="text-black"
+                    title="Share"
+                    @click="selectedItemToken = '{{ item.token }}'; selectedItemName = '{{ item.name|replace("'", "\\'") }}'; selectedItemType = '{{ item.type }}'; open_share_item = true"
+                    hx-get="{{ url('files_action', kwargs={'action': 'share-list'}) }}"
+                    hx-target="#files-share-table"
+                    hx-swap="innerHTML"
+                    hx-vals='{"item_token": "{{ item.token }}"}'>
+                <i class="fa-solid fa-share"></i>
+            </button>
+            <button type="button"
+                    class="text-[--red]"
+                    title="Delete"
+                    @click="selectedItemToken = '{{ item.token }}'; selectedItemName = '{{ item.name|replace("'", "\\'") }}'; selectedItemType = '{{ item.type }}'; open_delete_item = true">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        {% endif %}
+    </div>
+</div>

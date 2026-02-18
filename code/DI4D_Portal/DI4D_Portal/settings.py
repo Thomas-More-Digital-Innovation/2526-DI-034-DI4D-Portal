@@ -26,7 +26,8 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY_DJANGO")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DJANGO_DEBUG", "True").strip().lower() in {"1", "true", "yes", "on"}
+DEBUG = os.getenv("DJANGO_DEBUG", os.getenv("DEBUG", "True")).strip().lower() in {"1", "true", "yes", "on"}
+USE_S3 = os.getenv("USE_S3", "False").strip().lower() in {"1", "true", "yes", "on"}
 
 _allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts.split(",") if h.strip()]
@@ -52,6 +53,9 @@ INSTALLED_APPS = [
     'DI4D_app',
     'django_ckeditor_5',
 ]
+
+if USE_S3 and "storages" not in INSTALLED_APPS:
+    INSTALLED_APPS.append("storages")
 
 if DEBUG:
     INSTALLED_APPS.insert(0, "tailwind")
@@ -159,8 +163,51 @@ USE_I18N = True
 USE_TZ = True
 
 # Media files (Uploaded by users)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+if USE_S3:
+    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "")
+    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
+    AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "")
+    AWS_S3_ENDPOINT_URL = os.getenv("AWS_S3_ENDPOINT_URL", "").strip() or None
+    is_r2_endpoint = bool(AWS_S3_ENDPOINT_URL and "r2.cloudflarestorage.com" in AWS_S3_ENDPOINT_URL)
+    AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "auto" if is_r2_endpoint else "us-east-1")
+    AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_S3_CUSTOM_DOMAIN", "").strip()
+    AWS_LOCATION = os.getenv("AWS_LOCATION", "media").strip("/")
+    AWS_S3_FILE_OVERWRITE = os.getenv("AWS_S3_FILE_OVERWRITE", "False").strip().lower() in {"1", "true", "yes", "on"}
+    AWS_QUERYSTRING_AUTH = os.getenv("AWS_QUERYSTRING_AUTH", "False").strip().lower() in {"1", "true", "yes", "on"}
+    AWS_DEFAULT_ACL = None
+    AWS_S3_SIGNATURE_VERSION = os.getenv("AWS_S3_SIGNATURE_VERSION", "").strip() or None
+    AWS_S3_ADDRESSING_STYLE = os.getenv("AWS_S3_ADDRESSING_STYLE", "").strip() or None
+
+    if is_r2_endpoint:
+        AWS_S3_REGION_NAME = "auto"
+        AWS_S3_SIGNATURE_VERSION = AWS_S3_SIGNATURE_VERSION or "s3v4"
+        AWS_S3_ADDRESSING_STYLE = AWS_S3_ADDRESSING_STYLE or "path"
+        if not AWS_S3_CUSTOM_DOMAIN and not AWS_QUERYSTRING_AUTH:
+            AWS_QUERYSTRING_AUTH = True
+
+    if not AWS_STORAGE_BUCKET_NAME:
+        raise ValueError("USE_S3 is enabled, but AWS_STORAGE_BUCKET_NAME is not set.")
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+
+    if AWS_S3_CUSTOM_DOMAIN:
+        media_base = f"https://{AWS_S3_CUSTOM_DOMAIN}"
+    elif AWS_S3_ENDPOINT_URL:
+        media_base = AWS_S3_ENDPOINT_URL.rstrip("/")
+    else:
+        media_base = f"https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
+
+    MEDIA_URL = f"{media_base}/{AWS_LOCATION}/" if AWS_LOCATION else f"{media_base}/"
+else:
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
 # CKEditor configuration
 DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
@@ -241,3 +288,8 @@ LOGGING = {
         },
     },
 }
+
+COLLABORA_CODE_URL = os.getenv('COLLABORA_CODE_URL', 'https://localhost:9980').strip()
+COLLABORA_INSECURE_SKIP_VERIFY = os.getenv('COLLABORA_INSECURE_SKIP_VERIFY', 'True').strip().lower() in {'1', 'true', 'yes', 'on'}
+WOPI_TOKEN_TTL_SECONDS = int(os.getenv('WOPI_TOKEN_TTL_SECONDS', '900'))
+WOPI_BASE_URL = os.getenv('WOPI_BASE_URL', '').strip()

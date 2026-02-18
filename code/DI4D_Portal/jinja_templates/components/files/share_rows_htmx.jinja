@@ -1,0 +1,45 @@
+<div class="bg-[var(--input_bg_color)] text-[var(--input_text)] rounded-lg px-3 py-2">
+    <div class="grid grid-cols-[1.4fr_1fr_36px] gap-2 text-xs font-semibold opacity-80 pb-2 border-b border-[--lightest_grey]">
+        <p>User</p>
+        <p class="text-right">Rights</p>
+        <p class="sr-only">Remove</p>
+    </div>
+
+    {% if share_rows %}
+        {% for row in share_rows %}
+            <div class="grid grid-cols-[1.4fr_1fr_36px] gap-2 items-center py-2">
+                <div>
+                    <p class="text-sm">{{ row.display_name }}</p>
+                    {% if row.meta %}
+                        <p class="text-xs opacity-75">{{ row.meta }}</p>
+                    {% endif %}
+                </div>
+                <div class="flex justify-end">
+                    <select class="text-sm text-[var(--input_text)] bg-[var(--input_bg_color)] border border-[--lightest_grey] rounded-md px-2 py-1 text-right"
+                            hx-post="{{ url('files_action', kwargs={'action': 'share'}) }}"
+                            hx-target="#files-share-table"
+                            hx-swap="innerHTML"
+                            hx-include="#files-share-form"
+                            hx-vals='{"share_mode": "update", "share_user_token": "{{ row.target_token }}"}'
+                            hx-trigger="change"
+                            name="share_rights">
+                        <option value="view_only" {% if not row.can_edit %}selected{% endif %}>view only</option>
+                        <option value="edit" {% if row.can_edit %}selected{% endif %}>edit</option>
+                    </select>
+                </div>
+                <button type="button"
+                        class="text-[--red]"
+                        title="Remove rights"
+                        hx-post="{{ url('files_action', kwargs={'action': 'share'}) }}"
+                        hx-target="#files-share-table"
+                        hx-swap="innerHTML"
+                        hx-include="#files-share-form"
+                        hx-vals='{"share_mode": "remove", "share_user_token": "{{ row.target_token }}"}'>
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="text-sm py-2 opacity-80">No users have access yet.</p>
+    {% endif %}
+</div>

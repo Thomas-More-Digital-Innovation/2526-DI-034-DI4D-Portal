@@ -1,0 +1,16 @@
+<form class="flex flex-col gap-3"
+      hx-post="{{ url('files_action', kwargs={'action': 'create-folder'}) }}"
+      hx-target="#files-feedback"
+      hx-swap="innerHTML"
+    hx-include="#current-parent-folder-token"
+      hx-on::after-request="open_create_folder = false">
+    {{ csrf_input }}
+
+    <label class="text-white text-sm" for="folder_name">Folder Name</label>
+    <input id="folder_name" name="folder_name" type="text" placeholder="Folder name" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-2" required>
+
+    <div class="flex gap-2 mt-2">
+        <button type="button" class="btn text-[--button_text_modal] bg-[--white_grey] flex-1" @click="open_create_folder = false">Cancel</button>
+        <button type="submit" class="btn flex-1 text-white bg-[--green]">Add</button>
+    </div>
+</form>

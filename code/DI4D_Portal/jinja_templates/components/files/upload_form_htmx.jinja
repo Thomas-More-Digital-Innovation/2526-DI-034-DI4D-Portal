@@ -1,0 +1,43 @@
+<form class="flex flex-col gap-3"
+      hx-post="{{ url('files_action', kwargs={'action': 'upload'}) }}"
+      hx-target="#files-feedback"
+      hx-swap="innerHTML"
+      hx-encoding="multipart/form-data"
+    x-data="{ selectedFiles: [] }"
+      hx-include="#current-parent-folder-token"
+      hx-on::after-request="open_upload_files = false">
+    {{ csrf_input }}
+
+    <label class="text-white text-sm" for="upload_files_input">Click here to upload files</label>
+    <input id="upload_files_input"
+           name="files"
+           type="file"
+           multiple
+           required
+            x-ref="uploadFilesInput"
+           class="hidden"
+           @change="selectedFiles = Array.from($event.target.files).map(file => file.name)">
+    <button type="button"
+            class="w-full text-left text-[var(--input_text)]! bg-[var(--input_bg_color)]! rounded-lg px-4 py-2"
+            @click="$refs.uploadFilesInput.click()">
+        Choose files
+    </button>
+    <div class="text-white text-sm">
+        <template x-if="selectedFiles.length === 0">
+            <p>No files selected</p>
+        </template>
+        <template x-for="fileName in selectedFiles" :key="fileName">
+            <p x-text="fileName"></p>
+        </template>
+    </div>
+
+    <label class="text-white text-sm" for="upload_people">Add people</label>
+    <input id="upload_people" name="people" type="text" placeholder="Type names here" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-2">
+
+    <div class="text-white text-sm">• view only &nbsp;&nbsp;• edit</div>
+
+    <div class="flex gap-2 mt-2">
+        <button type="button" class="btn text-[--button_text_modal] bg-[--white_grey] flex-1" @click="open_upload_files = false">Cancel</button>
+        <button type="submit" class="btn flex-1 text-white bg-[--green]">Add</button>
+    </div>
+</form>

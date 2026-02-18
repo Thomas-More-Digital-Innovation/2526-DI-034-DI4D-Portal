@@ -49,6 +49,22 @@ spec:
             {{- toYaml . | nindent 12 }}
             - name: POSTGRES_HOST
               value: "{{ $.Release.Name }}-postgresql"
+            {{- if $.Values.collabora.enabled }}
+            {{- $defaultCollaboraUrl := printf "https://%s-collabora:%v" (include "di4d.fullname" $) $.Values.collabora.service.port }}
+            {{- if and $.Values.collabora.ingress.enabled $.Values.collabora.ingress.host }}
+            {{- $defaultCollaboraUrl = printf "https://%s" $.Values.collabora.ingress.host }}
+            {{- end }}
+            - name: COLLABORA_CODE_URL
+              value: {{ default $defaultCollaboraUrl $.Values.collabora.appEnv.collaboraCodeUrl | quote }}
+            - name: COLLABORA_INSECURE_SKIP_VERIFY
+              value: {{ $.Values.collabora.appEnv.insecureSkipVerify | quote }}
+            - name: WOPI_TOKEN_TTL_SECONDS
+              value: {{ $.Values.collabora.appEnv.wopiTokenTtlSeconds | quote }}
+            {{- if $.Values.collabora.appEnv.wopiBaseUrl }}
+            - name: WOPI_BASE_URL
+              value: {{ $.Values.collabora.appEnv.wopiBaseUrl | quote }}
+            {{- end }}
+            {{- end }}
           {{- end }}
           {{- with .Values.livenessProbe }}
           livenessProbe:

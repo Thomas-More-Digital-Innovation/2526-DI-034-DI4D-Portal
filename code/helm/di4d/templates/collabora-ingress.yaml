@@ -1,0 +1,38 @@
+{{- if and .Values.collabora.enabled .Values.collabora.ingress.enabled .Values.collabora.ingress.host -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "di4d.fullname" . }}-collabora
+  labels:
+    {{- include "di4d.labels" . | nindent 4 }}
+    app.kubernetes.io/component: collabora
+  {{- with .Values.collabora.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.collabora.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.collabora.ingress.tls }}
+  tls:
+    {{- range .Values.collabora.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.collabora.ingress.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "di4d.fullname" . }}-collabora
+                port:
+                  number: {{ .Values.collabora.service.port }}
+{{- end }}

@@ -200,3 +200,31 @@ env:
   - name: EMAIL_BACKEND
     value: "django.core.mail.backends.smtp.EmailBackend"
 
+# Collabora CODE configuration
+collabora:
+  enabled: false
+  image:
+    repository: collabora/code
+    tag: "25.04.9.1.1"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 9980
+  auth:
+    username: admin
+    password: admin
+  aliasgroup1: "https://.*"
+  resources: {}
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    host: "office.di4d.davidmaat.be"
+    tls: []
+  appEnv:
+    enabled: true
+    collaboraCodeUrl: ""
+    insecureSkipVerify: "True"
+    wopiTokenTtlSeconds: "900"
+    wopiBaseUrl: ""
+

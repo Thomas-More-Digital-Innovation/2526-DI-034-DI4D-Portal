@@ -1,25 +1,36 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from urllib import request
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.contrib.auth import authenticate, login
+from .models import ApplicationSetting, News, User, Question, FormAnswer, TechTalk, Form, UserType, Partner, LearningGoal, LearninggoalCourse, HistoryStudentApplicationForm, StatusStudentRegistration, DataType, FileItem
 
-from .models import ApplicationSetting, News, User, Question, FormAnswer, TechTalk, Form, UserType, Partner, LearningGoal, LearninggoalCourse, HistoryStudentApplicationForm, StatusStudentRegistration, DataType
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils.crypto import get_random_string
 from django.contrib.auth import update_session_auth_hash
+from django.urls import reverse
+from django.core import signing
+from django.core.signing import BadSignature
+from django.views.decorators.csrf import csrf_exempt
 import os
+import mimetypes
+import uuid
 import filetype
 from django.core.files.storage import default_storage
 import json
 from django.forms import modelform_factory
 import magic
 from django_ckeditor_5.widgets import CKEditor5Widget
+
+import logging
+from .features.files import views as files_feature_views
+
+logger = logging.getLogger(__name__)
 
 def page_not_found(request, exception=None):
     return render(request, 'errors/404.jinja', status=404)
@@ -282,6 +293,49 @@ def dashboard(request):
     active_page = 'dashboard'
     news = News.objects.all().order_by('-lastEditDate')[:2]
     return render(request, 'sharepoint/dashboard.jinja', {'active_page': active_page, 'news': news})
+
+@login_required(login_url='login')
+def files_view(request):
+    return files_feature_views.files_view(request)
+
+@login_required(login_url='login')
+def files_action(request, action):
+    return files_feature_views.files_action(request, action)
+
+
+@login_required(login_url='login')
+def files_download(request, item_token):
+    return files_feature_views.files_download(request, item_token)
+
+
+@login_required(login_url='login')
+def files_wopi_open(request, item_token):
+    return files_feature_views.files_wopi_open(request, item_token)
+
+
+@csrf_exempt
+def wopi_check_file_info(request, file_id):
+    return files_feature_views.wopi_check_file_info(request, file_id)
+
+
+@csrf_exempt
+def wopi_get_file(request, file_id):
+    return files_feature_views.wopi_get_file(request, file_id)
+
+
+@csrf_exempt
+def wopi_contents(request, file_id):
+    return files_feature_views.wopi_contents(request, file_id)
+
+
+@csrf_exempt
+def wopi_put_file(request, file_id):
+    return files_feature_views.wopi_put_file(request, file_id)
+
+
+@csrf_exempt
+def wopi_lock(request, file_id):
+    return files_feature_views.wopi_lock(request, file_id)
 
 @login_required(login_url='login')
 def users(request):
