@@ -1,0 +1,52 @@
+{% extends "structure/structure_private.jinja"%}
+{% block title %}Form Submissions - DI4D Portal{% endblock %}
+
+{% block content %}
+<div class="bg-white min-h-screen">
+    <div class="flex flex-col gap-4">
+        <div class="mb-2">
+            <a href="{{ url('forms') }}" class="text-[var(--blue_di4d)] hover:underline mb-2 inline-block">
+                <i class="fa-solid fa-arrow-left mr-2"></i>Back to Forms
+            </a>
+            <h1 class="text-3xl lg:text-4xl font-bold text-black">Submissions</h1>
+            <p class="text-gray-600 mt-1">{{ form.title }}</p>
+        </div>
+
+        {% if user_rows|length == 0 %}
+            <div class="bg-[var(--white_grey)] rounded-lg p-8 text-center text-gray-600">
+                No submissions yet.
+            </div>
+        {% else %}
+            <div>
+                <table class="w-full">
+                    <thead>
+                        <tr class="grid grid-cols-3 lg:grid-cols-4 gap-0">
+                            <th class="px-4 py-2 text-left bg-[--blue_di4d] text-white border border-black">Username</th>
+                            <th class="px-4 py-2 text-left bg-[--blue_di4d] text-white border border-black">Name</th>
+                            <th class="px-4 py-2 text-left bg-[--blue_di4d] text-white border border-black hidden lg:table-cell">Date submitted</th>
+                            <th class="px-4 py-2 text-left bg-[--blue_di4d] text-white border border-black">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in user_rows %}
+                            <tr class="grid grid-cols-3 lg:grid-cols-4 gap-0">
+                                <td class="px-4 py-2 text-left bg-white text-black border border-black">{{ row.user.username }}</td>
+                                <td class="px-4 py-2 text-left bg-white text-black border border-black">{{ row.user.firstname }} {{ row.user.lastname }}</td>
+                                <td class="px-4 py-2 text-left bg-white text-black border border-black hidden lg:table-cell">
+                                    {% if row.submitted_date %}{{ row.submitted_date.strftime('%m/%d/%Y') }}{% else %}-{% endif %}
+                                </td>
+                                <td class="px-4 py-2 text-left bg-white text-black border border-black">
+                                    <div class="flex flex-row gap-4 justify-center">
+                                        <a href="{{ url('form_submission_detail', kwargs={'form_id': form.id, 'username': row.user.username}) }}" 
+                                           class="btn_primary_orange text-sm">View</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
