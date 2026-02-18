@@ -43,6 +43,10 @@
                                     {% else %}
                                         <span class="text-gray-500">No answer</span>
                                     {% endif %}
+                                {% elif datatype_name == 'file' %}
+                                    <div class="flex items-center">
+                                        <a class="btn_primary_orange" href="{{ MEDIA_URL }}{{ answer }}">Download file</a>
+                                    </div>
                                 {% else %}
                                     {% if answer %}
                                         <span>{{ answer }}</span>

@@ -1067,6 +1067,7 @@ def form_submission_detail(request, form_id, username):
     form = get_object_or_404(Form, id=form_id, isActive=True)
     questions = Question.objects.filter(formId=form, isActive=True).order_by('id')
     user = get_object_or_404(User, username=username)
+    MEDIA_URL = settings.MEDIA_URL
 
     answers = FormAnswer.objects.filter(questionId__in=questions, userId=user)
     answer_map = {}
@@ -1080,13 +1081,7 @@ def form_submission_detail(request, form_id, username):
         else:
             answer_map[ans.questionId.id] = ans.answer
 
-    return render(request, 'sharepoint/form_submission_detail.jinja', {
-        'active_page': active_page,
-        'form': form,
-        'user': user,
-        'questions': questions,
-        'answer_map': answer_map
-    })
+    return render(request, 'sharepoint/form_submission_detail.jinja', {'active_page': active_page, 'form': form, 'user': user, 'questions': questions, 'answer_map': answer_map, 'MEDIA_URL': MEDIA_URL})
 
 @login_required(login_url='login')
 def form_builder_view(request, form_id=None):
