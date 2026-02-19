@@ -18,13 +18,12 @@ from django.core import signing
 from django.core.signing import BadSignature
 from django.views.decorators.csrf import csrf_exempt
 import os
-import mimetypes
 import uuid
 import filetype
 from django.core.files.storage import default_storage
 import json
 from django.forms import modelform_factory
-import magic
+import puremagic
 from django_ckeditor_5.widgets import CKEditor5Widget
 
 import logging
@@ -1599,8 +1598,15 @@ def student_registration_detail(request, submission_number):
             elif answer.questionId.datatype.name == "File":
                 # Get type of file
                 full_path = os.path.join(settings.MEDIA_ROOT, str(answer.answer))
-                mime = magic.Magic(mime=True)
-                mime_type = mime.from_file(full_path)
+                mime_type = None
+                try:
+                    matches = puremagic.magic_file(full_path)
+                    if isinstance(matches, list) and matches:
+                        first_match = matches[0]
+                        if isinstance(first_match, (list, tuple)) and len(first_match) > 1:
+                            mime_type = first_match[1] or None
+                except Exception:
+                    mime_type = None
                 answer.file_type = mime_type.split('/')[0] if mime_type else 'unknown'
     
     # Check if form is submitted to approve or deny the registration
