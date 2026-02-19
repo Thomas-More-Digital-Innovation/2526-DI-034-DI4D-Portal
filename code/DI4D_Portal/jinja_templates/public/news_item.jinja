@@ -5,7 +5,7 @@
 
 {% block content %}
 <div class="min-h-screen">
-    <div class="h-32 w-full bg-cover bg-center border-4 border border-[--orange_di4d]" style="background-image: url('{{ news_article.picture.url }}')"></div>
+    <div class="h-32 w-full bg-cover bg-center border-4 border border-[--orange_di4d]" style="background-image: url('{{ url('news_picture', kwargs={'mediaPath': news_article.mediaPath}) }}')"></div>
     <div class="p-8 max-w-6xl mx-auto">
         <div>
             <a href="{{ url('news') }}" class="btn_primary_blue"><i class="fa-solid fa-arrow-left"></i> Back to all news articles</a>

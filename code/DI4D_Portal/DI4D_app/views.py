@@ -31,6 +31,41 @@ from .features.files import views as files_feature_views
 
 logger = logging.getLogger(__name__)
 
+
+def _detect_content_type_from_storage(storage_path, file_name='', storage=None):
+    default_type = 'application/octet-stream'
+    if not storage_path:
+        return default_type
+    if storage is None:
+        storage = default_storage
+
+    file_handle = None
+    try:
+        file_handle = storage.open(storage_path, 'rb')
+        file_path = getattr(file_handle, 'name', None)
+        if isinstance(file_path, str) and os.path.exists(file_path):
+            matches = puremagic.magic_file(file_path)
+            if isinstance(matches, list) and matches:
+                first_match = matches[0]
+                if isinstance(first_match, (list, tuple)) and len(first_match) > 1:
+                    detected_type = first_match[1]
+                    if detected_type:
+                        return detected_type
+
+        header = file_handle.read(4096)
+        if not header:
+            return default_type
+        detected_type = puremagic.from_string(header, mime=True, filename=file_name or None)
+        return detected_type or default_type
+    except Exception:
+        return default_type
+    finally:
+        if file_handle is not None:
+            try:
+                file_handle.close()
+            except Exception:
+                pass
+
 def page_not_found(request, exception=None):
     return render(request, 'errors/404.jinja', status=404)
 
@@ -790,6 +825,29 @@ def view_news_item(request, mediaPath):
         # Take 2 other random news articles for suggestion at the bottom
         news = News.objects.filter(isPublic=True).exclude(id=news_article.id).order_by('?')[:2]
         return render(request, 'public/news_item.jinja', {'news_article': news_article, 'news': news})
+
+
+def news_picture(request, mediaPath):
+    if request.user.is_authenticated:
+        news_article = get_object_or_404(News, mediaPath=mediaPath)
+    else:
+        news_article = get_object_or_404(News, mediaPath=mediaPath, isPublic=True)
+
+    picture_storage = news_article.picture.storage
+    picture_path = getattr(news_article.picture, 'name', '')
+    if not picture_path:
+        return HttpResponse(status=404)
+
+    try:
+        if not picture_storage.exists(picture_path):
+            return HttpResponse(status=404)
+        file_handle = picture_storage.open(picture_path, 'rb')
+    except Exception:
+        return HttpResponse(status=404)
+
+    filename = os.path.basename(picture_path) or f'news_{news_article.id}.jpg'
+    content_type = _detect_content_type_from_storage(picture_path, filename, storage=picture_storage)
+    return FileResponse(file_handle, as_attachment=False, filename=filename, content_type=content_type)
 
 @login_required(login_url='login')
 def forms_view(request):
@@ -1584,8 +1642,6 @@ def student_registration_detail(request, submission_number):
     active_page = 'student_registrations'
     status = ""
     x_data =  '{"open_info": false}'
-    MEDIA_URL = settings.MEDIA_URL
-
     # Get Status or 404 if not exist
     item = get_object_or_404(StatusStudentRegistration, submission_number=submission_number)
 
@@ -1597,16 +1653,8 @@ def student_registration_detail(request, submission_number):
                 answer.parsed_answer = json.loads(answer.answer) if answer.answer else []
             elif answer.questionId.datatype.name == "File":
                 # Get type of file
-                full_path = os.path.join(settings.MEDIA_ROOT, str(answer.answer))
-                mime_type = None
-                try:
-                    matches = puremagic.magic_file(full_path)
-                    if isinstance(matches, list) and matches:
-                        first_match = matches[0]
-                        if isinstance(first_match, (list, tuple)) and len(first_match) > 1:
-                            mime_type = first_match[1] or None
-                except Exception:
-                    mime_type = None
+                storage_path = str(answer.answer or '')
+                mime_type = _detect_content_type_from_storage(storage_path, os.path.basename(storage_path))
                 answer.file_type = mime_type.split('/')[0] if mime_type else 'unknown'
     
     # Check if form is submitted to approve or deny the registration
@@ -1620,4 +1668,34 @@ def student_registration_detail(request, submission_number):
             status = "denied"
         x_data = '{"open_info": true}'
         item.save()
-    return render(request, 'admin/registration_detail.jinja', {'active_page': active_page, 'item': item, 'answers': answers, 'MEDIA_URL': MEDIA_URL, 'status': status, 'x_data': x_data})
+    return render(request, 'admin/registration_detail.jinja', {'active_page': active_page, 'item': item, 'answers': answers, 'status': status, 'x_data': x_data})
+
+
+@login_required(login_url='login')
+def student_registration_file(request, answer_id):
+    if not request.user.role_is_admin():
+        return HttpResponse(status=403)
+
+    answer = get_object_or_404(FormAnswer.objects.select_related('questionId', 'questionId__datatype'), id=answer_id)
+    if answer.questionId.datatype.name != "File":
+        return HttpResponse(status=404)
+
+    storage_path = str(answer.answer or '').strip()
+    if not storage_path:
+        return HttpResponse(status=404)
+
+    try:
+        if not default_storage.exists(storage_path):
+            return HttpResponse(status=404)
+    except Exception:
+        return HttpResponse(status=404)
+
+    try:
+        file_handle = default_storage.open(storage_path, 'rb')
+    except Exception:
+        return HttpResponse(status=404)
+
+    filename = os.path.basename(storage_path) or f'file_{answer.id}'
+    content_type = _detect_content_type_from_storage(storage_path, filename)
+    inline = request.GET.get('inline') == '1'
+    return FileResponse(file_handle, as_attachment=not inline, filename=filename, content_type=content_type)

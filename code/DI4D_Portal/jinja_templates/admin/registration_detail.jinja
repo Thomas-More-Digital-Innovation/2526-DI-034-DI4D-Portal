@@ -10,20 +10,22 @@
             {% if answer.questionId.datatype.name == 'Text' %}
                 <p class="text-lg border p-2 rounded break-words">{{ answer.answer }}</p>
             {% elif answer.questionId.datatype.name == 'File' %}
+                    {% set inline_file_url = url('student_registration_file', kwargs={'answer_id': answer.id}) + '?inline=1' %}
+                    {% set download_file_url = url('student_registration_file', kwargs={'answer_id': answer.id}) %}
                     <div class="mb-4 {% if answer.file_type == 'application' %}flex gap-4 mt-4{% endif %}">
                         {% if answer.file_type == 'image' %}
-                            <img src="{{ MEDIA_URL }}{{ answer.answer }}" alt="Uploaded Image" class="w-auto h-64 border p-2 rounded mb-4">
+                            <img src="{{ inline_file_url }}" alt="Uploaded Image" class="w-auto h-64 border p-2 rounded mb-4">
                         {% elif answer.file_type == 'video' %}
-                            <video src="{{ MEDIA_URL }}{{ answer.answer }}" controls class="w-full h-auto border p-2 rounded mb-4"></video>
+                            <video src="{{ inline_file_url }}" controls class="w-full h-auto border p-2 rounded mb-4"></video>
                         {% elif answer.file_type == 'audio' %}
-                            <audio src="{{ MEDIA_URL }}{{ answer.answer }}" controls class="w-full py-2 my-4"></audio>
+                            <audio src="{{ inline_file_url }}" controls class="w-full py-2 my-4"></audio>
                         {% elif answer.file_type == 'application' %}
                             <div class="mb-4">
-                                <a class="btn_primary_blue" href="{{ MEDIA_URL }}{{ answer.answer }}" target="_blank">View File</a>
+                                <a class="btn_primary_blue" href="{{ inline_file_url }}" target="_blank">View File</a>
                             </div>
                         {% endif%}
                         <div class="mb-4">
-                            <a class="btn_primary_orange" href="{{ MEDIA_URL }}{{ answer.answer }}" download>Download</a>
+                            <a class="btn_primary_orange" href="{{ download_file_url }}" download>Download</a>
                         </div>
                     </div>
             {% elif answer.questionId.datatype.name == 'Multiple_Choice' %}
