@@ -15,12 +15,12 @@ from django.views.decorators.http import require_http_methods
 from ...models import FileItem, FileShare, User, UserType, WopiAccessToken
 
 import os
-import mimetypes
 import uuid
 import logging
 import hashlib
 import secrets
 import datetime
+import puremagic
 from urllib.parse import quote
 from urllib.parse import urlsplit, urlunsplit
 from urllib.request import urlopen
@@ -33,6 +33,33 @@ FILES_USER_TOKEN_SALT = 'di4d-files-user-token'
 FILES_SHARE_TARGET_TOKEN_SALT = 'di4d-files-share-target-token'
 FILES_MODIFIED_CACHE_TTL_SECONDS = 300
 WOPI_LOCK_CACHE_PREFIX = 'wopi-lock:'
+
+
+def _detect_content_type(file_handle, file_name):
+    default_type = 'application/octet-stream'
+    try:
+        file_path = getattr(file_handle, 'name', None)
+        if isinstance(file_path, str) and os.path.exists(file_path):
+            matches = puremagic.magic_file(file_path)
+            if isinstance(matches, list) and matches:
+                first_match = matches[0]
+                if isinstance(first_match, (list, tuple)) and len(first_match) > 1:
+                    detected_type = first_match[1]
+                    if detected_type:
+                        return detected_type
+
+        header = file_handle.read(4096)
+        file_handle.seek(0)
+        if not header:
+            return default_type
+        detected_type = puremagic.from_string(header, mime=True, filename=file_name)
+        return detected_type or default_type
+    except Exception:
+        try:
+            file_handle.seek(0)
+        except Exception:
+            pass
+        return default_type
 
 
 def _get_collabora_base_url():
@@ -853,8 +880,8 @@ def files_download(request, item_token):
     if not item.s3Link or not default_storage.exists(item.s3Link):
         return HttpResponse(status=404)
 
-    content_type = mimetypes.guess_type(item.name or '')[0] or 'application/octet-stream'
     file_handle = default_storage.open(item.s3Link, 'rb')
+    content_type = _detect_content_type(file_handle, item.name or '')
     return FileResponse(file_handle, as_attachment=True, filename=item.name, content_type=content_type)
 
 
@@ -938,8 +965,8 @@ def wopi_get_file(request, file_id):
     if not file_item.s3Link or not default_storage.exists(file_item.s3Link):
         return HttpResponse(status=404)
 
-    content_type = mimetypes.guess_type(file_item.name or '')[0] or 'application/octet-stream'
     file_handle = default_storage.open(file_item.s3Link, 'rb')
+    content_type = _detect_content_type(file_handle, file_item.name or '')
     return FileResponse(file_handle, as_attachment=False, filename=file_item.name, content_type=content_type)
 
 

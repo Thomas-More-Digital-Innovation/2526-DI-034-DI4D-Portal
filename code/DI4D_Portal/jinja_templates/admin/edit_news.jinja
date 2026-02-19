@@ -29,7 +29,7 @@
             </div>
         </div>
         <label for="{{ form.picture.id_for_label }}" class="text-black w-full">Picture</label>
-        <div x-data="{hidden:false, preview:'', filename:''}" class="w-full py-2 rounded-md border border-[var(--white_grey)] py-6 relative" :style="hidden ? '' : ({% if form.instance.picture %}'background-image: url(\'{{ form.instance.picture.url }}\')'{% else %}''{% endif %})">
+        <div x-data="{hidden:false, preview:'', filename:''}" class="w-full py-2 rounded-md border border-[var(--white_grey)] py-6 relative" :style="hidden ? '' : ({% if form.instance.picture and mediaPath %}'background-image: url(\'{{ url('news_picture', kwargs={'mediaPath': mediaPath}) }}\')'{% else %}''{% endif %})">
             <div x-show="!hidden" class="absolute inset-0 bg-black opacity-50 rounded-md pointer-events-none"></div>
             
             <!-- Upload --> 
