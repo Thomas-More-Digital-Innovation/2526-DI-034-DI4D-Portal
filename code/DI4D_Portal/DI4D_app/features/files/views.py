@@ -38,6 +38,16 @@ WOPI_LOCK_CACHE_PREFIX = 'wopi-lock:'
 def _detect_content_type(file_handle, file_name):
     default_type = 'application/octet-stream'
     try:
+        file_path = getattr(file_handle, 'name', None)
+        if isinstance(file_path, str) and os.path.exists(file_path):
+            matches = puremagic.magic_file(file_path)
+            if isinstance(matches, list) and matches:
+                first_match = matches[0]
+                if isinstance(first_match, (list, tuple)) and len(first_match) > 1:
+                    detected_type = first_match[1]
+                    if detected_type:
+                        return detected_type
+
         header = file_handle.read(4096)
         file_handle.seek(0)
         if not header:
