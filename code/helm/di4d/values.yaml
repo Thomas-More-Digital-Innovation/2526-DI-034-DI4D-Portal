@@ -241,6 +241,7 @@ collabora:
     className: ""
     annotations:
       cert-manager.io/cluster-issuer: "letsencrypt-production"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     host: "office.di4d.davidmaat.be"
     tls:
       - secretName: collabora-office-tls
