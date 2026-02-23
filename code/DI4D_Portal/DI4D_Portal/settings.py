@@ -162,6 +162,22 @@ USE_I18N = True
 
 USE_TZ = True
 
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+WHITENOISE_MANIFEST_STRICT = os.getenv("WHITENOISE_MANIFEST_STRICT", "False").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+
 # Media files (Uploaded by users)
 if USE_S3:
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "")
@@ -188,13 +204,8 @@ if USE_S3:
     if not AWS_STORAGE_BUCKET_NAME:
         raise ValueError("USE_S3 is enabled, but AWS_STORAGE_BUCKET_NAME is not set.")
 
-    STORAGES = {
-        "default": {
-            "BACKEND": "storages.backends.s3.S3Storage",
-        },
-        "staticfiles": {
-            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-        },
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
     }
 
     if AWS_S3_CUSTOM_DOMAIN:
@@ -208,7 +219,6 @@ if USE_S3:
 else:
     MEDIA_URL = '/media/'
     MEDIA_ROOT = BASE_DIR / 'media'
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 # CKEditor configuration
 
 CKEDITOR_5_CONFIGS = {
