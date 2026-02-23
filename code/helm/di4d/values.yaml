@@ -199,6 +199,26 @@ env:
     value: "False"
   - name: EMAIL_BACKEND
     value: "django.core.mail.backends.smtp.EmailBackend"
+  - name: USE_S3
+    value: "True"
+  - name: AWS_ACCESS_KEY_ID
+    value: "change-me"
+  - name: AWS_SECRET_ACCESS_KEY
+    value: "change-me"
+  - name: AWS_STORAGE_BUCKET_NAME
+    value: "di4d-test"
+  - name: AWS_S3_REGION_NAME
+    value: "eu-west-1"
+  - name: AWS_S3_ENDPOINT_URL
+    value: "https://4861be7f4b44d74202950efd3ac0b13a.r2.cloudflarestorage.com"
+  - name: AWS_S3_CUSTOM_DOMAIN
+    value: ""
+  - name: AWS_LOCATION
+    value: "media"
+  - name: AWS_S3_FILE_OVERWRITE
+    value: "False"
+  - name: AWS_QUERYSTRING_AUTH
+    value: "False"
 
 # Collabora CODE configuration
 collabora:
