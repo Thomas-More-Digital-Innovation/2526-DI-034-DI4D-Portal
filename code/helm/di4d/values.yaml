@@ -239,9 +239,13 @@ collabora:
   ingress:
     enabled: false
     className: ""
-    annotations: {}
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-production"
     host: "office.di4d.davidmaat.be"
-    tls: []
+    tls:
+      - secretName: collabora-office-tls
+        hosts:
+          - office.di4d.davidmaat.be
   appEnv:
     enabled: true
     collaboraCodeUrl: ""
