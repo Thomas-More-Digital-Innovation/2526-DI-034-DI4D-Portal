@@ -222,7 +222,7 @@ env:
 
 # Collabora CODE configuration
 collabora:
-  enabled: false
+  enabled: true
   image:
     repository: collabora/code
     tag: "25.04.9.1.1"
