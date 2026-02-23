@@ -1,4 +1,5 @@
 {{- if .Values.collabora.enabled }}
+{{- $collaboraAuthSecret := default (printf "%s-collabora-auth" (include "di4d.fullname" .)) .Values.collabora.auth.existingSecret }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,9 +29,15 @@ spec:
               protocol: TCP
           env:
             - name: username
-              value: {{ .Values.collabora.auth.username | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $collaboraAuthSecret }}
+                  key: username
             - name: password
-              value: {{ .Values.collabora.auth.password | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $collaboraAuthSecret }}
+                  key: password
             - name: aliasgroup1
               value: {{ .Values.collabora.aliasgroup1 | quote }}
           {{- with .Values.collabora.resources }}

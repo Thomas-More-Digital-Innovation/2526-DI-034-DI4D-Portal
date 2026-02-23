@@ -231,6 +231,7 @@ collabora:
     type: ClusterIP
     port: 9980
   auth:
+    existingSecret: ""
     username: admin
     password: admin
   aliasgroup1: "https://.*"
