@@ -226,7 +226,14 @@ CKEDITOR_5_CONFIGS = {
         'toolbar': ['heading','bold','italic','link','bulletedList','numberedList','blockQuote','imageUpload','insertTable','undo','redo'],
         'height': 400,
         'contentCss': ['/static/news.css'],
-        'heading': {'options':[{'model':'paragraph','title':'Paragraph','class':'ck-heading_paragraph'}]},
+        'heading':{
+            'options': [
+                {'model': 'paragraph',       'title': 'Paragraph',  'class': 'ck-heading_paragraph'},
+                {'model': 'heading1',         'view': 'h2',          'title': 'Title',     'class': 'ck-heading_heading1'},
+                {'model': 'heading2',         'view': 'h3',          'title': 'Subtitle',  'class': 'ck-heading_heading2'},
+                {'model': 'heading3',         'view': 'h4',          'title': 'Heading 3', 'class': 'ck-heading_heading3'},
+            ]
+        },
         'removePlugins': ['WordCount','CKBox','CKFinderUploadAdapter','EasyImage','CloudServices'],
     }
 }

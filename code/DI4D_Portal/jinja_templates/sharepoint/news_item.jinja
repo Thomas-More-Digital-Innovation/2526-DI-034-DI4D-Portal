@@ -2,12 +2,12 @@
 {% block title %}News - DI4D Portal{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{{ static('news.css') }}">{% endblock %}
 
-{% block banner %}
+{# {% block banner %}
 <div class="h-32 w-full bg-cover bg-center border-4 border-[--blue_di4d]" style="background-image: url('{{ url('news_picture', kwargs={'mediaPath': news_article.mediaPath}) }}')"></div>
-{% endblock %}
+{% endblock %} #}
 
 {% block content %}
-<div class="bg-white min-h-screen w-80 md:w-full mx-auto">
+<div class="bg-white min-h-screen w-80 md:w-full md:max-w-4xl mx-auto">
     <div class="w-full mx-auto flex flex-col">
         <div>
             <h1 class="text-3xl lg:text-4xl font-bold text-black mb-4 break-words">{{ news_article.title }}</h1>

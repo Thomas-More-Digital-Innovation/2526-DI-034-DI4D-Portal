@@ -1,18 +1,37 @@
-.news-content img {
+.news-content img, .ck-content img {
     max-width: 100%;
     width: 400px;
     height: auto;
 }
 
-.news-content table {
+.news-content table, .ck-content table {
     width: 100%;
     overflow-x: auto;
     display: block;
 }
 
-td {
+.news-content td, .ck-content td {
     border: 1px solid black;
     padding: 8px;
+}
+
+.news-content h2, .ck-content h2 {
+    font-size: 26px;
+    font-weight: bold;
+}
+
+.news-content h3, .ck-content h3 {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.news-content h4, .ck-content h4{
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.news-content p, .ck-content p {
+    font-size: 16px;
 }
 
 .ck-content ul, .news-content ul { list-style: disc; padding-left: 40px; }
