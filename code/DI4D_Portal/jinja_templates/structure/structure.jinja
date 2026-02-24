@@ -57,12 +57,12 @@
     </div>
     {% if show_actions %}
       <div class="flex gap-2 mt-3">
-        <button type="button" class="btn_primary_blue flex-1 text-sm h-9 inline-flex items-center justify-center gap-2"
+        <button type="button" class="btn_primary_light_blue flex-1 text-sm h-9 inline-flex items-center justify-center gap-2"
                 @click="currentEditId = {{ talk.id }}, title = '{{ talk.title }}', speaker = '{{ talk.speaker }}', description = '{{ talk.description }}', date = '{{ talk.date }}', thubnail = '{{ talk.thubnail }}', videoPath = '{{ talk.videoPath }}', isPublic = {{ 'true' if talk.isPublic else 'false' }}, open_edit_talk = true">
           <i class="fa-solid fa-pen"></i>
           <span>Edit</span>
         </button>
-        <button type="button" class="btn flex-1 text-white bg-[--red] text-sm h-9 inline-flex items-center justify-center gap-2"
+        <button type="button" class="rounded-lg flex-1 text-white bg-[--red] text-sm h-9 inline-flex items-center justify-center gap-2"
                 @click="currentDeleteId = {{ talk.id }}, currentDeleteName = '{{ talk.title }}'">
           <i class="fa-solid fa-trash"></i>
           <span>Delete</span>
@@ -155,47 +155,67 @@
 
 {# NEW VERSION OF NEWS ITEM BOX #}
 {% macro news_item(article, color, request) %}
-<div class="{% if color%} bg-[{{ color }}] {% else %}bg-white{% endif %} rounded-lg news w-full h-full flex flex-col p-6">
-  <div class="flex flex-col md:flex-row gap-2 items-stretch h-full">
-      <img src="{{ url('news_picture', kwargs={'mediaPath': article.mediaPath}) }}" alt="{{ article.title }}" 
-          class="w-32 h-32 md:w-48 md:h-48 md:basis-2/5 aspect-square object-cover rounded mx-auto" />
-      <div class="md:basis-3/5 flex flex-col h-full">
-        <div class="flex-1">
-          <h3 class="text-2xl mb-2">{{ article.title }} {% if article.isPublic == false %}<i class="fa-solid fa-lock"></i>{% endif %}</h3>
-          {# Line clamp is to limit the number of lines shown for the description (add also ...) #}
-          <p class="mb-4 text-[var(--light_grey)] line-clamp-4">{{ article.description }}</p>
+<div class="{% if color %}bg-[{{ color }}]{% else %}bg-white{% endif %} rounded-lg overflow-hidden shadow-lg flex flex-col h-full">
+  <div class="flex flex-col md:flex-row flex-grow overflow-hidden">
+    <div class="w-full h-48 md:w-48 md:h-auto shrink-0 overflow-hidden bg-gray-100 flex items-center justify-center">
+      {% if article.mediaPath %}
+        <img src="{{ url('news_picture', kwargs={'mediaPath': article.mediaPath}) }}"
+             alt="{{ article.title }}"
+             class="w-full h-full object-cover" />
+      {% else %}
+        <div class="w-full h-full bg-gradient-to-b from-blue-600 to-blue-800 flex items-center justify-center">
+          <span class="text-white text-sm font-bold text-center px-3">{{ article.title }}</span>
         </div>
-        {% if request and request.user.is_authenticated and request.user.role_is_admin() %}
-          <div class="text-[var(--light_grey)] text-sm">
-              <p><i class="fa-regular fa-calendar"></i> {{ article.lastEditDate }}</p>
-              {% if article.showAuthor %}
-                <p><i class="fa-solid fa-file-pen"></i> {{ article.author.firstname }} {{ article.author.lastname }}</p>
-              {% endif %}
-          </div>
-        {% else %}
-          <div class="flex items-end justify-between">
-            <div class="text-[var(--light_grey)] text-sm">
-              <p><i class="fa-regular fa-calendar"></i> {{ article.lastEditDate }}</p>
-                {% if article.showAuthor %}
-                  <p><i class="fa-solid fa-file-pen"></i> {{ article.author.firstname }} {{ article.author.lastname }}</p>
-                {% endif %}
-            </div>
-              <a class="btn_primary_orange px-6 py-2" 
-              href="{{ url('view_news_item', args=[article.mediaPath]) }}">Read it here</a>
-          </div>
+      {% endif %}
+    </div>
+
+    <div class="p-4 flex flex-col flex-grow min-w-0">
+      <h3 class="text-lg font-bold mb-2 text-gray-900 line-clamp-2">
+        {{ article.title }}
+        {% if article.isPublic == false %}<i class="fa-solid fa-lock text-gray-400"></i>{% endif %}
+      </h3>
+      {# Line clamp is to limit the number of lines shown for the description (add also ...) #}
+      <p class="text-sm text-gray-600 mb-4 flex-grow line-clamp-4">{{ article.description }}</p>
+
+      <div class="text-sm text-gray-500 flex flex-col gap-1 mb-3">
+        <div class="flex items-center gap-2">
+          <i class="fa-regular fa-calendar"></i>
+          <span>{{ article.lastEditDate }}</span>
+        </div>
+        {% if article.showAuthor %}
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-file-pen"></i>
+          <span class="line-clamp-1">{{ article.author.firstname }} {{ article.author.lastname }}</span>
+        </div>
         {% endif %}
       </div>
-    </div>
-    {% if request and request.user.is_authenticated and request.user.role_is_admin() %}
-      <div x-data="{currentDeleteId: null, currentDeleteName: null}">
-        <div class="mt-6 flex flex-row gap-2 w-full justify-end">
-          <div><a class="btn_primary_light_blue h-full text-sm" href="{{ url('edit_news', args=[article.mediaPath]) }}"><i class="fa-solid fa-pencil"></i> Edit</a></div>
-          <div><a class="btn_primary_red h-full cursor-pointer text-sm" @click="currentDeleteId={{ article.id }}; currentDeleteName='{{ article.title }}'"><i class="fa-solid fa-trash"></i> Delete</a></div>
-          <div><a class="btn_primary_orange h-full text-sm" href="{{ url('view_news_item', args=[article.mediaPath]) }}">Read it here</a></div>
+
+      {% if request and request.user.is_authenticated and request.user.role_is_admin() %}
+        <div class="flex flex-wrap gap-2 mt-auto pt-2 border-t border-gray-100">
+          <a class="btn_primary_light_blue flex-1 min-w-fit text-sm h-9 px-3 inline-flex items-center justify-center gap-1 whitespace-nowrap"
+             href="{{ url('edit_news', args=[article.mediaPath]) }}">
+            <i class="fa-solid fa-pencil shrink-0"></i>
+            <span>Edit</span>
+          </a>
+          <button type="button"
+                  class="rounded-lg flex-1 min-w-fit text-white bg-[--red] text-sm h-9 px-3 inline-flex items-center justify-center gap-1 whitespace-nowrap"
+                  @click="currentDeleteId = {{ article.id }}, currentDeleteName = '{{ article.title }}'">
+            <i class="fa-solid fa-trash shrink-0"></i>
+            <span>Delete</span>
+          </button>
+          <a class="btn_primary_orange flex-1 min-w-fit text-sm h-9 px-3 inline-flex items-center justify-center gap-1 whitespace-nowrap"
+             href="{{ url('view_news_item', args=[article.mediaPath]) }}">
+            <span>Read it here</span>
+          </a>
         </div>
-        {{ delete_confirm_modal("Delete News Article", request.META.CSRF_COOKIE) }}
-      </div>
-    {% endif %}
+      {% else %}
+        <div class="mt-auto">
+          <a class="btn_primary_orange text-sm h-9 px-4 inline-flex items-center justify-center whitespace-nowrap"
+             href="{{ url('view_news_item', args=[article.mediaPath]) }}">Read it here</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
 </div>
 {% endmacro %}
 
