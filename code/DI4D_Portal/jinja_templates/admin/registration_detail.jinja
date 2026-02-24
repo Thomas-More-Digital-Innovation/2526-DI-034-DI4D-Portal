@@ -5,7 +5,9 @@
 <div>
     <h1 class="text-3xl lg:text-4xl font-bold text-black">Registration {{ item.submission_number }}</h1>
     <div class="mt-4 max-w-3xl">
-        {% for answer in answers %}
+        <a href="{{ url('student_registrations') }}" class="btn_primary_blue"><i class="fa-solid fa-arrow-left"></i> Back</a>
+        <div class="mt-6">
+            {% for answer in answers %}
             <p class="text-lg font-bold mt-2">{{ answer.questionId.question }} :</p>
             {% if answer.questionId.datatype.name == 'Text' %}
                 <p class="text-lg border p-2 rounded break-words">{{ answer.answer }}</p>
@@ -47,6 +49,7 @@
                 <button type="submit" name="submit" value="deny" class="btn_primary_red flex-1">Deny</button>
             </form>
             {{ info_modal_redirect("info", "You have "+status+" the registration!", "Registration "+item.submission_number|string+" is succesfully "+status, "student_registrations") }}
+        </div>
         </div>
     </div>
 </div>

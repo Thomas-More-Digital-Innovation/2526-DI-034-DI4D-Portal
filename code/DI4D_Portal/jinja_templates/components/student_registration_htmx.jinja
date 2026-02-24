@@ -7,19 +7,19 @@
                     <div class="w-4 h-4 rounded-full bg-gray-500 flex-shrink-0 border border-black"></div>
                     <span>Registration {{ submission.0 }} - {{ submission.1 }}</span>
                     <a class="px-4 bg-[--blue_di4d] text-center text-white mx-2 py-1 rounded-xl w-28" href="{{ url('student_registration_detail', kwargs={'submission_number': submission.0}) }}">
-                        Evaluate
+                        <span class="flex items-center gap-2 justify-center"><i class="fa-solid fa-eye"></i> Evaluate</span>
                     </a>
                 {% elif submission.2 == 'approved' %}
                     <div class="w-4 h-4 rounded-full bg-green-800 flex-shrink-0 border border-black"></div>
                     <span>Registration {{ submission.0 }} - {{ submission.1 }}</span>
                     <a class="px-4 bg-[--orange_di4d] text-center text-white mx-2 py-1 rounded-xl w-28" href="{{ url('student_registration_detail', kwargs={'submission_number': submission.0}) }}">
-                        Approved
+                        <span class="flex items-center gap-2 justify-center"><i class="fa-solid fa-eye"></i> Approved</span>
                     </a>
                 {% elif submission.2 == 'denied' %}
                     <div class="w-4 h-4 rounded-full bg-red-800 flex-shrink-0 border border-black"></div>
                     <span>Registration {{ submission.0 }} - {{ submission.1 }}</span>
                     <a class="px-4 bg-[--orange_di4d] text-center text-white mx-2 py-1 rounded-xl w-28" href="{{ url('student_registration_detail', kwargs={'submission_number': submission.0}) }}">
-                        Denied
+                        <span class="flex items-center gap-2 justify-center"><i class="fa-solid fa-eye"></i> Denied</span>
                     </a>
                 {% endif %}
             </li>
