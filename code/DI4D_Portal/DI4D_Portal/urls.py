@@ -45,6 +45,7 @@ urlpatterns = [
     path('export_data/', views.export_data, name='export_data'),
     path('users_data/', views.users_data, name='users_data'),
     path('learninggoals_data/', views.learninggoals_data, name='learninggoals_data'),
+    path('forms_data/<int:form_id>/', views.forms_data, name='forms_data'),
     path('news/edit/', views.edit_news, name='edit_news'),
     path('news/edit/<str:mediaPath>/', views.edit_news, name='edit_news'),
     path('news/<str:mediaPath>/picture/', views.news_picture, name='news_picture'),
