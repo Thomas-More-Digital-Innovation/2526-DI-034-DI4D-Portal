@@ -35,7 +35,7 @@
     {{ delete_confirm_modal("Delete Tech Talk", csrf_token) }}
 
     {% call empty_modal('add_talk', 'Add Tech Talk') %}
-        <form method="post" class="flex flex-col gap-3">
+        <form method="post" enctype="multipart/form-data" class="flex flex-col gap-3">
             <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
             <input type="hidden" name="action" value="create"/>
             <label class="text-white" for="add_title">Title</label>
@@ -44,10 +44,10 @@
             <input id="add_speaker" name="speaker" type="text" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="speaker"/>
             <label class="text-white" for="add_date">Date</label>
             <input id="add_date" name="date" type="date" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="date"/>
-            <label class="text-white" for="add_thumbnail">Thumbnail URL</label>
-            <input id="add_thumbnail" name="thubnail" type="text" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="thubnail"/>
-            <label class="text-white" for="add_video">Video URL</label>
-            <input id="add_video" name="videoPath" type="text" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="videoPath"/>
+            <label class="text-white" for="add_thumbnail">Thumbnail</label>
+            <input id="add_thumbnail" name="thubnail" type="file" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required accept="image/*"/>
+            <label class="text-white" for="add_video">Video(accepts: mp4, webm, ogg)</label>
+            <input id="add_video" name="videoPath" type="file" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required accept="video/mp4,video/webm,video/ogg"/>
             <label class="text-white" for="add_description">Description</label>
             <textarea id="add_description" name="description" rows="3" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="description"></textarea>
             <label class="text-white flex items-center gap-2">
@@ -62,7 +62,7 @@
     {% endcall %}
 
     {% call empty_modal('edit_talk', 'Edit Tech Talk') %}
-        <form method="post" class="flex flex-col gap-3">
+        <form method="post" enctype="multipart/form-data" class="flex flex-col gap-3">
             <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
             <input type="hidden" name="action" value="edit"/>
             <input type="hidden" name="talk_id" x-bind:value="currentEditId"/>
@@ -72,10 +72,10 @@
             <input id="edit_speaker" name="speaker" type="text" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="speaker"/>
             <label class="text-white" for="edit_date">Date</label>
             <input id="edit_date" name="date" type="date" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="date"/>
-            <label class="text-white" for="edit_thumbnail">Thumbnail URL</label>
-            <input id="edit_thumbnail" name="thubnail" type="text" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="thubnail"/>
-            <label class="text-white" for="edit_video">Video URL</label>
-            <input id="edit_video" name="videoPath" type="text" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="videoPath"/>
+            <label class="text-white" for="edit_thumbnail">Thumbnail (leave empty to keep current)</label>
+            <input id="edit_thumbnail" name="thubnail" type="file" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" accept="image/*"/>
+            <label class="text-white" for="edit_video">Video (leave empty to keep current)</label>
+            <input id="edit_video" name="videoPath" type="file" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" accept="video/mp4,video/webm,video/ogg"/>
             <label class="text-white" for="edit_description">Description</label>
             <textarea id="edit_description" name="description" rows="3" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="description"></textarea>
             <label class="text-white flex items-center gap-2">

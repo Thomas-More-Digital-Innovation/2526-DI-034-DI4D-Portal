@@ -26,7 +26,7 @@
 <div class="{% if color %}bg-[{{ color }}]{% else %}bg-white{% endif %} rounded-lg overflow-hidden shadow-lg flex flex-col h-full">
   <div class="w-full h-40 overflow-hidden bg-gray-100 flex items-center justify-center">
     {% if talk.thubnail %}
-      <img src="{{ talk.thubnail }}" alt="{{ talk.title }}" 
+      <img src="{{ talk.thubnail.url }}" alt="{{ talk.title }}" 
            class="w-full h-full object-cover" />
     {% else %}
       <div class="w-full h-full bg-gradient-to-r from-blue-600 to-blue-800 flex items-center justify-center">

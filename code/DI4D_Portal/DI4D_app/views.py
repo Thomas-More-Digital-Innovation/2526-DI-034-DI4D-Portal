@@ -510,19 +510,21 @@ def tech_talks(request):
             speaker = request.POST.get("speaker", "").strip()
             description = request.POST.get("description", "").strip()
             date_value = request.POST.get("date")
-            thubnail = request.POST.get("thubnail", "").strip()
-            video_path = request.POST.get("videoPath", "").strip()
             is_public = request.POST.get("isPublic") == "on"
 
+            # Handle files upload
+            thumbnail_file = request.FILES.get("thubnail")
+            video_file = request.FILES.get("videoPath")
+
             if action == "create":
-                if title and speaker and description and date_value and thubnail and video_path:
+                if title and speaker and description and date_value and thumbnail_file and video_file:
                     TechTalk.objects.create(
                         title=title,
                         speaker=speaker,
                         description=description,
                         date=date_value,
-                        thubnail=thubnail,
-                        videoPath=video_path,
+                        thubnail=thumbnail_file,
+                        videoPath=video_file,
                         isPublic=is_public,
                     )
                 return redirect('tech_talks')
@@ -537,8 +539,10 @@ def tech_talks(request):
                         talk.description = description
                         if date_value:
                             talk.date = date_value
-                        talk.thubnail = thubnail
-                        talk.videoPath = video_path
+                        if thumbnail_file:
+                            talk.thubnail = thumbnail_file
+                        if video_file:
+                            talk.videoPath = video_file
                         talk.isPublic = is_public
                         talk.save()
                 return redirect('tech_talks')
@@ -560,38 +564,8 @@ def tech_talk_detail(request, talk_id):
     talk = TechTalk.objects.get(id=talk_id, isPublic=True)
     recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
 
-    video_url = (talk.videoPath or "").strip()
-    # Normalize backslashes to forward slashes for URL
-    video_url = video_url.replace("\\", "/")
-    
-    def is_video_by_header(file_path: str) -> bool:
-        try:
-            kind = filetype.guess(file_path)
-            return kind is not None and kind.mime.startswith('video/')
-        except Exception:
-            return False
-
-    def is_video_by_url(url: str) -> bool:
-        try:
-            url_request = request.Request(url, method="HEAD")
-            with request.urlopen(url_request, timeout=5) as response:
-                content_type = response.headers.get('Content-Type', '')
-            return content_type.startswith('video/')
-        except Exception:
-            return False
-
-    is_local_video = False
-    if video_url.startswith(('http://', 'https://')):
-        is_local_video = is_video_by_url(video_url)
-    else:
-        local_path = os.path.join(settings.MEDIA_ROOT, video_url.lstrip('/'))
-        is_local_video = is_video_by_header(local_path)
-
-    # Build full media URL for local videos
-    if is_local_video and not video_url.startswith(('http://', 'https://')):
-        # Remove leading slash if present to avoid double slashes
-        video_url = video_url.lstrip('/')
-        video_url = settings.MEDIA_URL + video_url
+    video_url = talk.videoPath.url if talk.videoPath else ""
+    is_local_video = bool(talk.videoPath)
 
     context = {
         "talk": talk,
@@ -614,38 +588,8 @@ def tech_talk_detail(request, talk_id):
     talk = TechTalk.objects.get(id=talk_id, isPublic=True)
     recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
 
-    video_url = (talk.videoPath or "").strip()
-    # Normalize backslashes to forward slashes for URL
-    video_url = video_url.replace("\\", "/")
-    
-    def is_video_by_header(file_path: str) -> bool:
-        try:
-            kind = filetype.guess(file_path)
-            return kind is not None and kind.mime.startswith('video/')
-        except Exception:
-            return False
-
-    def is_video_by_url(url: str) -> bool:
-        try:
-            url_request = request.Request(url, method="HEAD")
-            with request.urlopen(url_request, timeout=5) as response:
-                content_type = response.headers.get('Content-Type', '')
-            return content_type.startswith('video/')
-        except Exception:
-            return False
-
-    is_local_video = False
-    if video_url.startswith(('http://', 'https://')):
-        is_local_video = is_video_by_url(video_url)
-    else:
-        local_path = os.path.join(settings.MEDIA_ROOT, video_url.lstrip('/'))
-        is_local_video = is_video_by_header(local_path)
-
-    # Build full media URL for local videos
-    if is_local_video and not video_url.startswith(('http://', 'https://')):
-        # Remove leading slash if present to avoid double slashes
-        video_url = video_url.lstrip('/')
-        video_url = settings.MEDIA_URL + video_url
+    video_url = talk.videoPath.url if talk.videoPath else ""
+    is_local_video = bool(talk.videoPath)
 
     context = {
         "talk": talk,
