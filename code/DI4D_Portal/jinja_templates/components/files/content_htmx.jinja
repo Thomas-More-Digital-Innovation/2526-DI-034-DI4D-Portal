@@ -49,15 +49,25 @@
         </select>
     </div>
 
-    <div class="flex items-center justify-between gap-2">
-        <a class="btn_primary_blue 
+    <div class="flex items-end">
+        <a class="btn_primary_blue rounded-b-none
                 {% if view_mode == 'mine' %}
-                    bg-gray-300 hover:bg-gray-400
-                {% endif %}" {% if view_mode=='shared' %} href="{{ url('files') }}?view_mode=mine" {%else%} href="#"
-            {%endif%}>My files</a>
-        <a class="btn_primary_blue {% if view_mode == 'shared' %}bg-gray-300 hover:bg-gray-400{% endif %}" {% if
-            view_mode=='mine' %}href="{{ url('files') }}?view_mode=shared" {%else%}href="#" {%endif%}>Shared with
-            me</a>
+                    opacity-100
+                {% else %}
+                    opacity-60 hover:opacity-80
+                {% endif %}"
+            {% if view_mode == 'shared' %}href="{{ url('files') }}?view_mode=mine"{% else %}href="#"{% endif %}>
+            My files
+        </a>
+        <a class="btn_primary_blue rounded-b-none
+                {% if view_mode == 'shared' %}
+                    opacity-100
+                {% else %}
+                    opacity-60 hover:opacity-80
+                {% endif %}"
+            {% if view_mode == 'mine' %}href="{{ url('files') }}?view_mode=shared"{% else %}href="#"{% endif %}>
+            Shared with me
+        </a>
     </div>
 </form>
 
