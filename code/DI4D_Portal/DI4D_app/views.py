@@ -560,9 +560,12 @@ def tech_talks(request):
     return render(request, 'public/techtalks.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query, "active_page": active_page})
 
 def tech_talk_detail(request, talk_id):
-
-    talk = TechTalk.objects.get(id=talk_id, isPublic=True)
-    recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
+    if request.user.is_authenticated:
+        talk = TechTalk.objects.get(id=talk_id)
+        recent_talks = TechTalk.objects.exclude(id=talk.id).order_by("-date", "-id")[:2]
+    else:
+        talk = TechTalk.objects.get(id=talk_id, isPublic=True)
+        recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
 
     video_url = talk.videoPath.url if talk.videoPath else ""
     is_local_video = bool(talk.videoPath)
@@ -581,26 +584,6 @@ def tech_talk_detail(request, talk_id):
 
     if request.user.is_authenticated:
         return render(request, 'sharepoint/techtalk_detail.jinja', context)
-    return render(request, 'public/techtalk_detail.jinja', context)
-
-def tech_talk_detail(request, talk_id):
-
-    talk = TechTalk.objects.get(id=talk_id, isPublic=True)
-    recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
-
-    video_url = talk.videoPath.url if talk.videoPath else ""
-    is_local_video = bool(talk.videoPath)
-
-    context = {
-        "talk": talk,
-        "recent_talks": recent_talks,
-        "video_url": video_url,
-        "is_local_video": is_local_video,
-    }
-
-    if request.headers.get("HX-Request") == "true":
-        return render(request, 'components/techtalk_detail_htmx.jinja', context)
-
     return render(request, 'public/techtalk_detail.jinja', context)
 
 @login_required(login_url='login')
