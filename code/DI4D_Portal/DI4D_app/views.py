@@ -584,13 +584,11 @@ def tech_talk_detail(request, talk_id):
         recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
 
     video_url = talk.videoPath.url if talk.videoPath else ""
-    is_local_video = bool(talk.videoPath)
-
     context = {
         "talk": talk,
         "recent_talks": recent_talks,
         "video_url": video_url,
-        "is_local_video": is_local_video,
+        "is_authenticated": request.user.is_authenticated,
     }
 
     if request.headers.get("HX-Request") == "true":
@@ -601,6 +599,32 @@ def tech_talk_detail(request, talk_id):
     if request.user.is_authenticated:
         return render(request, 'sharepoint/techtalk_detail.jinja', context)
     return render(request, 'public/techtalk_detail.jinja', context)
+
+@login_required(login_url='login')
+def download_techtalk_video(request, talk_id):
+    """Download a TechTalk video file (authenticated users only)"""
+    try:
+        talk = TechTalk.objects.get(id=talk_id)
+        if not talk.videoPath:
+            return HttpResponse("Video not found", status=404)
+        
+        file_path = talk.videoPath.path
+        file_name = os.path.basename(file_path)
+        
+        try:
+            # Detect MIME type based on file extension
+            mime_type = _detect_content_type_from_storage(talk.videoPath.name, file_name)
+            if not mime_type.startswith('video/'):
+                mime_type = 'application/octet-stream'
+            
+            response = FileResponse(open(file_path, 'rb'))
+            response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+            response['Content-Type'] = mime_type
+            return response
+        except FileNotFoundError:
+            return HttpResponse("Video file not found on disk", status=404)
+    except TechTalk.DoesNotExist:
+        return HttpResponse("Tech talk not found", status=404)
 
 @login_required(login_url='login')
 def settings_view(request):

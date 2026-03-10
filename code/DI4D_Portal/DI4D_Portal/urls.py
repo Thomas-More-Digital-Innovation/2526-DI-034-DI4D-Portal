@@ -32,6 +32,7 @@ urlpatterns = [
     path('news/', views.news, name='news'),
     path('techtalks/', views.tech_talks, name='tech_talks'),
     path('techtalks/<int:talk_id>/', views.tech_talk_detail, name='tech_talk_detail'),
+    path('techtalks/<int:talk_id>/download/', views.download_techtalk_video, name='download_techtalk_video'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('files/', views.files_view, name='files'),
     path('files/download/<str:item_token>/', views.files_download, name='files_download'),
