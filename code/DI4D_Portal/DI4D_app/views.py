@@ -503,7 +503,23 @@ def tech_talks(request):
         if request.user.is_authenticated and (action in ["create", "edit", "delete"] or delete_id):
             if action == "delete" or delete_id:
                 if delete_id:
-                    TechTalk.objects.filter(id=delete_id).delete()
+                    try:
+                        tech_talk = TechTalk.objects.get(id=delete_id)
+                        # Delete the thumbnail and video 
+                        if tech_talk.thubnail:
+                            try:
+                                default_storage.delete(tech_talk.thubnail.name)
+                            except Exception as e:
+                                logger.error(f"Failed to delete thumbnail: {e}")
+                        if tech_talk.videoPath:
+                            try:
+                                default_storage.delete(tech_talk.videoPath.name)
+                            except Exception as e:
+                                logger.error(f"Failed to delete video: {e}")
+                        # Delete the TechTalk
+                        tech_talk.delete()
+                    except TechTalk.DoesNotExist:
+                        logger.warning(f"TechTalk with id {delete_id} not found")
                 return redirect('tech_talks')
 
             title = request.POST.get("title", "").strip()
