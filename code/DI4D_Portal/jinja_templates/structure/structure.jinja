@@ -77,18 +77,16 @@
 {% endmacro %}
 
 {# TECH TALK DETAIL BOX #}
-{% macro techtalk_detail(talk, recent_talks, video_url, embed_url, is_authenticated=false, info_bg="--blue_di4d", text_class="text-white", heading_class="text-white", video_bg="--blue_di4d", video_height_class="h-[32rem]", video_width_class="lg:w-3/4", video_bg_class=None, info_bg_class=None) %}
+{% macro techtalk_detail(talk, recent_talks, video_url, embed_url, is_authenticated=false, video_mime_type="video/mp4", info_bg="--blue_di4d", text_class="text-white", heading_class="text-white", video_bg="--blue_di4d", video_height_class="h-[32rem]", video_width_class="lg:w-3/4", video_bg_class=None, info_bg_class=None) %}
 <div>
   <div class="w-full {{ video_width_class }} mx-auto {% if video_bg_class %}{{ video_bg_class }}{% else %}bg-[var(--{{ video_bg }})]{% endif %} flex items-center justify-center {{ video_height_class }}">
       <video class="w-full h-full" controls controlslist="nodownload" disablepictureinpicture oncontextmenu="return false;">
-        <source src="{{ video_url }}" type="video/mp4" />
-        <source src="{{ video_url }}" type="video/webm" />
-        <source src="{{ video_url }}" type="video/ogg" />
+        <source src="{{ video_url }}" type="{{ video_mime_type }}" />
         Your browser does not support the video.
       </video>
   </div>
-  {% if is_authenticated and is_local_video %}
-  <div class="w-full {{ video_width_class }} mx-auto flex items-center justify-start p-3 bg-gray-100">
+  {% if is_authenticated%}
+  <div class="w-full {{ video_width_class }} mx-auto flex items-center justify-start p-3">
     <a href="{{ url('download_techtalk_video', args=[talk.id]) }}" class="btn_primary_orange inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white font-semibold hover:opacity-90 transition">
       <i class="fa-solid fa-download"></i> Download Video
     </a>

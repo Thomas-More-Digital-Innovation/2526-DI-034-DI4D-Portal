@@ -49,7 +49,8 @@ def _detect_content_type_from_storage(storage_path, file_name='', storage=None):
                 first_match = matches[0]
                 if isinstance(first_match, (list, tuple)) and len(first_match) > 1:
                     detected_type = first_match[1]
-                    if detected_type:
+                    # Added this because .mp4 where returning as MIME type 20
+                    if detected_type and isinstance(detected_type, str) and '/' in detected_type:
                         return detected_type
 
         header = file_handle.read(4096)
@@ -584,10 +585,17 @@ def tech_talk_detail(request, talk_id):
         recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
 
     video_url = talk.videoPath.url if talk.videoPath else ""
+    
+    # Detect MIME type for video
+    video_mime_type = "video/mp4"  # Default fallback
+    if talk.videoPath:
+        file_name = os.path.basename(talk.videoPath.name)
+        video_mime_type = _detect_content_type_from_storage(talk.videoPath.name, file_name)
     context = {
         "talk": talk,
         "recent_talks": recent_talks,
         "video_url": video_url,
+        "video_mime_type": video_mime_type,
         "is_authenticated": request.user.is_authenticated,
     }
 

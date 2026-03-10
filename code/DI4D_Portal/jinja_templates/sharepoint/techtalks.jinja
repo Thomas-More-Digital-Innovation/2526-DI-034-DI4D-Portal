@@ -61,9 +61,9 @@
                     </div>
                 </div>
             </div>
-            <label class="text-white" for="add_video">Video (accepts: mp4, webm, ogg)</label>
+            <label class="text-white" for="add_video">Video</label>
             <div class="bg-[var(--input_bg_color)] rounded-lg px-4 py-4 border-2 border-dashed border-[var(--input_text)] flex flex-col items-center justify-center gap-2 cursor-pointer hover:opacity-80 transition relative">
-                <input id="add_video" name="videoPath" type="file" class="opacity-0 w-full h-full absolute inset-0" accept="video/mp4,video/webm,video/ogg" required x-ref="addVideoInput" @change="const f = $event.target.files[0]; if(f){ video_filename = f.name; }" />
+                <input id="add_video" name="videoPath" type="file" class="opacity-0 w-full h-full absolute inset-0" accept="video/*" required x-ref="addVideoInput" @change="const f = $event.target.files[0]; if(f){ video_filename = f.name; }" />
                 <div class="flex flex-col items-center justify-center gap-2 pointer-events-none">
                     <!-- Upload View -->
                     <div x-show="!video_filename" class="flex flex-col items-center justify-center gap-2 text-center">
@@ -121,7 +121,7 @@
             </div>
             <label class="text-white" for="edit_video">Video (leave empty to keep current)</label>
             <div class="bg-[var(--input_bg_color)] rounded-lg px-4 py-4 border-2 border-dashed border-[var(--input_text)] flex flex-col items-center justify-center gap-2 cursor-pointer hover:opacity-80 transition relative">
-                <input id="edit_video" name="videoPath" type="file" class="opacity-0 w-full h-full absolute inset-0" accept="video/mp4,video/webm,video/ogg" x-ref="editVideoInput" @change="const f = $event.target.files[0]; if(f){ edit_video_filename = f.name; }" />
+                <input id="edit_video" name="videoPath" type="file" class="opacity-0 w-full h-full absolute inset-0" accept="video/*" x-ref="editVideoInput" @change="const f = $event.target.files[0]; if(f){ edit_video_filename = f.name; }" />
                 <div class="flex flex-col items-center justify-center gap-2 pointer-events-none">
                     <!-- Upload View -->
                     <div x-show="!edit_video_filename" class="flex flex-col items-center justify-center gap-2 text-center">
