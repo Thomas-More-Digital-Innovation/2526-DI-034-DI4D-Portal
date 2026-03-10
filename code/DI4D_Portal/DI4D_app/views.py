@@ -49,7 +49,8 @@ def _detect_content_type_from_storage(storage_path, file_name='', storage=None):
                 first_match = matches[0]
                 if isinstance(first_match, (list, tuple)) and len(first_match) > 1:
                     detected_type = first_match[1]
-                    if detected_type:
+                    # Added this because .mp4 where returning as MIME type 20
+                    if detected_type and isinstance(detected_type, str) and '/' in detected_type:
                         return detected_type
 
         header = file_handle.read(4096)
@@ -503,26 +504,44 @@ def tech_talks(request):
         if request.user.is_authenticated and (action in ["create", "edit", "delete"] or delete_id):
             if action == "delete" or delete_id:
                 if delete_id:
-                    TechTalk.objects.filter(id=delete_id).delete()
+                    try:
+                        tech_talk = TechTalk.objects.get(id=delete_id)
+                        # Delete the thumbnail and video 
+                        if tech_talk.thubnail:
+                            try:
+                                default_storage.delete(tech_talk.thubnail.name)
+                            except Exception as e:
+                                logger.error(f"Failed to delete thumbnail: {e}")
+                        if tech_talk.videoPath:
+                            try:
+                                default_storage.delete(tech_talk.videoPath.name)
+                            except Exception as e:
+                                logger.error(f"Failed to delete video: {e}")
+                        # Delete the TechTalk
+                        tech_talk.delete()
+                    except TechTalk.DoesNotExist:
+                        logger.warning(f"TechTalk with id {delete_id} not found")
                 return redirect('tech_talks')
 
             title = request.POST.get("title", "").strip()
             speaker = request.POST.get("speaker", "").strip()
             description = request.POST.get("description", "").strip()
             date_value = request.POST.get("date")
-            thubnail = request.POST.get("thubnail", "").strip()
-            video_path = request.POST.get("videoPath", "").strip()
             is_public = request.POST.get("isPublic") == "on"
 
+            # Handle files upload
+            thumbnail_file = request.FILES.get("thubnail")
+            video_file = request.FILES.get("videoPath")
+
             if action == "create":
-                if title and speaker and description and date_value and thubnail and video_path:
+                if title and speaker and description and date_value and thumbnail_file and video_file:
                     TechTalk.objects.create(
                         title=title,
                         speaker=speaker,
                         description=description,
                         date=date_value,
-                        thubnail=thubnail,
-                        videoPath=video_path,
+                        thubnail=thumbnail_file,
+                        videoPath=video_file,
                         isPublic=is_public,
                     )
                 return redirect('tech_talks')
@@ -537,8 +556,10 @@ def tech_talks(request):
                         talk.description = description
                         if date_value:
                             talk.date = date_value
-                        talk.thubnail = thubnail
-                        talk.videoPath = video_path
+                        if thumbnail_file:
+                            talk.thubnail = thumbnail_file
+                        if video_file:
+                            talk.videoPath = video_file
                         talk.isPublic = is_public
                         talk.save()
                 return redirect('tech_talks')
@@ -556,48 +577,26 @@ def tech_talks(request):
     return render(request, 'public/techtalks.jinja', {"all_techtalks": all_techtalks, "total_techtalks": total_techtalks, "search_query": search_query, "active_page": active_page})
 
 def tech_talk_detail(request, talk_id):
-
-    talk = TechTalk.objects.get(id=talk_id, isPublic=True)
-    recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
-
-    video_url = (talk.videoPath or "").strip()
-    # Normalize backslashes to forward slashes for URL
-    video_url = video_url.replace("\\", "/")
-    
-    def is_video_by_header(file_path: str) -> bool:
-        try:
-            kind = filetype.guess(file_path)
-            return kind is not None and kind.mime.startswith('video/')
-        except Exception:
-            return False
-
-    def is_video_by_url(url: str) -> bool:
-        try:
-            url_request = request.Request(url, method="HEAD")
-            with request.urlopen(url_request, timeout=5) as response:
-                content_type = response.headers.get('Content-Type', '')
-            return content_type.startswith('video/')
-        except Exception:
-            return False
-
-    is_local_video = False
-    if video_url.startswith(('http://', 'https://')):
-        is_local_video = is_video_by_url(video_url)
+    if request.user.is_authenticated:
+        talk = TechTalk.objects.get(id=talk_id)
+        recent_talks = TechTalk.objects.exclude(id=talk.id).order_by("-date", "-id")[:2]
     else:
-        local_path = os.path.join(settings.MEDIA_ROOT, video_url.lstrip('/'))
-        is_local_video = is_video_by_header(local_path)
+        talk = TechTalk.objects.get(id=talk_id, isPublic=True)
+        recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
 
-    # Build full media URL for local videos
-    if is_local_video and not video_url.startswith(('http://', 'https://')):
-        # Remove leading slash if present to avoid double slashes
-        video_url = video_url.lstrip('/')
-        video_url = settings.MEDIA_URL + video_url
-
+    video_url = talk.videoPath.url if talk.videoPath else ""
+    
+    # Detect MIME type for video
+    video_mime_type = "video/mp4"  # Default fallback
+    if talk.videoPath:
+        file_name = os.path.basename(talk.videoPath.name)
+        video_mime_type = _detect_content_type_from_storage(talk.videoPath.name, file_name)
     context = {
         "talk": talk,
         "recent_talks": recent_talks,
         "video_url": video_url,
-        "is_local_video": is_local_video,
+        "video_mime_type": video_mime_type,
+        "is_authenticated": request.user.is_authenticated,
     }
 
     if request.headers.get("HX-Request") == "true":
@@ -609,55 +608,31 @@ def tech_talk_detail(request, talk_id):
         return render(request, 'sharepoint/techtalk_detail.jinja', context)
     return render(request, 'public/techtalk_detail.jinja', context)
 
-def tech_talk_detail(request, talk_id):
-
-    talk = TechTalk.objects.get(id=talk_id, isPublic=True)
-    recent_talks = TechTalk.objects.filter(isPublic=True).exclude(id=talk.id).order_by("-date", "-id")[:2]
-
-    video_url = (talk.videoPath or "").strip()
-    # Normalize backslashes to forward slashes for URL
-    video_url = video_url.replace("\\", "/")
-    
-    def is_video_by_header(file_path: str) -> bool:
+@login_required(login_url='login')
+def download_techtalk_video(request, talk_id):
+    """Download a TechTalk video file (authenticated users only)"""
+    try:
+        talk = TechTalk.objects.get(id=talk_id)
+        if not talk.videoPath:
+            return HttpResponse("Video not found", status=404)
+        
+        file_path = talk.videoPath.path
+        file_name = os.path.basename(file_path)
+        
         try:
-            kind = filetype.guess(file_path)
-            return kind is not None and kind.mime.startswith('video/')
-        except Exception:
-            return False
-
-    def is_video_by_url(url: str) -> bool:
-        try:
-            url_request = request.Request(url, method="HEAD")
-            with request.urlopen(url_request, timeout=5) as response:
-                content_type = response.headers.get('Content-Type', '')
-            return content_type.startswith('video/')
-        except Exception:
-            return False
-
-    is_local_video = False
-    if video_url.startswith(('http://', 'https://')):
-        is_local_video = is_video_by_url(video_url)
-    else:
-        local_path = os.path.join(settings.MEDIA_ROOT, video_url.lstrip('/'))
-        is_local_video = is_video_by_header(local_path)
-
-    # Build full media URL for local videos
-    if is_local_video and not video_url.startswith(('http://', 'https://')):
-        # Remove leading slash if present to avoid double slashes
-        video_url = video_url.lstrip('/')
-        video_url = settings.MEDIA_URL + video_url
-
-    context = {
-        "talk": talk,
-        "recent_talks": recent_talks,
-        "video_url": video_url,
-        "is_local_video": is_local_video,
-    }
-
-    if request.headers.get("HX-Request") == "true":
-        return render(request, 'components/techtalk_detail_htmx.jinja', context)
-
-    return render(request, 'public/techtalk_detail.jinja', context)
+            # Detect MIME type based on file extension
+            mime_type = _detect_content_type_from_storage(talk.videoPath.name, file_name)
+            if not mime_type.startswith('video/'):
+                mime_type = 'application/octet-stream'
+            
+            response = FileResponse(open(file_path, 'rb'))
+            response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+            response['Content-Type'] = mime_type
+            return response
+        except FileNotFoundError:
+            return HttpResponse("Video file not found on disk", status=404)
+    except TechTalk.DoesNotExist:
+        return HttpResponse("Tech talk not found", status=404)
 
 @login_required(login_url='login')
 def settings_view(request):

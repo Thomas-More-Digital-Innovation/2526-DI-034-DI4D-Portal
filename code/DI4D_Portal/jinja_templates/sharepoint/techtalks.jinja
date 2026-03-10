@@ -3,7 +3,7 @@
 {% block title %}Tech Talks - DI4D Portal{% endblock %}
 
 {% block content %}
-<div class="bg-white min-h-screen" x-data="{ currentDeleteId: null, currentDeleteName: null, open_add_talk: false, open_edit_talk: false, currentEditId: null, title: '', speaker: '', description: '', date: '', thubnail: '', videoPath: '', isPublic: false }">
+<div class="bg-white min-h-screen" x-data="{ currentDeleteId: null, currentDeleteName: null, open_add_talk: false, open_edit_talk: false, currentEditId: null, title: '', speaker: '', description: '', date: '', thubnail_filename: '', video_filename: '', isPublic: false, edit_thumbnail_filename: '', edit_video_filename: '' }">
     <div class="flex flex-col gap-4">
         <div class="flex flex-col gap-4">
             <h1 class="text-3xl lg:text-4xl font-bold text-black">Tech Talks</h1>
@@ -22,7 +22,7 @@
                 </button>
             </div>
             {% if request.user.role_is_admin() %}
-                <button type="button" class="px-4 bg-[--white_grey] rounded-md" @click="open_add_talk = true; title = ''; speaker = ''; description = ''; date = ''; thubnail = ''; videoPath = ''; isPublic = false">
+                <button type="button" class="px-4 bg-[--white_grey] rounded-md" @click="open_add_talk = true; title = ''; speaker = ''; description = ''; date = ''; thubnail_filename = ''; video_filename = ''; isPublic = false">
                     <i class="fa-solid fa-plus text-[--green]"></i>
                 </button>
             {% endif %}
@@ -35,7 +35,7 @@
     {{ delete_confirm_modal("Delete Tech Talk", csrf_token) }}
 
     {% call empty_modal('add_talk', 'Add Tech Talk') %}
-        <form method="post" class="flex flex-col gap-3">
+        <form method="post" enctype="multipart/form-data" class="flex flex-col gap-3">
             <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
             <input type="hidden" name="action" value="create"/>
             <label class="text-white" for="add_title">Title</label>
@@ -44,10 +44,40 @@
             <input id="add_speaker" name="speaker" type="text" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="speaker"/>
             <label class="text-white" for="add_date">Date</label>
             <input id="add_date" name="date" type="date" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="date"/>
-            <label class="text-white" for="add_thumbnail">Thumbnail URL</label>
-            <input id="add_thumbnail" name="thubnail" type="text" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="thubnail"/>
-            <label class="text-white" for="add_video">Video URL</label>
-            <input id="add_video" name="videoPath" type="text" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="videoPath"/>
+            <label class="text-white" for="add_thumbnail">Thumbnail</label>
+            <div class="bg-[var(--input_bg_color)] rounded-lg px-4 py-4 border-2 border-dashed border-[var(--input_text)] flex flex-col items-center justify-center gap-2 cursor-pointer hover:opacity-80 transition relative">
+                <input id="add_thumbnail" name="thubnail" type="file" class="opacity-0 w-full h-full absolute inset-0" accept="image/*" x-ref="fileInput" @change="const f = $event.target.files[0]; if(f){ thubnail_filename = f.name; }" required/>
+                <div class="flex flex-col items-center justify-center gap-2 pointer-events-none">
+                    <!-- Upload View -->
+                    <div x-show="!thubnail_filename" class="flex flex-col items-center justify-center gap-2 text-center">
+                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-[var(--input_text)]"></i>
+                        <span class="text-[var(--input_text)] font-semibold">Click to upload picture</span>
+                    </div>
+                    <!-- Preview View -->
+                    <div x-show="thubnail_filename" class="flex flex-col items-center justify-center gap-2 w-full">
+                        <i class="fa-solid fa-check-circle text-2xl text-green-500"></i>
+                        <p class="text-sm text-[var(--input_text)] truncate max-w-full" x-text="thubnail_filename"></p>
+                        <button type="button" @click.stop="thubnail_filename = ''; $refs.fileInput.value = ''" class="text-xs text-[--orange_di4d] hover:underline pointer-events-auto">Change</button>
+                    </div>
+                </div>
+            </div>
+            <label class="text-white" for="add_video">Video</label>
+            <div class="bg-[var(--input_bg_color)] rounded-lg px-4 py-4 border-2 border-dashed border-[var(--input_text)] flex flex-col items-center justify-center gap-2 cursor-pointer hover:opacity-80 transition relative">
+                <input id="add_video" name="videoPath" type="file" class="opacity-0 w-full h-full absolute inset-0" accept="video/*" required x-ref="addVideoInput" @change="const f = $event.target.files[0]; if(f){ video_filename = f.name; }" />
+                <div class="flex flex-col items-center justify-center gap-2 pointer-events-none">
+                    <!-- Upload View -->
+                    <div x-show="!video_filename" class="flex flex-col items-center justify-center gap-2 text-center">
+                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-[var(--input_text)]"></i>
+                        <span class="text-[var(--input_text)] font-semibold">Click to upload video</span>
+                    </div>
+                    <!-- Preview View -->
+                    <div x-show="video_filename" class="flex flex-col items-center justify-center gap-2 w-full">
+                        <i class="fa-solid fa-check-circle text-2xl text-green-500"></i>
+                        <p class="text-sm text-[var(--input_text)] truncate max-w-full" x-text="video_filename"></p>
+                        <button type="button" @click.stop="video_filename = ''; $refs.addVideoInput.value = ''" class="text-xs text-[--orange_di4d] hover:underline pointer-events-auto">Change</button>
+                    </div>
+                </div>
+            </div>
             <label class="text-white" for="add_description">Description</label>
             <textarea id="add_description" name="description" rows="3" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="description"></textarea>
             <label class="text-white flex items-center gap-2">
@@ -62,7 +92,7 @@
     {% endcall %}
 
     {% call empty_modal('edit_talk', 'Edit Tech Talk') %}
-        <form method="post" class="flex flex-col gap-3">
+        <form method="post" enctype="multipart/form-data" class="flex flex-col gap-3">
             <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}"/>
             <input type="hidden" name="action" value="edit"/>
             <input type="hidden" name="talk_id" x-bind:value="currentEditId"/>
@@ -72,10 +102,40 @@
             <input id="edit_speaker" name="speaker" type="text" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="speaker"/>
             <label class="text-white" for="edit_date">Date</label>
             <input id="edit_date" name="date" type="date" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="date"/>
-            <label class="text-white" for="edit_thumbnail">Thumbnail URL</label>
-            <input id="edit_thumbnail" name="thubnail" type="text" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="thubnail"/>
-            <label class="text-white" for="edit_video">Video URL</label>
-            <input id="edit_video" name="videoPath" type="text" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="videoPath"/>
+            <label class="text-white" for="edit_thumbnail">Thumbnail (leave empty to keep current)</label>
+            <div class="bg-[var(--input_bg_color)] rounded-lg px-4 py-4 border-2 border-dashed border-[var(--input_text)] flex flex-col items-center justify-center gap-2 cursor-pointer hover:opacity-80 transition relative">
+                <input id="edit_thumbnail" name="thubnail" type="file" class="opacity-0 w-full h-full absolute inset-0" accept="image/*" x-ref="editFileInput" @change="const f = $event.target.files[0]; if(f){ edit_thumbnail_filename = f.name; }"/>
+                <div class="flex flex-col items-center justify-center gap-2 pointer-events-none">
+                    <!-- Upload View -->
+                    <div x-show="!edit_thumbnail_filename" class="flex flex-col items-center justify-center gap-2 text-center">
+                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-[var(--input_text)]"></i>
+                        <span class="text-[var(--input_text)] font-semibold">Click to upload picture</span>
+                    </div>
+                    <!-- Preview View -->
+                    <div x-show="edit_thumbnail_filename" class="flex flex-col items-center justify-center gap-2 w-full">
+                        <i class="fa-solid fa-check-circle text-2xl text-green-500"></i>
+                        <p class="text-sm text-[var(--input_text)] truncate max-w-full" x-text="edit_thumbnail_filename"></p>
+                        <button type="button" @click.stop="edit_thumbnail_filename = ''; $refs.editFileInput.value = ''" class="text-xs text-[--orange_di4d] hover:underline pointer-events-auto">Change</button>
+                    </div>
+                </div>
+            </div>
+            <label class="text-white" for="edit_video">Video (leave empty to keep current)</label>
+            <div class="bg-[var(--input_bg_color)] rounded-lg px-4 py-4 border-2 border-dashed border-[var(--input_text)] flex flex-col items-center justify-center gap-2 cursor-pointer hover:opacity-80 transition relative">
+                <input id="edit_video" name="videoPath" type="file" class="opacity-0 w-full h-full absolute inset-0" accept="video/*" x-ref="editVideoInput" @change="const f = $event.target.files[0]; if(f){ edit_video_filename = f.name; }" />
+                <div class="flex flex-col items-center justify-center gap-2 pointer-events-none">
+                    <!-- Upload View -->
+                    <div x-show="!edit_video_filename" class="flex flex-col items-center justify-center gap-2 text-center">
+                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-[var(--input_text)]"></i>
+                        <span class="text-[var(--input_text)] font-semibold">Click to upload video</span>
+                    </div>
+                    <!-- Preview View -->
+                    <div x-show="edit_video_filename" class="flex flex-col items-center justify-center gap-2 w-full">
+                        <i class="fa-solid fa-check-circle text-2xl text-green-500"></i>
+                        <p class="text-sm text-[var(--input_text)] truncate max-w-full" x-text="edit_video_filename"></p>
+                        <button type="button" @click.stop="edit_video_filename = ''; $refs.editVideoInput.value = ''" class="text-xs text-[--orange_di4d] hover:underline pointer-events-auto">Change</button>
+                    </div>
+                </div>
+            </div>
             <label class="text-white" for="edit_description">Description</label>
             <textarea id="edit_description" name="description" rows="3" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="description"></textarea>
             <label class="text-white flex items-center gap-2">

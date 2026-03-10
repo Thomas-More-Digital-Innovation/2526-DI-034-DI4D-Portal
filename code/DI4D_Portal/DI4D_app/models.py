@@ -151,8 +151,8 @@ class FormAnswer(models.Model):
 
 class TechTalk(models.Model):
     title = models.CharField(max_length=150)
-    thubnail = models.CharField()
-    videoPath = models.CharField()
+    thubnail = models.ImageField(upload_to='techtalk/thumbnails/')
+    videoPath = models.FileField(upload_to='techtalk/videos/')
     isPublic = models.BooleanField(default=False)
     speaker = models.CharField(max_length=100)
     description = models.CharField()
