@@ -58,7 +58,7 @@
     {% if show_actions %}
       <div class="flex gap-2 mt-3">
         <button type="button" class="btn_primary_light_blue flex-1 text-sm h-9 inline-flex items-center justify-center gap-2"
-                @click="currentEditId = {{ talk.id }}, title = '{{ talk.title }}', speaker = '{{ talk.speaker }}', description = '{{ talk.description }}', date = '{{ talk.date }}', thubnail = '{{ talk.thubnail }}', videoPath = '{{ talk.videoPath }}', isPublic = {{ 'true' if talk.isPublic else 'false' }}, open_edit_talk = true">
+                @click="currentEditId = {{ talk.id }}, title = '{{ talk.title }}', speaker = '{{ talk.speaker }}', description = '{{ talk.description }}', date = '{{ talk.date }}', edit_thumbnail_preview = '', edit_thumbnail_filename = '', videoPath = '{{ talk.videoPath }}', isPublic = {{ 'true' if talk.isPublic else 'false' }}, open_edit_talk = true">
           <i class="fa-solid fa-pen"></i>
           <span>Edit</span>
         </button>

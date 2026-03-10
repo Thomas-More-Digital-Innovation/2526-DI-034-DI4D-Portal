@@ -3,7 +3,7 @@
 {% block title %}Tech Talks - DI4D Portal{% endblock %}
 
 {% block content %}
-<div class="bg-white min-h-screen" x-data="{ currentDeleteId: null, currentDeleteName: null, open_add_talk: false, open_edit_talk: false, currentEditId: null, title: '', speaker: '', description: '', date: '', thubnail: '', videoPath: '', isPublic: false }">
+<div class="bg-white min-h-screen" x-data="{ currentDeleteId: null, currentDeleteName: null, open_add_talk: false, open_edit_talk: false, currentEditId: null, title: '', speaker: '', description: '', date: '', thubnail_preview: '', thubnail_filename: '', videoPath: '', isPublic: false, edit_thumbnail_preview: '', edit_thumbnail_filename: '' }">
     <div class="flex flex-col gap-4">
         <div class="flex flex-col gap-4">
             <h1 class="text-3xl lg:text-4xl font-bold text-black">Tech Talks</h1>
@@ -22,7 +22,7 @@
                 </button>
             </div>
             {% if request.user.role_is_admin() %}
-                <button type="button" class="px-4 bg-[--white_grey] rounded-md" @click="open_add_talk = true; title = ''; speaker = ''; description = ''; date = ''; thubnail = ''; videoPath = ''; isPublic = false">
+                <button type="button" class="px-4 bg-[--white_grey] rounded-md" @click="open_add_talk = true; title = ''; speaker = ''; description = ''; date = ''; thubnail_preview = ''; thubnail_filename = ''; videoPath = ''; isPublic = false">
                     <i class="fa-solid fa-plus text-[--green]"></i>
                 </button>
             {% endif %}
@@ -45,7 +45,23 @@
             <label class="text-white" for="add_date">Date</label>
             <input id="add_date" name="date" type="date" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="date"/>
             <label class="text-white" for="add_thumbnail">Thumbnail</label>
-            <input id="add_thumbnail" name="thubnail" type="file" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required accept="image/*"/>
+            <div class="w-full py-2 rounded-md border border-[var(--white_grey)] relative h-24" :style="thubnail_preview ? `background-image: url('${thubnail_preview}')` : ''" x-data="{ show_upload: true }">
+                <div x-show="thubnail_preview" class="absolute inset-0 bg-black opacity-40 rounded-md"></div>
+                <!-- Upload View -->
+                <div x-show="!thubnail_preview" class="absolute inset-0 bg-black opacity-50 rounded-md"></div>
+                <div x-show="!thubnail_preview" class="relative z-10 flex items-center justify-center h-24">
+                    <input id="add_thumbnail" name="thubnail" type="file" class="opacity-0 absolute inset-0" accept="image/*" x-ref="fileInput" @change="const f = $event.target.files[0]; if(f){ thubnail_filename = f.name; thubnail_preview = URL.createObjectURL(f); }" required/>
+                    <label for="add_thumbnail" class="text-sm text-white cursor-pointer text-center">
+                        <i class="fa-solid fa-upload text-xl mb-1 block justify-self-center"></i>
+                        <span class="text-center">Click to upload picture</span>
+                    </label>
+                </div>
+                <!-- Preview View -->
+                <div x-show="thubnail_preview" class="relative z-10 flex flex-col items-center justify-center h-24 gap-1">
+                    <p class="text-xs text-white truncate" x-text="thubnail_filename"></p>
+                    <button type="button" @click="thubnail_preview = ''; thubnail_filename = ''; $refs.fileInput.value = ''" class="text-xs text-[--orange_di4d] hover:underline">Change</button>
+                </div>
+            </div>
             <label class="text-white" for="add_video">Video(accepts: mp4, webm, ogg)</label>
             <input id="add_video" name="videoPath" type="file" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required accept="video/mp4,video/webm,video/ogg"/>
             <label class="text-white" for="add_description">Description</label>
@@ -73,7 +89,23 @@
             <label class="text-white" for="edit_date">Date</label>
             <input id="edit_date" name="date" type="date" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" required x-model="date"/>
             <label class="text-white" for="edit_thumbnail">Thumbnail (leave empty to keep current)</label>
-            <input id="edit_thumbnail" name="thubnail" type="file" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" accept="image/*"/>
+            <div class="w-full py-2 rounded-md border border-[var(--white_grey)] relative h-24" :style="edit_thumbnail_preview ? `background-image: url('${edit_thumbnail_preview}')` : ''" x-data="{ show_upload: true }">
+                <div x-show="edit_thumbnail_preview" class="absolute inset-0 bg-black opacity-40 rounded-md"></div>
+                <!-- Upload View -->
+                <div x-show="!edit_thumbnail_preview" class="absolute inset-0 bg-black opacity-50 rounded-md"></div>
+                <div x-show="!edit_thumbnail_preview" class="relative z-10 flex items-center justify-center h-24">
+                    <input id="edit_thumbnail" name="thubnail" type="file" class="opacity-0 absolute inset-0" accept="image/*" x-ref="editFileInput" @change="const f = $event.target.files[0]; if(f){ edit_thumbnail_filename = f.name; edit_thumbnail_preview = URL.createObjectURL(f); }"/>
+                    <label for="edit_thumbnail" class="text-sm text-white cursor-pointer text-center">
+                        <i class="fa-solid fa-upload text-xl mb-1 block"></i>
+                        <span class="text-center">Click to upload picture</span>
+                    </label>
+                </div>
+                <!-- Preview View -->
+                <div x-show="edit_thumbnail_preview" class="relative z-10 flex flex-col items-center justify-center h-24 gap-1">
+                    <p class="text-xs text-white truncate" x-text="edit_thumbnail_filename"></p>
+                    <button type="button" @click="edit_thumbnail_preview = ''; edit_thumbnail_filename = ''; $refs.editFileInput.value = ''" class="text-xs text-[--orange_di4d] hover:underline">Change</button>
+                </div>
+            </div>
             <label class="text-white" for="edit_video">Video (leave empty to keep current)</label>
             <input id="edit_video" name="videoPath" type="file" class="w-full text-[var(--input_text)] bg-[var(--input_bg_color)] rounded-lg px-4 py-1" accept="video/mp4,video/webm,video/ogg"/>
             <label class="text-white" for="edit_description">Description</label>
