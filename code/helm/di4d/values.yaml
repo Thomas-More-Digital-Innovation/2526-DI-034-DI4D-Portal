@@ -199,6 +199,16 @@ env:
     value: "False"
   - name: EMAIL_BACKEND
     value: "django.core.mail.backends.smtp.EmailBackend"
+  - name: SMTP_HOST
+    value: smtp.resend.com
+  - name: SMTP_PORT
+    value: '587'
+  - name: SMTP_USER
+    value: resend
+  - name: SMTP_PASSWORD
+    value: ChangeMeInProduction
+  - name: DEFAULT_FROM_EMAIL
+    value: info@davidmaat.be
   - name: USE_S3
     value: "True"
   - name: AWS_ACCESS_KEY_ID
@@ -215,10 +225,16 @@ env:
     value: ""
   - name: AWS_LOCATION
     value: "media"
+  - name: AWS_S3_ADDRESSING_STYLE
+    value: path
+  - name: AWS_S3_SIGNATURE_VERSION
+    value: s3v4
   - name: AWS_S3_FILE_OVERWRITE
     value: "False"
   - name: AWS_QUERYSTRING_AUTH
     value: "False"
+  - name: DOMAIN_NAME
+    value: "di4d.davidmaat.be"
 
 # Collabora CODE configuration
 collabora:
