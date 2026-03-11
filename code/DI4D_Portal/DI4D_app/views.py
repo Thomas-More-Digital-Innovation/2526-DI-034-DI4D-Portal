@@ -711,7 +711,14 @@ def export_data(request):
     active_page = 'export_data'
     # Check if user is admin
     if request.user.role_is_admin():
-        return render(request, 'admin/export.jinja', {'active_page': active_page})
+        # Get all forms
+        forms = Form.objects.filter(isActive=True)
+        # Check is there was a post request to export form data
+        if request.method == "POST":
+            form_id = request.POST.get("form")
+            if form_id:
+                return forms_data(request, form_id)
+        return render(request, 'admin/export.jinja', {'active_page': active_page, 'forms': forms})
     else:
         return redirect('dashboard')
 
@@ -730,6 +737,42 @@ def users_data(request):
         response = HttpResponse(csv_data, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="users_data.csv"'
         return response
+
+@login_required(login_url='login')
+def forms_data(request, form_id):
+    if not request.user.role_is_admin():
+        return redirect('dashboard')
+    
+    MEDIA_URL = settings.MEDIA_URL
+    DOMAIN_NAME = os.environ.get('DOMAIN_NAME')
+    form = get_object_or_404(Form, id=form_id)
+    questions = list(Question.objects.filter(formId=form).order_by("id"))
+
+    # Create CSV header
+    response = "SubmissionNumber,Username,Year,"
+    for i, question in enumerate(questions):
+        response += question.question
+        response += "\n" if i == len(questions) - 1 else ","
+
+    # Get all the users/submission_numbers that filled in the form
+    users = FormAnswer.objects.filter(questionId__formId=form).values("submission_number", "userId", "answerDate", "userId__username").distinct()
+    for user in users:
+        line = ""
+        line += f'{user["submission_number"] if user["submission_number"] else ""},{user["userId__username"] if user["userId__username"] else ""},{user["answerDate"].year if user["answerDate"] else ""},'
+        for i, question in enumerate(questions):
+            answer = FormAnswer.objects.filter(questionId=question, submission_number=user["submission_number"], userId=user["userId"]).first()
+            # Check if question type is file
+            if question.datatype.name.lower() == "file":
+                line += f"{DOMAIN_NAME}/{MEDIA_URL}{answer.answer if answer else ''}"
+            else:
+                line += f"{answer.answer if answer else ''}"
+            line += "\n" if i == len(questions) - 1 else ","
+        response += line
+
+    # Create a CSV File response
+    response = HttpResponse(response, content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="forms_data.csv"'
+    return response
 
 @login_required(login_url='login')
 def learninggoals_data(request):

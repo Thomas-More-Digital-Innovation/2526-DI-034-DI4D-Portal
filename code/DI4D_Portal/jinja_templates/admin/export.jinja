@@ -21,5 +21,24 @@
             <a href="{{ url('learninggoals_data') }}" class="btn_primary_blue">Download Learning Goals</a>
         </div>
     </div>
+    <div class="mt-8">
+        <h2 class="text-2xl underline">3. Download list of forms</h2>
+        <p>You get all the answers of a chosen form.</p>
+        <div class="mt-4">
+           <form method="post">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                <div>
+                    <select name="form" id="form" class="border border-gray-300 rounded-md p-2" required>
+                        {% for form in forms %}
+                            <option value="{{ form.id }}">{{ form.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <button type="submit" class="btn_primary_blue mt-4">Download Form Data</button>
+                </div>
+           </form> 
+        </div>
+    </div>
 </div>
 {% endblock %}
