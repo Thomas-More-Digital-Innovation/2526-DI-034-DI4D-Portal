@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+import re
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -185,8 +186,14 @@ if USE_S3:
     AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME", "")
     AWS_S3_ENDPOINT_URL = os.getenv("AWS_S3_ENDPOINT_URL", "").strip() or None
     is_r2_endpoint = bool(AWS_S3_ENDPOINT_URL and "r2.cloudflarestorage.com" in AWS_S3_ENDPOINT_URL)
+    is_s3_compatible = bool(
+        AWS_S3_ENDPOINT_URL
+        and "amazonaws.com" not in AWS_S3_ENDPOINT_URL
+        and "r2.cloudflarestorage.com" not in AWS_S3_ENDPOINT_URL
+    )
     AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "auto" if is_r2_endpoint else "us-east-1")
-    AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_S3_CUSTOM_DOMAIN", "").strip()
+    _raw_custom_domain = os.getenv("AWS_S3_CUSTOM_DOMAIN", "").strip()
+    AWS_S3_CUSTOM_DOMAIN = re.sub(r'^https?://', '', _raw_custom_domain)
     AWS_LOCATION = os.getenv("AWS_LOCATION", "media").strip("/")
     AWS_S3_FILE_OVERWRITE = os.getenv("AWS_S3_FILE_OVERWRITE", "False").strip().lower() in {"1", "true", "yes", "on"}
     AWS_QUERYSTRING_AUTH = os.getenv("AWS_QUERYSTRING_AUTH", "False").strip().lower() in {"1", "true", "yes", "on"}
@@ -200,6 +207,10 @@ if USE_S3:
         AWS_S3_ADDRESSING_STYLE = AWS_S3_ADDRESSING_STYLE or "path"
         if not AWS_S3_CUSTOM_DOMAIN and not AWS_QUERYSTRING_AUTH:
             AWS_QUERYSTRING_AUTH = True
+
+    if is_s3_compatible:
+        AWS_S3_SIGNATURE_VERSION = AWS_S3_SIGNATURE_VERSION or "s3v4"
+        AWS_S3_ADDRESSING_STYLE = AWS_S3_ADDRESSING_STYLE or "path"
 
     if not AWS_STORAGE_BUCKET_NAME:
         raise ValueError("USE_S3 is enabled, but AWS_STORAGE_BUCKET_NAME is not set.")
