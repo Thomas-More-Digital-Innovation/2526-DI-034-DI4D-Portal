@@ -11,6 +11,7 @@ from django.db.models import Q
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.utils.text import get_valid_filename
 
 from ...models import FileItem, FileShare, User, UserType, WopiAccessToken
 
@@ -820,11 +821,22 @@ def files_action(request, action):
 
         stored_keys = []
         for uploaded_file in uploaded_files:
-            clean_name = os.path.basename((uploaded_file.name or '').strip())
+            raw_name = os.path.basename((uploaded_file.name or '').strip())
+            clean_name = get_valid_filename(raw_name) if raw_name else 'upload'
             timestamp = timezone.now().strftime('%Y%m%d_%H%M%S_%f')
             unique_suffix = uuid.uuid4().hex[:8]
             key = f"files/user_{request.user.id}/{timestamp}_{unique_suffix}_{clean_name}"
-            saved_key = default_storage.save(key, uploaded_file)
+            try:
+                saved_key = default_storage.save(key, uploaded_file)
+            except Exception:
+                logger.exception(
+                    'Upload save failed for user=%s raw_name=%r clean_name=%r key=%r',
+                    request.user.id,
+                    raw_name,
+                    clean_name,
+                    key,
+                )
+                raise
             stored_keys.append(saved_key)
 
             FileItem.objects.update_or_create(
