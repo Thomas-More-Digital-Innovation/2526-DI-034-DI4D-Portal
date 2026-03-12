@@ -238,6 +238,8 @@ CKEDITOR_5_CONFIGS = {
     }
 }
 
+CKEDITOR_5_FILE_STORAGE = 'DI4D_app.storage.CKEditorNewsPictureStorage'
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
