@@ -21,4 +21,9 @@ class CKEditorNewsPictureStorage(Storage):
         return self.base_storage.exists(name)
 
     def url(self, name):
-        return self.base_storage.url(name)
+        url = self.base_storage.url(name)
+        # CKEditor preview needs a URL that is valid from nested admin routes.
+        # Normalize plain relative paths to root-relative URLs.
+        if isinstance(url, str) and url and not url.startswith(("http://", "https://", "//", "/")):
+            return f"/{url.lstrip('/')}"
+        return url
