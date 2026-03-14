@@ -20,6 +20,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import os
 import uuid
+import time
 import filetype
 from django.core.files.storage import default_storage
 import json
@@ -952,11 +953,19 @@ def news_content_image(request, storagePath):
         return HttpResponse(status=404)
 
     storage = default_storage
-    try:
-        if not storage.exists(storage_path):
-            return HttpResponse(status=404)
-        file_handle = storage.open(storage_path, 'rb')
-    except Exception:
+    file_handle = None
+    # Some backends can briefly return not-found right after upload.
+    # Retry for a short window so CKEditor's immediate preview request succeeds.
+    for _ in range(8):
+        try:
+            if storage.exists(storage_path):
+                file_handle = storage.open(storage_path, 'rb')
+                break
+        except Exception:
+            pass
+        time.sleep(0.25)
+
+    if file_handle is None:
         return HttpResponse(status=404)
 
     filename = os.path.basename(storage_path) or 'news_content_image'
