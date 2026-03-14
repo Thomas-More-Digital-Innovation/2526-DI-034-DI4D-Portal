@@ -1,5 +1,5 @@
-from django.http import HttpResponse, FileResponse
-from urllib import request
+from django.http import HttpResponse, FileResponse, JsonResponse
+from urllib.parse import urlsplit, unquote
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect, get_object_or_404
@@ -17,19 +17,92 @@ from django.urls import reverse
 from django.core import signing
 from django.core.signing import BadSignature
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 import os
 import uuid
 import filetype
 from django.core.files.storage import default_storage
 import json
+import re
 from django.forms import modelform_factory
 import puremagic
 from django_ckeditor_5.widgets import CKEditor5Widget
+from django_ckeditor_5.forms import UploadFileForm
+from django_ckeditor_5.storage_utils import image_verify
+from django_ckeditor_5.exceptions import NoImageException
 
 import logging
 from .features.files import views as files_feature_views
 
 logger = logging.getLogger(__name__)
+
+
+def _news_upload_allowed(user):
+    if not getattr(user, "is_authenticated", False):
+        return False
+    return bool(
+        getattr(user, "is_staff", False)
+        or getattr(user, "is_superuser", False)
+        or user.role_is_admin()
+        or user.has_perm("DI4D_app.change_news")
+    )
+
+
+def _media_url_path_prefix():
+    media_url = settings.MEDIA_URL or "/media/"
+    media_path = urlsplit(media_url).path or media_url
+    media_path = "/" + media_path.lstrip("/")
+    if not media_path.endswith("/"):
+        media_path += "/"
+    return media_path
+
+
+def _extract_storage_path_from_url(candidate_url):
+    if not candidate_url:
+        return ""
+
+    parsed = urlsplit(candidate_url)
+    path = parsed.path or ""
+    decoded_path = unquote(path)
+
+    media_path_prefix = _media_url_path_prefix()
+    if decoded_path.startswith(media_path_prefix):
+        return decoded_path[len(media_path_prefix):].lstrip("/")
+
+    # Support custom/public CDN paths that include the media location later in the path,
+    # e.g. /di4d/media/<file>.
+    media_location = (getattr(settings, "AWS_LOCATION", "") or "media").strip("/")
+    marker = f"/{media_location}/"
+    marker_index = decoded_path.find(marker)
+    if marker_index != -1:
+        return decoded_path[marker_index + len(marker):].lstrip("/")
+
+    return ""
+
+
+def _normalize_news_content_urls(content):
+    if not content:
+        return content
+
+    url_pattern = re.compile(r"https?://[^\s\"'<>]+")
+
+    def _replace(match):
+        original_url = match.group(0)
+        storage_path = _extract_storage_path_from_url(original_url)
+        if not storage_path:
+            return original_url
+
+        # If the file exists in storage, generate a fresh storage URL at render time.
+        # For signed S3/R2 URLs this renews the token each request.
+        try:
+            if default_storage.exists(storage_path):
+                return default_storage.url(storage_path)
+        except Exception:
+            return original_url
+
+        return original_url
+
+    return url_pattern.sub(_replace, content)
 
 
 def _detect_content_type_from_storage(storage_path, file_name='', storage=None):
@@ -810,6 +883,9 @@ def edit_news(request, mediaPath=None):
 
     # Check if form is submitted
     if request.method == "POST":
+        if not form.is_valid():
+            return render(request, 'admin/edit_news.jinja', {'mediaPath': mediaPath, 'active_page': active_page, 'form': form, 'saved': False})
+
         #  Because we do form save it automatically handles create and edit
         news_article = form.save(commit=False)
         news_article.lastEditDate = timezone.now()
@@ -834,12 +910,14 @@ def view_news_item(request, mediaPath):
         active_page = 'news'
         # Get the news article by mediaPath (private + public)
         news_article = get_object_or_404(News, mediaPath=mediaPath)
+        news_article.content = _normalize_news_content_urls(news_article.content)
         # Take 2 other random news articles for suggestion at the bottom
         news = News.objects.all().exclude(id=news_article.id).order_by('?')[:2]
         return render(request, 'sharepoint/news_item.jinja', {'news_article': news_article, 'news': news, 'active_page': active_page})
     else:
         # Get the news article by mediaPath (only public)
         news_article = get_object_or_404(News, mediaPath=mediaPath, isPublic=True)
+        news_article.content = _normalize_news_content_urls(news_article.content)
         # Take 2 other random news articles for suggestion at the bottom
         news = News.objects.filter(isPublic=True).exclude(id=news_article.id).order_by('?')[:2]
         return render(request, 'public/news_item.jinja', {'news_article': news_article, 'news': news})
@@ -866,6 +944,51 @@ def news_picture(request, mediaPath):
     filename = os.path.basename(picture_path) or f'news_{news_article.id}.jpg'
     content_type = _detect_content_type_from_storage(picture_path, filename, storage=picture_storage)
     return FileResponse(file_handle, as_attachment=False, filename=filename, content_type=content_type)
+
+
+def news_content_image(request, storagePath):
+    storage_path = unquote(storagePath).lstrip('/')
+    if not storage_path.startswith('news_content/'):
+        return HttpResponse(status=404)
+
+    storage = default_storage
+    try:
+        if not storage.exists(storage_path):
+            return HttpResponse(status=404)
+        file_handle = storage.open(storage_path, 'rb')
+    except Exception:
+        return HttpResponse(status=404)
+
+    filename = os.path.basename(storage_path) or 'news_content_image'
+    content_type = _detect_content_type_from_storage(storage_path, filename, storage=storage)
+    return FileResponse(file_handle, as_attachment=False, filename=filename, content_type=content_type)
+
+
+@login_required(login_url='login')
+@require_POST
+def news_content_upload(request):
+    if not _news_upload_allowed(request.user):
+        return JsonResponse({"error": {"message": "You do not have permission to upload files."}}, status=403)
+
+    form = UploadFileForm(request.POST, request.FILES)
+    upload = request.FILES.get('upload')
+    if not upload:
+        return JsonResponse({"error": {"message": "No file uploaded."}}, status=400)
+
+    try:
+        image_verify(upload)
+    except NoImageException:
+        return JsonResponse({"error": {"message": "Invalid image format."}}, status=400)
+
+    if not form.is_valid():
+        if form.errors.get('upload'):
+            return JsonResponse({"error": {"message": form.errors['upload'][0]}}, status=400)
+        return JsonResponse({"error": {"message": "Invalid form data"}}, status=400)
+
+    safe_file_name = os.path.basename(upload.name).replace(' ', '_')
+    storage_path = default_storage.save(f"news_content/{uuid.uuid4().hex}_{safe_file_name}", upload)
+    proxy_url = reverse('news_content_image', kwargs={'storagePath': storage_path})
+    return JsonResponse({"url": proxy_url})
 
 @login_required(login_url='login')
 def forms_view(request):

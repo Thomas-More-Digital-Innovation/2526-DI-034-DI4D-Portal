@@ -248,6 +248,11 @@ CKEDITOR_5_CONFIGS = {
     }
 }
 
+# Allow app-authenticated users to hit the upload endpoint; the custom view
+# applies stricter role checks for news management.
+CKEDITOR_5_FILE_UPLOAD_PERMISSION = "authenticated"
+CK_EDITOR_5_UPLOAD_FILE_VIEW_NAME = "news_content_upload"
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 

@@ -54,18 +54,23 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email"]
 
+    def _has_role(self, role_name):
+        if not self.userTypeId or not self.userTypeId.name:
+            return False
+        return self.userTypeId.name.strip().lower() == role_name
+
     # Security check methods
     def role_is_admin(self):
-        return self.userTypeId and self.userTypeId.name == "admin"
+        return self._has_role("admin")
     
     def role_is_sharepoint_user(self):
-        return self.userTypeId and self.userTypeId.name == "sharepoint_user"
+        return self._has_role("sharepoint_user")
     
     def role_is_partner(self):
-        return self.userTypeId and self.userTypeId.name == "partner"
+        return self._has_role("partner")
     
     def role_is_student(self):
-        return self.userTypeId and self.userTypeId.name == "student"
+        return self._has_role("student")
 
 class UserSettings(models.Model):
     settingJson = models.CharField()
