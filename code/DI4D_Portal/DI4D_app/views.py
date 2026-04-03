@@ -175,7 +175,7 @@ def _verify_turnstile(token):
         with urllib.request.urlopen(req) as response:
             result = json.loads(response.read().decode())
             success = result.get('success', False)
-            logger.info(f"Turnstile verification result: {success} for token prefix: {token[:10]}...")
+            logger.info(f"Turnstile verification result: {success}")
             return success
     except Exception as e:
         logger.error(f"Turnstile verification error: {e}")
