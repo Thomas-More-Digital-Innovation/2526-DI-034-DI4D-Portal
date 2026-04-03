@@ -14,27 +14,31 @@
 - DI4D_app : This is the app we are going to use. We only use one app for the hole application.
 
 ## Important commando's Django
--  Create new app : python manage.py startapp <app_name>
-- Make migrations : python manage.py makemigrations
-- Run migrations : python manage.py migrate
-- Create a super user : python manage.py createsuperuser
-- Run server : python manage.py runserver
+-  Create new app : `python manage.py startapp <app_name>`
+- Make migrations : `python manage.py makemigrations`
+- Run migrations : `python manage.py migrate`
+- Create a super user : `python manage.py createsuperuser`
+- Run server : `python manage.py runserver`
 
 ## Setup development environment (Windows)
-- Create venv: python -m venv .\code\\.venv
-- Activate venv: .\code\\.venv\Scripts\Activate.ps1
-- Upgrade pip: python -m pip install -U pip
-- Install deps from pyproject.toml: pip install -e ".\code[dev]"
-- Install tailwind binary: python .\code\DI4D_Portal\manage.py tailwind install
+- Create venv: `python -m venv .\code\\.venv`
+- Activate venv: `.\code\\.venv\Scripts\Activate.ps1`
+- Upgrade pip: `python -m pip install -U pip`
+- Install deps from pyproject.toml: `pip install -e ".\code[dev]"`
+- Install tailwind binary: `python .\code\DI4D_Portal\manage.py tailwind install`
+- Copy .env.template to .env and fill in the values.
+- Run migrations: `python .\code\DI4D_Portal\manage.py migrate`
 - Copy .vscode\tasks.json.windows.template to .vscode\tasks.json and edit .venv with with your venv name.
 - Run dev environment: Ctrl + Shift + p, Task: run task, choose dev.
 
 ## Setup development environment (Linux)
-- Create venv: python -m venv ./code/.venv
-- Activate venv: source ./code/.venv/bin/activate
-- Upgrade pip: python3 -m pip install -U pip
-- Install deps from pyproject.toml: pip install -e "./code[dev]"
-- Install tailwind binary: python3 ./code/DI4D_Portal/manage.py tailwind install
+- Create venv: `python3 -m venv ./code/.venv`
+- Activate venv: `source ./code/.venv/bin/activate`
+- Upgrade pip: `python3 -m pip install -U pip`
+- Install deps from pyproject.toml: `pip install -e "./code[dev]"`
+- Install tailwind binary: `python3 ./code/DI4D_Portal/manage.py tailwind install`
+- Copy .env.template to .env and fill in the values: `cp ./code/.env.template ./code/.env`
+- Run migrations: `python3 ./code/DI4D_Portal/manage.py migrate`
 - Copy .vscode/tasks.json.linux.template to .vscode/tasks.json and edit .venv with with your venv name.
 - Run dev environment: Ctrl + Shift + p, Task: run task, choose dev.
 
