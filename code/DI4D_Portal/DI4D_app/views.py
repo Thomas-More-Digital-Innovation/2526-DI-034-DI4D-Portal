@@ -1,5 +1,7 @@
 from django.http import HttpResponse, FileResponse, JsonResponse
-from urllib.parse import urlsplit, unquote
+from urllib.parse import urlsplit, unquote, urlencode
+import urllib.request
+
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect, get_object_or_404
@@ -148,6 +150,37 @@ def page_not_found(request, exception=None):
 def hello_world(request):
     return render(request, 'test.jinja')
 
+def _verify_turnstile(token):
+    """
+    Verify Cloudflare Turnstile token.
+    """
+    if not token:
+        return False
+        
+    secret = settings.TURNSTILE_SECRET_KEY
+    url = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+    
+    # Pre-check: if secret is missing but enforcement is on, we should probably fail or log warning
+    if not secret:
+        logger.error("TURNSTILE_SECRET_KEY is not set in settings.")
+        return False
+
+    params = urlencode({
+        'secret': secret,
+        'response': token,
+    }).encode('utf-8')
+    
+    try:
+        req = urllib.request.Request(url, data=params, method='POST')
+        with urllib.request.urlopen(req) as response:
+            result = json.loads(response.read().decode())
+            success = result.get('success', False)
+            logger.info(f"Turnstile verification result: {success} for token prefix: {token[:10]}...")
+            return success
+    except Exception as e:
+        logger.error(f"Turnstile verification error: {e}")
+        return False
+
 def home(request):
     data = {}
     today = timezone.now().date() 
@@ -162,23 +195,32 @@ def home(request):
         email = request.POST.get("email")
         message = request.POST.get("message")
         
-        # Get mails of admins
-        admin_emails = User.objects.filter(userTypeId__name='admin').values_list('email', flat=True)
-        # if everything is filled in
         if name and email and message:
-            # Send email via SMTP
-            if len(admin_emails) > 0:
-                result = send_mail(
-                    subject=f"Contact Form DI4D Portal - Message from {name}",
-                    message=f"Name : {name}\nEmail: {email}\nMessage:\n{message}",
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=admin_emails,
-                    fail_silently=False
-                )
-                if result:
-                    data["success"] = "Your message has been sent successfully."
-                else:
-                    data["error"] = "There was an error sending your message. Please try again later."
+            turnstile_token = request.POST.get("cf-turnstile-response")
+            if not _verify_turnstile(turnstile_token):
+                data["error"] = "Spam protection validation failed. Please try again."
+                logger.error("Turnstile verification failed. Not proceeding with email.")
+            else:
+                logger.info("Turnstile verification succeeded. Proceeding with email.")
+            
+            # If no error yet (verified)
+            if not data.get("error"):
+                # Get mails of admins
+                admin_emails = User.objects.filter(userTypeId__name='admin').values_list('email', flat=True)
+                # Send email via SMTP
+                if len(admin_emails) > 0:
+                    result = send_mail(
+                        subject=f"Contact Form DI4D Portal - Message from {name}",
+                        message=f"Name : {name}\nEmail: {email}\nMessage:\n{message}",
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=admin_emails,
+                        fail_silently=False
+                    )
+                    if result:
+                        logger.info(f"Email sent successfully to: {list(admin_emails)}")
+                        data["success"] = "Your message has been sent successfully."
+                    else:
+                        data["error"] = "There was an error sending your message. Please try again later."
 
     # Check if student can register himself
     application_setting = ApplicationSetting.objects.first()

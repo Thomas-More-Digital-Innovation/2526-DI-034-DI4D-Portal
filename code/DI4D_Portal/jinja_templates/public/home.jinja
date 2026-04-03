@@ -23,6 +23,9 @@
 {% endmacro %}
 
 {% block title %}Home - DI4D Portal{% endblock %}
+{% block extra_head %}
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endblock %}
 {% block content %}
 <div class="w-full">
     <!-- Section 1 -->
@@ -195,7 +198,8 @@
                     <input required type="email" placeholder="Email" id="email" name="email" class="mb-4 p-2 rounded-lg w-full lg:w-150 bg-white text-[var(--light-grey)] w-full"/>
                     <label class="text-white" for="message">Message</label>
                     <textarea required rows="5" placeholder="Message" id="message" name="message" class="mb-4 p-2 rounded-lg w-full lg:w-150 bg-white text-[var(--light-grey)] w-full"></textarea>
-                    <div class="flex justify-end">
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4 mt-2">
+                        <div class="cf-turnstile" data-sitekey="{{ TURNSTILE_SITE_KEY }}"></div>
                         <button class="btn_primary_orange w-40" type="submit">Send Message</button>
                     </div>
                 </form>
