@@ -26,6 +26,7 @@
 - Upgrade pip: python -m pip install -U pip
 - Install deps from pyproject.toml: pip install -e ".\code[dev]"
 - Install tailwind binary: python .\code\DI4D_Portal\manage.py tailwind install
+- Install frontend deps and generate local vendor assets: cd .\code\DI4D_Portal\theme\static_src && npm ci && npm run sync:vendor
 - Copy .vscode\tasks.json.windows.template to .vscode\tasks.json and edit .venv with with your venv name.
 - Run dev environment: Ctrl + Shift + p, Task: run task, choose dev.
 
@@ -35,6 +36,7 @@
 - Upgrade pip: python3 -m pip install -U pip
 - Install deps from pyproject.toml: pip install -e "./code[dev]"
 - Install tailwind binary: python3 ./code/DI4D_Portal/manage.py tailwind install
+- Install frontend deps and generate local vendor assets: cd ./code/DI4D_Portal/theme/static_src && npm ci && npm run sync:vendor
 - Copy .vscode/tasks.json.linux.template to .vscode/tasks.json and edit .venv with with your venv name.
 - Run dev environment: Ctrl + Shift + p, Task: run task, choose dev.
 

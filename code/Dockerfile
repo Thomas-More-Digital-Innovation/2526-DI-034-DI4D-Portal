@@ -5,6 +5,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# Node tooling is required to materialize frontend vendor assets.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends nodejs npm && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copy enough source for packaging metadata
 COPY pyproject.toml README.md ./
 COPY DI4D_Portal ./DI4D_Portal
@@ -12,6 +17,11 @@ COPY DI4D_Portal ./DI4D_Portal
 # Install Python deps (dev for tailwind build, prod for runtime)
 RUN python -m pip install --upgrade pip && \
     pip install ".[dev,prod]"
+
+# Install pinned frontend deps and copy vendor assets into static/vendor.
+RUN cd DI4D_Portal/theme/static_src && \
+    npm ci && \
+    npm run sync:vendor
 
 # Build Tailwind CSS
 RUN cd DI4D_Portal && \
